@@ -19,6 +19,7 @@ local cam = require("camera").new()
 local inspect = require("inspect")
 local gr = love.graphics
 local sim = require("simulator")
+local mtschemes = require("mtschemes")
 
  ViewState = {}
 
@@ -118,7 +119,7 @@ function drawGrid()
 
       local schema
       local ok, errmsg = pcall(function()
-         schema = require("mtschemes")[commonSetup.threadCount]
+         schema = mtschemes[commonSetup.threadCount]
       end)
       if not ok then
          print("Could'not require 'mtschemes'")
@@ -291,6 +292,43 @@ local function nextMode()
    sim.setMode(mode)
 end
 
+
+
+
+
+local function checkValidThreadCount(threadCount)
+
+
+   local prev = 1
+   local ok = false
+   for k, _ in pairs(mtschemes) do
+      if k == threadCount then
+         ok = true
+         break
+      end
+      prev = k
+
+   end
+
+   if not ok then
+      threadCount = prev
+   end
+
+   return threadCount
+end
+
+print("checkValidThreadCount(1)", checkValidThreadCount(1))
+print("checkValidThreadCount(2)", checkValidThreadCount(2))
+print("checkValidThreadCount(3)", checkValidThreadCount(3))
+print("checkValidThreadCount(4)", checkValidThreadCount(4))
+print("checkValidThreadCount(5)", checkValidThreadCount(5))
+print("checkValidThreadCount(6)", checkValidThreadCount(6))
+print("checkValidThreadCount(7)", checkValidThreadCount(7))
+print("checkValidThreadCount(8)", checkValidThreadCount(8))
+print("checkValidThreadCount(9)", checkValidThreadCount(9))
+print("checkValidThreadCount(10)", checkValidThreadCount(10))
+print("checkValidThreadCount(19)", checkValidThreadCount(19))
+
 local function drawSim()
    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
@@ -310,6 +348,9 @@ local function drawSim()
    commonSetup.denergy, status = imgui.SliderFloat("decrease enerby by", commonSetup.denergy, 0, 1)
 
    commonSetup.foodenergy, status = imgui.SliderFloat("food energy", commonSetup.foodenergy, 0, 10)
+
+   commonSetup.threadCount, status = imgui.SliderInt("thread count", commonSetup.threadCount, 1, 9)
+   commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
 
    if imgui.Button("reset silumation") then
       collectgarbage()
@@ -332,9 +373,11 @@ local function drawSim()
    end
 
    if underCursor then
-      local cell = getCell(underCursor)
-      drawCellInfo(cell)
-      drawCellPath(cell)
+
+
+
+
+
    end
 
    imgui.End()

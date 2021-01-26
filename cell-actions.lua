@@ -30,7 +30,7 @@ local allEated = 0
 local schema
 
 
-local threadNum
+local curThreadNum
 
 
 local function isAlive(x, y)
@@ -60,15 +60,24 @@ end
 
 
 local function isAliveNeighbours(x, y, threadNum)
+   print("threadNum", threadNum)
    local msgChan = love.thread.getChannel("msg" .. threadNum)
    msgChan:push("isalive")
    msgChan:push(x)
    msgChan:push(y)
 
-   local state = love.thread.getChannel("request" .. threadNum):demand(0.1)
-   print(state)
-   assert(state ~= nil)
-   return state
+
+
+
+   if threadNum == curThreadNum then
+      return isAlive(x, y)
+   else
+      local threadName = "request" .. threadNum
+      local state = love.thread.getChannel(threadName):demand(0.1)
+      print(state)
+      assert(state ~= nil, "no answer from " .. threadName .. " thread")
+      return state
+   end
 end
 
 
@@ -85,9 +94,9 @@ function actions.left(cell)
 
    if pos.x > 1 and not isAlive(pos.x - 1, pos.y) then
       pos.x = pos.x - 1
-   elseif pos.x <= 1 and not isAlive(gridSize, pos.y) then
 
 
+   elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
 
       pos.x = gridSize
 
@@ -353,17 +362,12 @@ end
 
 local function init(t)
 
-   threadNum = t.threadNum
+   curThreadNum = t.threadNum
    getGrid = t.getGrid
    gridSize = t.gridSize
    initCell = t.initCell
    schema = t.schema
-
    ENERGY = t.foodenergy
-
-
-
-
    setup = shallowCopy(t)
 
    print("t", inspect(t))

@@ -30,7 +30,7 @@ local allEated: number = 0
 local schema: MtSchema
 
 -- текущий номер потока
-local threadNum: number
+local curThreadNum: number
 
 --local function isAlive(x: number, y: number, threadNum: number|nil): boolean
 local function isAlive(x: number, y: number): boolean
@@ -60,15 +60,24 @@ end
 
 -- проверяет жива ли клетка в определенном потоке
 local function isAliveNeighbours(x: number, y: number, threadNum: number): boolean
+    print("threadNum", threadNum)
     local msgChan = love.thread.getChannel("msg" .. threadNum)
     msgChan:push("isalive")
     msgChan:push(x)
     msgChan:push(y)
+
+    -- блокирующий вызов, вешает программу
     --local state: boolean = love.thread.getChannel("request" .. threadNum):demand() as boolean
-    local state: boolean = love.thread.getChannel("request" .. threadNum):demand(0.1) as boolean
-    print(state)
-    assert(state ~= nil)
-    return state
+
+    if threadNum == curThreadNum then
+        return isAlive(x, y)
+    else
+        local threadName = "request" .. threadNum
+        local state: boolean = love.thread.getChannel(threadName):demand(0.1) as boolean
+        print(state)
+        assert(state ~= nil, "no answer from " .. threadName .. " thread")
+        return state
+    end
 end
 
 -- отослать клетку в другой поток через канал
@@ -85,9 +94,9 @@ function actions.left(cell: Cell)
     --print("cell", inspect(cell))
     if pos.x > 1 and not isAlive(pos.x - 1, pos.y) then
         pos.x = pos.x - 1
-    elseif pos.x <= 1 and not isAlive(gridSize, pos.y) then
+    --elseif pos.x <= 1 and not isAlive(gridSize, pos.y) then
     --print("schema", inspect(schema))
-    --elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
+    elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         pos.x = gridSize
         --moveCellToThread(cell, schema.l)
@@ -353,7 +362,7 @@ end
 
 local function init(t: CellActionsInit)
     --assert(type(getGridFunc) == "function")
-    threadNum = t.threadNum
+    curThreadNum = t.threadNum
     getGrid = t.getGrid
     gridSize = t.gridSize
     initCell = t.initCell
