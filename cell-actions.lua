@@ -94,6 +94,7 @@ local function moveCellToThread(cell, threadNum)
 end
 
 function actions.left(cell)
+   local res = false
    local pos = cell.pos
    pushPosition(cell)
 
@@ -103,10 +104,16 @@ function actions.left(cell)
 
    elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
 
+      local oldx, oldy = cell.pos.x, cell.pos.y
       pos.x = gridSize
       moveCellToThread(cell, schema.l)
-      getGrid()[cell.pos.x][cell.pos.y] = {}
+
+
+
+
+      res = true
    end
+   return res
 end
 
 function actions.right(cell)
@@ -364,6 +371,7 @@ function actions.cross(cell)
 
 
 
+   return false
 end
 
 local function init(t)

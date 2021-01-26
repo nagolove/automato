@@ -93,7 +93,8 @@ local function moveCellToThread(cell: Cell, threadNum: number)
     chan:push(dump)
 end
 
-function actions.left(cell: Cell)
+function actions.left(cell: Cell): boolean
+    local res = false
     local pos = cell.pos
     pushPosition(cell)
     --print("cell", inspect(cell))
@@ -103,13 +104,19 @@ function actions.left(cell: Cell)
     --print("schema", inspect(schema))
     elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
+        local oldx, oldy = cell.pos.x, cell.pos.y
         pos.x = gridSize
         moveCellToThread(cell, schema.l)
-        getGrid()[cell.pos.x][cell.pos.y] = {}
+        --getGrid()[oldx][oldy] = {}
+        -- XXX клетка должна быть сразу уничтожена
+        -- после возврата из функции
+        --getGrid()[oldx][oldy].energy = 0
+        res = true
     end
+    return res
 end
 
-function actions.right(cell: Cell)
+function actions.right(cell: Cell): boolean
     local pos = cell.pos
     pushPosition(cell)
     if pos.x < gridSize and not isAlive(pos.x + 1, pos.y) then
@@ -122,7 +129,7 @@ function actions.right(cell: Cell)
     end
 end
 
-function actions.up(cell: Cell)
+function actions.up(cell: Cell): boolean
     local pos = cell.pos
     pushPosition(cell)
     if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
@@ -135,7 +142,7 @@ function actions.up(cell: Cell)
     end
 end
 
-function actions.down(cell: Cell)
+function actions.down(cell: Cell): boolean
     local pos = cell.pos
     pushPosition(cell)
     if pos.y < gridSize and not isAlive(pos.x, pos.y + 1) then
@@ -147,7 +154,7 @@ function actions.down(cell: Cell)
     end
 end
 
-function actions.left2(cell: Cell)
+function actions.left2(cell: Cell): boolean
     local pos = cell.pos
     pushPosition(cell)
     if pos.x > 1 and not isAlive(pos.x - 1, pos.y) then
@@ -157,7 +164,7 @@ function actions.left2(cell: Cell)
     end
 end
 
-function actions.right2(cell: Cell)
+function actions.right2(cell: Cell): boolean
     local pos = cell.pos
     pushPosition(cell)
     if pos.x < gridSize and not isAlive(pos.x + 1, pos.y) then
@@ -167,7 +174,7 @@ function actions.right2(cell: Cell)
     end
 end
 
-function actions.up2(cell: Cell)
+function actions.up2(cell: Cell): boolean
     local pos = cell.pos
     pushPosition(cell)
     if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
@@ -177,7 +184,7 @@ function actions.up2(cell: Cell)
     end
 end
 
-function actions.down2(cell: Cell)
+function actions.down2(cell: Cell): boolean
     local pos = cell.pos
     pushPosition(cell)
     if pos.y < gridSize and not isAlive(pos.x, pos.y + 1) then
@@ -190,10 +197,10 @@ end
 -- непонятно куда выкладывать значения из стека.
 -- либо другие функции должны напрямую работать со стеком или
 -- должны быть регистры в виде переменных внутри клетки.
-function actions.popmem_pos(cell: Cell)
+function actions.popmem_pos(cell: Cell): boolean
 end
 
-function actions.pushmem_pos(cell: Cell)
+function actions.pushmem_pos(cell: Cell): boolean
     --table.insert(cell.mem, cell.pos.x)
     --table.insert(cell.mem, cell.pos.y)
 end
@@ -214,7 +221,7 @@ end
 
 -- Проверяет на съедобность все клетки вокруг себя. Найдя съедобную - поедает
 -- ее оставаясь на месте
-function actions.eat8(cell: Cell)
+function actions.eat8(cell: Cell): boolean
     local nx, ny = cell.pos.x, cell.pos.y
     for _, displacement in ipairs(around) do
         nx = nx + displacement[1]
@@ -238,7 +245,7 @@ function actions.eat8(cell: Cell)
 end
 
 -- аналогично eat8, но перемещается на место съеденной клетки.
-function actions.eat8move(cell: Cell)
+function actions.eat8move(cell: Cell): boolean
     local pos = cell.pos
     local newt: Pos = copy(pos as {any: any}) as Pos
     for _, displacement in ipairs(around) do
@@ -344,7 +351,7 @@ local function findFreePos(x: number, y: number): boolean, Pos
 end
 
 -- если достаточно энергии(>0), то клетка
-function actions.cross(cell: Cell)
+function actions.cross(cell: Cell): boolean
     --[[
     if cell.energy > 0 then
         cell.wantdivide = true
@@ -364,6 +371,7 @@ function actions.cross(cell: Cell)
         end)
     end
     --]]
+    return false
 end
 
 local function init(t: CellActionsInit)
