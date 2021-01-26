@@ -73,16 +73,21 @@ local function isAliveNeighbours(x: number, y: number, threadNum: number): boole
         return isAlive(x, y)
     else
         local threadName = "request" .. threadNum
+        print("request to", threadName)
         local state: boolean = love.thread.getChannel(threadName):demand(0.1) as boolean
         print(state)
         assert(state ~= nil, "no answer from " .. threadName .. " thread")
         return state
+
+        --return true
     end
 end
 
 -- отослать клетку в другой поток через канал
 local function moveCellToThread(cell: Cell, threadNum: number)
-    local dump: string = serpent.dump(cell)
+    print("moveCellToThread", threadNum)
+    --local dump: string = serpent.dump(cell)
+    local dump = serpent.dump(cell)
     local chan = love.thread.getChannel("msg" .. threadNum)
     chan:push("insertcell")
     chan:push(dump)
@@ -99,7 +104,8 @@ function actions.left(cell: Cell)
     elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         pos.x = gridSize
-        --moveCellToThread(cell, schema.l)
+        moveCellToThread(cell, schema.l)
+        getGrid()[cell.pos.x][cell.pos.y] = {}
     end
 end
 

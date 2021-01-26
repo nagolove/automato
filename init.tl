@@ -20,6 +20,7 @@ local inspect = require "inspect"
 local gr = love.graphics
 local sim = require "simulator"
 local mtschemes = require "mtschemes"
+local startInStepMode = false
 
 global type ViewState = enum
     "sim"
@@ -351,6 +352,13 @@ local function drawSim()
 
     commonSetup.threadCount, status = imgui.SliderInt("thread count", commonSetup.threadCount, 1, 9)
     commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
+
+    status = imgui.Checkbox("start in step mode", startInStepMode)
+    startInStepMode = status
+
+    if startInStepMode then
+        commonSetup.mode = "step"
+    end
 
     if imgui.Button("reset silumation") then
         collectgarbage()

@@ -53,6 +53,12 @@ global type DrawNode = record
     food: boolean
 end
 
+global type SimulatorMode = enum
+    "step"
+    "continuos"
+    "stop"
+end
+
 global type CommonSetup = record
     threadCount: number
     gridSize: number
@@ -63,6 +69,7 @@ global type CommonSetup = record
     nofood: boolean
     denergy: number
     foodenergy: number
+    mode: SimulatorMode
 end
 
 global type ThreadCommandsStore = record
@@ -81,12 +88,6 @@ global type ThreadCommands = enum
     "continuos"
     "isalive"
     "insertcell"
-end
-
-global type SimulatorMode = enum
-    "step"
-    "continuos"
-    "stop"
 end
 
 global type Simulator = record

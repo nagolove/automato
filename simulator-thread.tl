@@ -318,10 +318,12 @@ function initialEmit(iter: number)
     [end
     ]]
 
-    for i = 1, 2 do
+    --for i = 1, 1 do
+    if threadNum == 1 then
         local steps = 5
         initCellOneCommandCode("left", steps)
     end
+    --end
 
     for i = 1, cellsNum do
         --initCell()
@@ -384,7 +386,7 @@ function experiment()
 
         iter = iter + 1
 
-        print("cells", #cells)
+        --print("cells", #cells)
 
         -- можно возвращать сдесь какое-то состояние клеток из нити
         --coroutine.yield(stepStatistic)
@@ -455,17 +457,24 @@ function commands.continuos()
 end
 
 function commands.isalive()
-  local x, y = chan:pop() as number, chan:pop() as number  
-  local ok, errmsg: boolean, string = pcall(function()
-      if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
-        local cell = grid[x][y]
-        local state: boolean = cell.energy and cell.energy > 0
-        request:push(state)
-      end
+    local x, y = chan:pop() as number, chan:pop() as number  
+    --print("isalive", threadNum, "x, y", x, y)
+    local ok, errmsg: boolean, string = pcall(function()
+        if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
+            local cell = grid[x][y]
+            --print("cell", inspect(cell))
+            --local state: boolean = cell.energy and cell.energy > 0
+            local state = false
+            if cell.energy and cell.energy > 0 then
+                state = true
+            end
+            --print("pushed state", state)
+            request:push(state)
+        end
     end)
-  if not ok then
-    error(errmsg)
-  end
+    if not ok then
+        error(errmsg)
+    end
 end
 
 function commands.insertcell()
@@ -493,55 +502,62 @@ local function popCommand()
 end
 
 local function doSetup()
-  local setupName = "setup" .. threadNum
-  initialSetup = love.thread.getChannel(setupName):pop() as CommonSetup
+    local setupName = "setup" .. threadNum
+    initialSetup = love.thread.getChannel(setupName):pop() as CommonSetup
 
-  print("thread", threadNum)
-  print("initialSetup", inspect(initialSetup))
+    if initialSetup.mode == "step" then
+        commands.step()
+    elseif initialSetup.mode == "continuos" then
+        commands.continuos()
+    end
 
-  gridSize = initialSetup.gridSize
-  codeLen = initialSetup.codeLen
-  cellsNum = initialSetup.cellsNum
-  --initialEnergy[1], initialEnergy[2] = initialSetup.initialEnergy[1], initialSetup.initialEnergy[2]
+    print("thread", threadNum)
+    print("initialSetup", inspect(initialSetup))
 
-  local sschema: string = love.thread.getChannel(setupName):pop() as string
+    gridSize = initialSetup.gridSize
+    codeLen = initialSetup.codeLen
+    cellsNum = initialSetup.cellsNum
+    --initialEnergy[1], initialEnergy[2] = initialSetup.initialEnergy[1], initialSetup.initialEnergy[2]
 
-  local schemafun, err = load(sschema)
-  if err then
-    error("Could'not get schema for thread")
-  end
-  local schemaRestored: MtSchema = schemafun() as MtSchema
-  print("schemaRestored", inspect(schemaRestored))
-  schema = flatCopy(schemaRestored as table) as MtSchema
+    local sschema: string = love.thread.getChannel(setupName):pop() as string
 
-  drawCoefficients = flatCopy(schemaRestored.draw) as {number, number}
+    local schemafun, err = load(sschema)
+    if err then
+        error("Could'not get schema for thread")
+    end
+    local schemaRestored: MtSchema = schemafun() as MtSchema
+    print("schemaRestored", inspect(schemaRestored))
+    schema = flatCopy(schemaRestored as table) as MtSchema
 
-  print("schema", inspect(schema))
-  print("drawCoefficients", inspect(drawCoefficients))
+    drawCoefficients = flatCopy(schemaRestored.draw) as {number, number}
 
-  experimentCoro = coroutine.create(function()
-      local ok, errmsg: boolean, string = pcall(experiment)
-      if not ok then
-        logferror("Error %s", errmsg)
-      end
+    print("schema", inspect(schema))
+    print("drawCoefficients", inspect(drawCoefficients))
+
+    experimentCoro = coroutine.create(function()
+        local ok, errmsg: boolean, string = pcall(experiment)
+        if not ok then
+            logferror("Error in experiment pcall %s", errmsg)
+        end
     end)
 
-  -- первый запуск корутины, прогревочный 
-  coroutine.resume(experimentCoro)
+    -- первый запуск корутины, прогревочный 
+    coroutine.resume(experimentCoro)
 
-  actionsModule.init({
-      threadNum = threadNum,
-      getGrid = getGrid,
-      gridSize = gridSize,
-      initCell = initCell,
-      schema = schema,
-      foodenergy = initialSetup.foodenergy,
+    actionsModule.init({
+        threadNum = threadNum,
+        getGrid = getGrid,
+        gridSize = gridSize,
+        initCell = initCell,
+        schema = schema,
+        foodenergy = initialSetup.foodenergy,
     })
 
-  -- установка ссылки на таблицу действий - язык клетки.
-  actions = actionsModule.actions
+    -- установка ссылки на таблицу действий - язык клетки.
+    actions = actionsModule.actions
 end
 
+-- флажок устанавливается когда корутина эксперимента закончилась
 local free = false
 
 local function step()

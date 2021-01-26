@@ -318,10 +318,12 @@ function initialEmit(iter)
 
 
 
-   for i = 1, 2 do
+
+   if threadNum == 1 then
       local steps = 5
       initCellOneCommandCode("left", steps)
    end
+
 
    for i = 1, cellsNum do
 
@@ -384,7 +386,7 @@ function experiment()
 
       iter = iter + 1
 
-      print("cells", #cells)
+
 
 
 
@@ -456,10 +458,17 @@ end
 
 function commands.isalive()
    local x, y = chan:pop(), chan:pop()
+
    local ok, errmsg = pcall(function()
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
          local cell = grid[x][y]
-         local state = cell.energy and cell.energy > 0
+
+
+         local state = false
+         if cell.energy and cell.energy > 0 then
+            state = true
+         end
+
          request:push(state)
       end
    end)
@@ -496,6 +505,12 @@ local function doSetup()
    local setupName = "setup" .. threadNum
    initialSetup = love.thread.getChannel(setupName):pop()
 
+   if initialSetup.mode == "step" then
+      commands.step()
+   elseif initialSetup.mode == "continuos" then
+      commands.continuos()
+   end
+
    print("thread", threadNum)
    print("initialSetup", inspect(initialSetup))
 
@@ -522,7 +537,7 @@ local function doSetup()
    experimentCoro = coroutine.create(function()
       local ok, errmsg = pcall(experiment)
       if not ok then
-         logferror("Error %s", errmsg)
+         logferror("Error in experiment pcall %s", errmsg)
       end
    end)
 
@@ -541,6 +556,7 @@ local function doSetup()
 
    actions = actionsModule.actions
 end
+
 
 local free = false
 

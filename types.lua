@@ -53,7 +53,14 @@ require("mtschemes")
 
 
 
+ SimulatorMode = {}
+
+
+
+
+
  CommonSetup = {}
+
 
 
 
@@ -78,12 +85,6 @@ require("mtschemes")
 
 
 
-
-
-
-
-
- SimulatorMode = {}
 
 
 
