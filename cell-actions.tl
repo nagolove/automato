@@ -2,6 +2,7 @@ require "external"
 require "types"
 require "mtschemes"
 require "love"
+require "common"
 
 local inspect = require "inspect"
 local serpent = require "serpent"
@@ -37,7 +38,8 @@ local function isAlive(x: number, y: number): boolean
     return t.energy and t.energy > 0
 end
 
-local init: CellActionsInit = {}
+-- лучшее название для переменной
+local setup: CellActionsInit = {}
 
 -- записать текущее положение клетки в ее табличку передвижений
 local function pushPosition(cell: Cell)
@@ -356,12 +358,8 @@ local function init(t: CellActionsInit)
     gridSize = t.gridSize
     initCell = t.initCell
     schema = t.schema
-
     ENERGY = t.foodenergy
-    -- FIXME
-    --for k, v in pairs(t as table) do
-        --init[k] = v
-    --end
+    setup = shallowCopy(t)
 
     print("t", inspect(t))
     allEated = 0

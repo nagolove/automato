@@ -2,6 +2,7 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 require("types")
 require("mtschemes")
 require("love")
+require("common")
 
 local inspect = require("inspect")
 local serpent = require("serpent")
@@ -37,7 +38,8 @@ local function isAlive(x, y)
    return t.energy and t.energy > 0
 end
 
-local init = {}
+
+local setup = {}
 
 
 local function pushPosition(cell)
@@ -362,6 +364,7 @@ local function init(t)
 
 
 
+   setup = shallowCopy(t)
 
    print("t", inspect(t))
    allEated = 0

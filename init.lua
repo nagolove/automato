@@ -13,6 +13,7 @@ require("types")
 
 package.path = package.path .. ";scenes/automato/?.lua"
 
+local keyconfig = require("keyconfig")
 local imgui = require("imgui")
 local cam = require("camera").new()
 local inspect = require("inspect")
@@ -432,9 +433,9 @@ local function update()
 
    local isDown = love.keyboard.isDown
    if isDown("z") then
-      cam:zoom(1.01)
+
    elseif isDown("x") then
-      cam:zoom(0.99)
+
    end
 end
 
@@ -459,6 +460,18 @@ local function init()
    math.randomseed(love.timer.getTime())
    local mx, my = love.mouse.getPosition()
    underCursor = { x = mx, y = my }
+
+
+   keyconfig.bindKeyPressed("zoom out", { "z" }, function()
+      print("zoout")
+      cam:zoom(1.01)
+   end)
+   keyconfig.bindKeyPressed("zoom in", { "x" }, function()
+      cam:zoom(0.99)
+   end)
+   keyconfig.bindKeyPressed("close program", { "escape" }, function()
+      love.event.quit()
+   end)
 end
 
 local function quit()
