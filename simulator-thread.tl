@@ -331,9 +331,9 @@ function initialEmit(iter: number)
         cell.color = {0, 0, math.random()}
     end
     if threadNum == 2 then
-        local steps = 5
-        local cell = initCellOneCommandCode("right", steps)
-        cell.color = {math.random(), 0, 0}
+        --local steps = 5
+        --local cell = initCellOneCommandCode("right", steps)
+        --cell.color = {math.random(), 0, 0}
     end
     --end
 
@@ -574,6 +574,7 @@ local function doSetup()
         initCell = initCell,
         schema = schema,
         foodenergy = initialSetup.foodenergy,
+        popCommand = popCommand
     })
 
     -- установка ссылки на таблицу действий - язык клетки.
@@ -581,15 +582,16 @@ local function doSetup()
 end
 
 -- флажок устанавливается когда корутина эксперимента закончилась
+-- нет смысла в этом флаге если корутина завершилась ошибочно
 local free = false
 
 local function step()
-  local ok, errmsg = coroutine.resume(experimentCoro)
-  if not ok and not experimentErrorPrinted then
-    experimentErrorPrinted = true
-    free = true
-    print(string.format("coroutine error %s", errmsg))
-  end
+    local ok, errmsg = coroutine.resume(experimentCoro)
+    if not ok and not experimentErrorPrinted then
+        experimentErrorPrinted = true
+        free = true
+        print(string.format("coroutine error %s", errmsg))
+    end
 end
 
 local function main()

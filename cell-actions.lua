@@ -78,6 +78,14 @@ local function isAliveNeighbours(x, y, threadNum)
       print("request to", threadName)
       local chan = love.thread.getChannel(threadName)
       local state = chan:demand(requestThreadDemandTimeout)
+
+      if not state then
+         print("setup.popCommand")
+         setup.popCommand()
+         state = chan:demand(requestThreadDemandTimeout)
+         print("state", state)
+      end
+
       print(state)
       assert(state ~= nil, "no answer from " .. threadName .. " thread")
       return state

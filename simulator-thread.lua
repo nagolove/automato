@@ -331,9 +331,9 @@ function initialEmit(iter)
       cell.color = { 0, 0, math.random() }
    end
    if threadNum == 2 then
-      local steps = 5
-      local cell = initCellOneCommandCode("right", steps)
-      cell.color = { math.random(), 0, 0 }
+
+
+
    end
 
 
@@ -574,11 +574,13 @@ local function doSetup()
       initCell = initCell,
       schema = schema,
       foodenergy = initialSetup.foodenergy,
+      popCommand = popCommand,
    })
 
 
    actions = actionsModule.actions
 end
+
 
 
 local free = false

@@ -63,9 +63,9 @@ local pixSize = 10
 
 local commonSetup = {
 
-   gridSize = 100,
+   gridSize = 50,
 
-   cellsNum = 2000,
+   cellsNum = 1000,
 
    initialEnergy = { 5000, 10000 },
 

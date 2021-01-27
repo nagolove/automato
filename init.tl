@@ -63,9 +63,9 @@ local pixSize: number = 10
 --]]
 local commonSetup: CommonSetup = {
     -- размер сетки одного потока
-    gridSize = 100,
+    gridSize = 50,
     -- количество клеток создаваемых на один поток
-    cellsNum = 2000, 
+    cellsNum = 1000, 
     -- разброс начальной энергии клеток
     initialEnergy = {5000, 10000},
     -- длина ленты кода

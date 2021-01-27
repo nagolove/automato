@@ -36,6 +36,7 @@ global type CellActionsInit = record
     gridSize: number
     initCell: InitCellFunction
     schema: MtSchema
+    popCommand: function
     -- сколько прибавляется энергии за съеденную еду
     foodenergy: number
 end
@@ -97,7 +98,7 @@ end
 global type ThreadInfo = record
     cells: number
     meals: number
-    threadNum: number
+    --threadNum: number
 end
 
 global type Simulator = record
