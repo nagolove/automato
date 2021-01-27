@@ -10,7 +10,6 @@ local serpent = require("serpent")
 
 love.filesystem.setRequirePath("scenes/automato/?.lua")
 
-
 require("external")
 require("log")
 require("love.timer")
@@ -140,8 +139,10 @@ function updateCell(cell)
       print("code", code)
 
 
+
+
       local isremoved = actions[code](cell)
-      print("isremoved", isremoved)
+
 
       cell.ip = cell.ip + 1
       cell.energy = cell.energy - initialSetup.denergy

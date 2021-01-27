@@ -350,6 +350,8 @@ local function drawSim()
 
     commonSetup.foodenergy, status = imgui.SliderFloat("food energy", commonSetup.foodenergy, 0, 10)
 
+    commonSetup.gridSize, status = imgui.SliderInt("grid size", commonSetup.gridSize, 10, 100)
+
     commonSetup.threadCount, status = imgui.SliderInt("thread count", commonSetup.threadCount, 1, 9)
     commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
 

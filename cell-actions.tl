@@ -104,8 +104,8 @@ function actions.left(cell: Cell): boolean
     --print("schema", inspect(schema))
     elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
-        local oldx, oldy = cell.pos.x, cell.pos.y
-        pos.x = gridSize
+        --local oldx, oldy = cell.pos.x, cell.pos.y
+        --pos.x = gridSize
         moveCellToThread(cell, schema.l)
         --getGrid()[oldx][oldy] = {}
         -- XXX клетка должна быть сразу уничтожена
