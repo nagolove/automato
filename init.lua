@@ -334,6 +334,15 @@ print("checkValidThreadCount(9)", checkValidThreadCount(9))
 print("checkValidThreadCount(10)", checkValidThreadCount(10))
 print("checkValidThreadCount(19)", checkValidThreadCount(19))
 
+local function printThreadsInfo()
+   local info = sim.getThreadsInfo()
+   if info then
+      for k, v in ipairs(info) do
+         imgui.Text(string.format("thread %d cells %d meals %d", k, v.cells, v.meals))
+      end
+   end
+end
+
 local function drawSim()
    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
@@ -381,6 +390,7 @@ local function drawSim()
    end
 
    imgui.Text(replaceCaret(inspect(sim.getStatistic)))
+   printThreadsInfo()
 
    if sim.getStatistic() and sim.getStatistic().allEated then
       imgui.LabelText(sim.getStatistic().allEated, "all eated")

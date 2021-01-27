@@ -81,6 +81,7 @@ global type ThreadCommandsStore = record
     continuos: function
     isalive: function
     insertcell: function
+    info: function
 end
 
 global type ThreadCommands = enum
@@ -90,6 +91,13 @@ global type ThreadCommands = enum
     "continuos"
     "isalive"
     "insertcell"
+    "info"
+end
+
+global type ThreadInfo = record
+    cells: number
+    meals: number
+    threadNum: number
 end
 
 global type Simulator = record
@@ -105,5 +113,6 @@ global type Simulator = record
     getIter : function(): number
     getGridSize : function(): number
     getSchema : function()
+    getThreadsInfo: function(): {ThreadInfo}
 end
 

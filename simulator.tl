@@ -39,6 +39,34 @@ function Simulator.getDrawLists(): {DrawNode}
     return list
 end
 
+function Simulator.getThreadsInfo(): {ThreadInfo}
+    local list: {ThreadInfo} = {}
+    for k, _ in ipairs(threads) do
+        local chan = love.thread.getChannel("msg" .. k)
+        if chan then
+            chan:push("info")
+
+            local rchan = love.thread.getChannel("request" .. k)
+            local infostr = rchan:demand(0.02) as string
+
+            if infostr then
+                local ok, info = serpent.load(infostr)
+                if not ok then
+                    error(string.format("Could not load string in getThreadsInfo()"))
+                end
+                table.insert(list, info as ThreadInfo)
+            end
+            --local sublist: {DrawNode} = chan:demand(0.1) as {DrawNode}
+            --if sublist then
+                --for _, v1 in ipairs(sublist) do
+                    --table.insert(list, v1)
+                --end
+            --end
+        end
+    end
+    return list
+end
+
 local function pushSync()
     local syncChan = love.thread.getChannel("sync")
     local i = 1
@@ -189,10 +217,12 @@ function Simulator.getObject(x: number, y: number): Cell
         return nil
     end
 
-    local objectfun, err: function, boolean = serpent.load(sobject)
+    --local objectfun, err: function, boolean = serpent.load(sobject)
+    local ok, objectfun: boolean, function = serpent.load(sobject)
 
-    if err then
-        logferror("Could'not deserialize cell object %s", err)
+    if not ok then
+        --logferror("Could'not deserialize cell object %s", err)
+        logferror("Could'not deserialize cell object")
         return nil
     end
 

@@ -16,7 +16,7 @@ require "love.timer"
 require "mtschemes"
 require "types"
 
---print("------------------- WORKER STARTED -------------------")
+local maxDataChannelCount = 10
 
 local randseed: number = love.timer.getTime()
 math.randomseed(randseed)
@@ -437,9 +437,17 @@ local function pushDrawList()
         })
     end
     -- нужное-ли условие?
-    if data:getCount() < 5 then
+    if data:getCount() < maxDataChannelCount then
         data:push(drawlist)
     end
+end
+
+function commands.info()
+    local info: ThreadInfo = {
+        cells = #cells,
+        meals = #meal
+    }
+    request:push(serpent.dump(info))
 end
 
 function commands.stop()
