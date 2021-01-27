@@ -133,10 +133,10 @@ function updateCell(cell: Cell): boolean, Cell
     if cell.ip >= #cell.code then
         cell.ip = 1
     end
-    print("cell", cell.id, "energy", cell.energy)
+    --print("cell", cell.id, "energy", cell.energy)
     if cell.energy > 0 then
         local code = cell.code[cell.ip]
-        print("code", code)
+        --print("code", code)
 
         --actions[code](cell)
         

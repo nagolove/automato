@@ -21,6 +21,7 @@ local gr = love.graphics
 local sim = require("simulator")
 local mtschemes = require("mtschemes")
 local startInStepMode = false
+local timer = require("Timer")
 
  ViewState = {}
 
@@ -80,6 +81,9 @@ local commonSetup = {
 local maxCellsNum = 5000
 
 local gridLineWidth = 1
+local infoTimer = timer.new()
+
+local threadsInfo
 
 local function getMode()
    return mode
@@ -335,11 +339,12 @@ print("checkValidThreadCount(10)", checkValidThreadCount(10))
 print("checkValidThreadCount(19)", checkValidThreadCount(19))
 
 local function printThreadsInfo()
-   local info = sim.getThreadsInfo()
-   if info then
-      for k, v in ipairs(info) do
+   if threadsInfo then
+      for k, v in ipairs(threadsInfo) do
          imgui.Text(string.format("thread %d cells %d meals %d", k, v.cells, v.meals))
       end
+   else
+      imgui.Text(string.format("thread %d cells %d meals %d", -1, -1, -1))
    end
 end
 
@@ -389,12 +394,13 @@ local function drawSim()
       sim.step()
    end
 
-   imgui.Text(replaceCaret(inspect(sim.getStatistic)))
-   printThreadsInfo()
 
-   if sim.getStatistic() and sim.getStatistic().allEated then
-      imgui.LabelText(sim.getStatistic().allEated, "all eated")
-   end
+
+
+
+
+
+   printThreadsInfo()
 
    if underCursor then
 
@@ -490,7 +496,9 @@ end
 
 
 
-local function update()
+local function update(dt)
+   infoTimer:update(dt)
+
    controlCamera(cam)
 
    sim.step()
@@ -528,16 +536,26 @@ local function init()
    local mx, my = love.mouse.getPosition()
    underCursor = { x = mx, y = my }
 
-
-   keyconfig.bindKeyPressed("zoom out", { "z" }, function()
+   keyconfig.bindKeyDown("zoomout", { "z" }, function()
       print("zoout")
       cam:zoom(1.01)
-   end)
-   keyconfig.bindKeyPressed("zoom in", { "x" }, function()
+   end, "zoom camera out")
+
+   keyconfig.bindKeyDown("zoomin", { "x" }, function()
       cam:zoom(0.99)
-   end)
-   keyconfig.bindKeyPressed("close program", { "escape" }, function()
+   end, "zoom camera in")
+
+   keyconfig.bindKeyPressed("exit", { "escape" }, function()
       love.event.quit()
+   end, "close program")
+
+   threadsInfo = { { cells = 0, meals = 0 } }
+   infoTimer:every(0.1, function(_)
+      local info = sim.getThreadsInfo()
+      print("infO", inspect(info))
+      if info then
+         threadsInfo = info
+      end
    end)
 end
 
