@@ -58,6 +58,8 @@ local function pushPosition(cell: Cell)
     end
 end
 
+local requestThreadDemandTimeout = 0.02
+
 -- проверяет жива ли клетка в определенном потоке
 local function isAliveNeighbours(x: number, y: number, threadNum: number): boolean
     print("threadNum", threadNum)
@@ -74,7 +76,8 @@ local function isAliveNeighbours(x: number, y: number, threadNum: number): boole
     else
         local threadName = "request" .. threadNum
         print("request to", threadName)
-        local state: boolean = love.thread.getChannel(threadName):demand(0.1) as boolean
+        local chan = love.thread.getChannel(threadName)
+        local state: boolean = chan:demand(requestThreadDemandTimeout) as boolean
         print(state)
         assert(state ~= nil, "no answer from " .. threadName .. " thread")
         return state
@@ -105,7 +108,7 @@ function actions.left(cell: Cell): boolean
     elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         --local oldx, oldy = cell.pos.x, cell.pos.y
-        --pos.x = gridSize
+        pos.x = gridSize
         moveCellToThread(cell, schema.l)
         --getGrid()[oldx][oldy] = {}
         -- XXX клетка должна быть сразу уничтожена
@@ -117,41 +120,50 @@ function actions.left(cell: Cell): boolean
 end
 
 function actions.right(cell: Cell): boolean
+    local res = false
     local pos = cell.pos
     pushPosition(cell)
     if pos.x < gridSize and not isAlive(pos.x + 1, pos.y) then
         pos.x = pos.x + 1
     --elseif pos.x >= gridSize and not isAlive(1, pos.y) then
     elseif pos.x >= gridSize and not isAliveNeighbours(1, pos.y, schema.r) then
-        getGrid()[cell.pos.x][cell.pos.y].energy = 0
+        --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         pos.x = 1
         moveCellToThread(cell, schema.r)
+        res = true
     end
+    return res
 end
 
 function actions.up(cell: Cell): boolean
+    local res = false
     local pos = cell.pos
     pushPosition(cell)
     if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
         pos.y = pos.y - 1
     --elseif pos.y <= 1 and not isAlive(pos.x, gridSize) then
     elseif pos.y <= 1 and not isAliveNeighbours(pos.x, gridSize, schema.u) then
-        getGrid()[cell.pos.x][cell.pos.y].energy = 0
+        --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         pos.y = gridSize
         moveCellToThread(cell, schema.u)
+        res = true
     end
+    return res
 end
 
 function actions.down(cell: Cell): boolean
+    local res = false
     local pos = cell.pos
     pushPosition(cell)
     if pos.y < gridSize and not isAlive(pos.x, pos.y + 1) then
         pos.y = pos.y + 1
     elseif pos.y >= gridSize and not isAliveNeighbours(pos.x, 1, schema.d) then
-        getGrid()[cell.pos.x][cell.pos.y].energy = 0
+        --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         pos.y = 1
         moveCellToThread(cell, schema.d)
+        res = true
     end
+    return res
 end
 
 function actions.left2(cell: Cell): boolean

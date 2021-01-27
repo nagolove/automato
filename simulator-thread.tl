@@ -272,14 +272,15 @@ function updateCells(cells: {Cell}): {Cell}
   return alive
 end
 
-local function initCellOneCommandCode(command: string, steps: number)
-  local cell = initCell()
-  print("cell.energy", cell.energy)
-  cell.code = {}
-  for i = 1, steps do
-    table.insert(cell.code, command)
-  end
-  print("cell.code", inspect(cell.code))
+local function initCellOneCommandCode(command: string, steps: number): Cell
+    local cell = initCell()
+    print("cell.energy", cell.energy)
+    cell.code = {}
+    for i = 1, steps do
+        table.insert(cell.code, command)
+    end
+    --print("cell.code", inspect(cell.code))
+    return cell
 end
 
 --[[ XXX Not compiled
@@ -326,7 +327,13 @@ function initialEmit(iter: number)
     --for i = 1, 1 do
     if threadNum == 1 then
         local steps = 5
-        initCellOneCommandCode("left", steps)
+        local cell = initCellOneCommandCode("left", steps)
+        cell.color = {0, 0, math.random()}
+    end
+    if threadNum == 2 then
+        local steps = 5
+        local cell = initCellOneCommandCode("right", steps)
+        cell.color = {math.random(), 0, 0}
     end
     --end
 
@@ -412,24 +419,27 @@ local function getGrid(): Grid
 end
 
 local function pushDrawList()
-  local drawlist: {DrawNode} = {}
-  for _, v in ipairs(cells) do
-    table.insert(drawlist, { 
-        x = v.pos.x + gridSize * drawCoefficients[1],
-        y = v.pos.y + gridSize * drawCoefficients[2],
-      })
-  end
-  for _, v in ipairs(meal) do
-    table.insert(drawlist, { 
-        x = v.pos.x + gridSize * drawCoefficients[1],
-        y = v.pos.y + gridSize * drawCoefficients[2], 
-        food = true
-      })
-  end
-  -- нужное-ли условие?
-  if data:getCount() < 5 then
-    data:push(drawlist)
-  end
+    local drawlist: {DrawNode} = {}
+    for _, v in ipairs(cells) do
+        table.insert(drawlist, { 
+            x = v.pos.x + gridSize * drawCoefficients[1],
+            y = v.pos.y + gridSize * drawCoefficients[2],
+        })
+        if v.color then
+            drawlist[#drawlist].color = shallowCopy(v.color)
+        end
+    end
+    for _, v in ipairs(meal) do
+        table.insert(drawlist, { 
+            x = v.pos.x + gridSize * drawCoefficients[1],
+            y = v.pos.y + gridSize * drawCoefficients[2], 
+            food = true
+        })
+    end
+    -- нужное-ли условие?
+    if data:getCount() < 5 then
+        data:push(drawlist)
+    end
 end
 
 function commands.stop()
@@ -542,7 +552,7 @@ local function doSetup()
     experimentCoro = coroutine.create(function()
         local ok, errmsg: boolean, string = pcall(experiment)
         if not ok then
-            logferror("Error in experiment pcall %s", errmsg)
+            logferror("Error in experiment pcall '%s'", errmsg)
         end
     end)
 
@@ -584,7 +594,7 @@ local function main()
                 if doStep then
                     step()
                 end
-                love.timer.sleep(0.02)
+                love.timer.sleep(0.002)
             else
                 step()
             end
@@ -600,7 +610,7 @@ local function main()
             local iterChan = love.thread.getChannel("iter")
             iterChan:push(iter)
         else
-            love.timer.sleep(0.02)
+            love.timer.sleep(0.002)
         end
     end
 end

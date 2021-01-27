@@ -8,6 +8,7 @@ global type Pos = record
 end
 
 global type Cell = record
+    color: {number}
     pos: Pos
     ip: number
     energy: number
@@ -51,6 +52,7 @@ global type DrawNode = record
     x: number
     y: number
     food: boolean
+    color: {number}
 end
 
 global type SimulatorMode = enum

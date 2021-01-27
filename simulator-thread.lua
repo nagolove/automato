@@ -140,8 +140,8 @@ function updateCell(cell)
 
 
 
+      local isremoved = not actions[code](cell)
 
-      local isremoved = actions[code](cell)
 
 
       cell.ip = cell.ip + 1
@@ -279,7 +279,8 @@ local function initCellOneCommandCode(command, steps)
    for i = 1, steps do
       table.insert(cell.code, command)
    end
-   print("cell.code", inspect(cell.code))
+
+   return cell
 end
 
 
@@ -326,7 +327,13 @@ function initialEmit(iter)
 
    if threadNum == 1 then
       local steps = 5
-      initCellOneCommandCode("left", steps)
+      local cell = initCellOneCommandCode("left", steps)
+      cell.color = { 0, 0, math.random() }
+   end
+   if threadNum == 2 then
+      local steps = 5
+      local cell = initCellOneCommandCode("right", steps)
+      cell.color = { math.random(), 0, 0 }
    end
 
 
@@ -418,6 +425,9 @@ local function pushDrawList()
          x = v.pos.x + gridSize * drawCoefficients[1],
          y = v.pos.y + gridSize * drawCoefficients[2],
       })
+      if v.color then
+         drawlist[#drawlist].color = shallowCopy(v.color)
+      end
    end
    for _, v in ipairs(meal) do
       table.insert(drawlist, {
@@ -542,7 +552,7 @@ local function doSetup()
    experimentCoro = coroutine.create(function()
       local ok, errmsg = pcall(experiment)
       if not ok then
-         logferror("Error in experiment pcall %s", errmsg)
+         logferror("Error in experiment pcall '%s'", errmsg)
       end
    end)
 
@@ -584,7 +594,7 @@ local function main()
             if doStep then
                step()
             end
-            love.timer.sleep(0.02)
+            love.timer.sleep(0.002)
          else
             step()
          end
@@ -600,7 +610,7 @@ local function main()
          local iterChan = love.thread.getChannel("iter")
          iterChan:push(iter)
       else
-         love.timer.sleep(0.02)
+         love.timer.sleep(0.002)
       end
    end
 end

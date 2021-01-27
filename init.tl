@@ -95,7 +95,11 @@ function drawCells()
                 local w, h = pixSize, pixSize
                 gr.rectangle("fill", x, y, w, h)
             else
-                gr.setColor(0.5, 0.5, 0.5)
+                if v.color then
+                    gr.setColor(v.color)
+                else
+                    gr.setColor(0.5, 0.5, 0.5)
+                end
                 local x, y = (v.x - 1)* pixSize, (v.y - 1) * pixSize
                 local w, h = pixSize, pixSize
                 gr.rectangle("fill", x, y, w, h)

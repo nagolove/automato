@@ -58,6 +58,8 @@ local function pushPosition(cell)
    end
 end
 
+local requestThreadDemandTimeout = 0.02
+
 
 local function isAliveNeighbours(x, y, threadNum)
    print("threadNum", threadNum)
@@ -74,7 +76,8 @@ local function isAliveNeighbours(x, y, threadNum)
    else
       local threadName = "request" .. threadNum
       print("request to", threadName)
-      local state = love.thread.getChannel(threadName):demand(0.1)
+      local chan = love.thread.getChannel(threadName)
+      local state = chan:demand(requestThreadDemandTimeout)
       print(state)
       assert(state ~= nil, "no answer from " .. threadName .. " thread")
       return state
@@ -104,7 +107,7 @@ function actions.left(cell)
 
    elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
 
-      local oldx, oldy = cell.pos.x, cell.pos.y
+
       pos.x = gridSize
       moveCellToThread(cell, schema.l)
 
@@ -117,41 +120,50 @@ function actions.left(cell)
 end
 
 function actions.right(cell)
+   local res = false
    local pos = cell.pos
    pushPosition(cell)
    if pos.x < gridSize and not isAlive(pos.x + 1, pos.y) then
       pos.x = pos.x + 1
 
    elseif pos.x >= gridSize and not isAliveNeighbours(1, pos.y, schema.r) then
-      getGrid()[cell.pos.x][cell.pos.y].energy = 0
+
       pos.x = 1
       moveCellToThread(cell, schema.r)
+      res = true
    end
+   return res
 end
 
 function actions.up(cell)
+   local res = false
    local pos = cell.pos
    pushPosition(cell)
    if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
       pos.y = pos.y - 1
 
    elseif pos.y <= 1 and not isAliveNeighbours(pos.x, gridSize, schema.u) then
-      getGrid()[cell.pos.x][cell.pos.y].energy = 0
+
       pos.y = gridSize
       moveCellToThread(cell, schema.u)
+      res = true
    end
+   return res
 end
 
 function actions.down(cell)
+   local res = false
    local pos = cell.pos
    pushPosition(cell)
    if pos.y < gridSize and not isAlive(pos.x, pos.y + 1) then
       pos.y = pos.y + 1
    elseif pos.y >= gridSize and not isAliveNeighbours(pos.x, 1, schema.d) then
-      getGrid()[cell.pos.x][cell.pos.y].energy = 0
+
       pos.y = 1
       moveCellToThread(cell, schema.d)
+      res = true
    end
+   return res
 end
 
 function actions.left2(cell)
