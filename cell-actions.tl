@@ -64,6 +64,9 @@ local requestThreadDemandTimeout = 0.02
 
 -- проверяет жива ли клетка в определенном потоке
 local function isAliveNeighbours(x: number, y: number, threadNum: number): boolean
+    if not threadNum then
+        error("no threadNum")
+    end
     writelog(string.format("isAliveNeighbours(%d, %d, %d)", x, y, threadNum))
 
     --print("threadNum", threadNum)
@@ -79,6 +82,7 @@ local function isAliveNeighbours(x: number, y: number, threadNum: number): boole
     if threadNum == curThreadNum then
         return isAlive(x, y)
     else
+        --print("FUCKFUCK")
         local threadName = "cellrequest" .. threadNum
 
         writelog("request to", threadName)
@@ -86,17 +90,17 @@ local function isAliveNeighbours(x: number, y: number, threadNum: number): boole
         local chan = love.thread.getChannel(threadName)
         local state: boolean = chan:demand(requestThreadDemandTimeout) as boolean
 
-        if not state then
-            writelog("setup.popCommand")
+        --if not state then
+            --writelog("setup.popCommand")
 
-            setup.popCommand()
-            state = chan:demand(requestThreadDemandTimeout) as boolean
+            --setup.popCommand()
+            --state = chan:demand(requestThreadDemandTimeout) as boolean
 
-        end
+        --end
 
         writelog("state ", tostring(state))
 
-        --assert(state ~= nil, "no answer from " .. threadName .. " thread")
+        assert(state ~= nil, "no answer from " .. threadName .. " thread")
         return state
 
         --return true
@@ -125,7 +129,8 @@ function actions.left(cell: Cell): boolean
     elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         --local oldx, oldy = cell.pos.x, cell.pos.y
-        pos.x = gridSize
+        --pos.x = gridSize
+        cell.pos.x = gridSize
         moveCellToThread(cell, schema.l)
         --getGrid()[oldx][oldy] = {}
         -- XXX клетка должна быть сразу уничтожена
@@ -145,7 +150,7 @@ function actions.right(cell: Cell): boolean
     --elseif pos.x >= gridSize and not isAlive(1, pos.y) then
     elseif pos.x >= gridSize and not isAliveNeighbours(1, pos.y, schema.r) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
-        pos.x = 1
+        cell.pos.x = 1
         moveCellToThread(cell, schema.r)
         res = true
     end
@@ -161,7 +166,7 @@ function actions.up(cell: Cell): boolean
     --elseif pos.y <= 1 and not isAlive(pos.x, gridSize) then
     elseif pos.y <= 1 and not isAliveNeighbours(pos.x, gridSize, schema.u) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
-        pos.y = gridSize
+        cell.pos.y = gridSize
         moveCellToThread(cell, schema.u)
         res = true
     end
@@ -176,13 +181,14 @@ function actions.down(cell: Cell): boolean
         pos.y = pos.y + 1
     elseif pos.y >= gridSize and not isAliveNeighbours(pos.x, 1, schema.d) then
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
-        pos.y = 1
+        cell.pos.y = 1
         moveCellToThread(cell, schema.d)
         res = true
     end
     return res
 end
 
+--[[
 function actions.left2(cell: Cell): boolean
     local pos = cell.pos
     pushPosition(cell)
@@ -222,6 +228,9 @@ function actions.down2(cell: Cell): boolean
         pos.y = 1
     end
 end
+--]]
+
+--[[
 
 -- непонятно куда выкладывать значения из стека.
 -- либо другие функции должны напрямую работать со стеком или
@@ -233,6 +242,8 @@ function actions.pushmem_pos(_: Cell): boolean
     --table.insert(cell.mem, cell.pos.x)
     --table.insert(cell.mem, cell.pos.y)
 end
+
+--]]
 
 local around: {{number}} = {
     {-1, -1}, {0, -1}, {1, -1},

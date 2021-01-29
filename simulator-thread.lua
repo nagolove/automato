@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local coroutine = _tl_compat and _tl_compat.coroutine or coroutine; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local load = _tl_compat and _tl_compat.load or load; local math = _tl_compat and _tl_compat.math or math; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("mobdebug").start()
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local coroutine = _tl_compat and _tl_compat.coroutine or coroutine; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local load = _tl_compat and _tl_compat.load or load; local math = _tl_compat and _tl_compat.math or math; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("mobdebug").start()
 local threadNum = ...
 print("thread", threadNum, "is running")
 
@@ -74,11 +74,11 @@ local function getCodeValues()
    for k, _ in pairs(cellActions.actions) do
 
 
-      if k == "left" then k = "left2"
-      elseif k == "right" then k = "right2"
-      elseif k == "up" then k = "up2"
-      elseif k == "down" then k = "down2"
-      end
+
+
+
+
+
 
       table.insert(codeValues, k)
    end
@@ -86,6 +86,7 @@ local function getCodeValues()
 end
 
 local codeValues = getCodeValues()
+print("codeValues", inspect(codeValues))
 
 local actions
 local removed = {}
@@ -331,11 +332,11 @@ function initialEmit(iter)
 
 
    if threadNum == 1 then
-      local steps = 5
-      local cell = initCellOneCommandCode("left", steps)
-      cell.color = { 0, 0, math.random() }
-      cell.pos.x = 30
-      cell.pos.y = 1
+
+
+
+
+
    end
    if threadNum == 2 then
 
@@ -345,7 +346,7 @@ function initialEmit(iter)
 
 
    for i = 1, cellsNum do
-
+      initCell()
    end
 end
 
@@ -496,6 +497,9 @@ end
 
 function commands.isalive()
    local x, y = msgChan:pop(), msgChan:pop()
+   if not x or not y or not threadNum then
+      assert(string.format("x, y " .. x .. " " .. y .. " threadNum " .. threadNum))
+   end
    writelog(string.format("isalive %d x, y %d %d", threadNum, x, y))
    local ok, errmsg = pcall(function()
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then

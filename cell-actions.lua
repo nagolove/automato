@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("external")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("external")
 require("types")
 require("mtschemes")
 require("love")
@@ -64,6 +64,9 @@ local requestThreadDemandTimeout = 0.02
 
 
 local function isAliveNeighbours(x, y, threadNum)
+   if not threadNum then
+      error("no threadNum")
+   end
    writelog(string.format("isAliveNeighbours(%d, %d, %d)", x, y, threadNum))
 
 
@@ -79,6 +82,7 @@ local function isAliveNeighbours(x, y, threadNum)
    if threadNum == curThreadNum then
       return isAlive(x, y)
    else
+
       local threadName = "cellrequest" .. threadNum
 
       writelog("request to", threadName)
@@ -86,17 +90,17 @@ local function isAliveNeighbours(x, y, threadNum)
       local chan = love.thread.getChannel(threadName)
       local state = chan:demand(requestThreadDemandTimeout)
 
-      if not state then
-         writelog("setup.popCommand")
 
-         setup.popCommand()
-         state = chan:demand(requestThreadDemandTimeout)
 
-      end
+
+
+
+
+
 
       writelog("state ", tostring(state))
 
-
+      assert(state ~= nil, "no answer from " .. threadName .. " thread")
       return state
 
 
@@ -125,7 +129,8 @@ function actions.left(cell)
    elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
 
 
-      pos.x = gridSize
+
+      cell.pos.x = gridSize
       moveCellToThread(cell, schema.l)
 
 
@@ -145,7 +150,7 @@ function actions.right(cell)
 
    elseif pos.x >= gridSize and not isAliveNeighbours(1, pos.y, schema.r) then
 
-      pos.x = 1
+      cell.pos.x = 1
       moveCellToThread(cell, schema.r)
       res = true
    end
@@ -161,7 +166,7 @@ function actions.up(cell)
 
    elseif pos.y <= 1 and not isAliveNeighbours(pos.x, gridSize, schema.u) then
 
-      pos.y = gridSize
+      cell.pos.y = gridSize
       moveCellToThread(cell, schema.u)
       res = true
    end
@@ -176,63 +181,69 @@ function actions.down(cell)
       pos.y = pos.y + 1
    elseif pos.y >= gridSize and not isAliveNeighbours(pos.x, 1, schema.d) then
 
-      pos.y = 1
+      cell.pos.y = 1
       moveCellToThread(cell, schema.d)
       res = true
    end
    return res
 end
 
-function actions.left2(cell)
-   local pos = cell.pos
-   pushPosition(cell)
-   if pos.x > 1 and not isAlive(pos.x - 1, pos.y) then
-      pos.x = pos.x - 1
-   elseif pos.x <= 1 and not isAlive(gridSize, pos.y) then
-      pos.x = gridSize
-   end
-end
-
-function actions.right2(cell)
-   local pos = cell.pos
-   pushPosition(cell)
-   if pos.x < gridSize and not isAlive(pos.x + 1, pos.y) then
-      pos.x = pos.x + 1
-   elseif pos.x >= gridSize and not isAlive(1, pos.y) then
-      pos.x = 1
-   end
-end
-
-function actions.up2(cell)
-   local pos = cell.pos
-   pushPosition(cell)
-   if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
-      pos.y = pos.y - 1
-   elseif pos.y <= 1 and not isAlive(pos.x, gridSize) then
-      pos.y = gridSize
-   end
-end
-
-function actions.down2(cell)
-   local pos = cell.pos
-   pushPosition(cell)
-   if pos.y < gridSize and not isAlive(pos.x, pos.y + 1) then
-      pos.y = pos.y + 1
-   elseif pos.y >= gridSize and not isAlive(pos.x, 1) then
-      pos.y = 1
-   end
-end
 
 
 
 
-function actions.popmem_pos(_)
-end
-
-function actions.pushmem_pos(_)
 
 
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local around = {
    { -1, -1 }, { 0, -1 }, { 1, -1 },

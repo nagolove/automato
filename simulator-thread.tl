@@ -74,11 +74,11 @@ local function getCodeValues(): {string}
   for k, _ in pairs(cellActions.actions) do
     
     -- XXX
-    if k == "left" then k = "left2"
-    elseif k == "right" then k = "right2"
-    elseif k == "up" then k = "up2"
-    elseif k == "down" then k = "down2"
-    end
+    --if k == "left" then k = "left2"
+    --elseif k == "right" then k = "right2"
+    --elseif k == "up" then k = "up2"
+    --elseif k == "down" then k = "down2"
+    --end
 
     table.insert(codeValues, k)
   end
@@ -86,6 +86,7 @@ local function getCodeValues(): {string}
 end
 
 local codeValues = getCodeValues()
+print("codeValues", inspect(codeValues))
 
 local actions: {string: function(Cell): boolean}
 local removed: {Cell} = {}
@@ -331,11 +332,11 @@ function initialEmit(iter: number)
 
     --for i = 1, 1 do
     if threadNum == 1 then
-        local steps = 5
-        local cell = initCellOneCommandCode("left", steps)
-        cell.color = {0, 0, math.random()}
-        cell.pos.x = 30
-        cell.pos.y = 1
+        --local steps = 5
+        --local cell = initCellOneCommandCode("left", steps)
+        --cell.color = {0, 0, math.random()}
+        --cell.pos.x = 30
+        --cell.pos.y = 1
     end
     if threadNum == 2 then
         --local steps = 5
@@ -345,7 +346,7 @@ function initialEmit(iter: number)
     --end
 
     for i = 1, cellsNum do
-        --initCell()
+        initCell()
     end
 end
 
@@ -496,6 +497,9 @@ end
 
 function commands.isalive()
     local x, y = msgChan:pop() as number, msgChan:pop() as number  
+    if not x or not y or not threadNum then
+        assert(string.format("x, y " ..  x .. " " .. y .. " threadNum " .. threadNum))
+    end
     writelog(string.format("isalive %d x, y %d %d", threadNum, x, y))
     local ok, errmsg: boolean, string = pcall(function()
         if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
