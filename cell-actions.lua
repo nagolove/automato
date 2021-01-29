@@ -91,12 +91,19 @@ local function isAliveNeighbours(x, y, threadNum)
       local state = chan:demand(requestThreadDemandTimeout)
 
 
+      local i = 0
+      local limit = 500
+      while not state do
+         if i >= limit then
+            error("Cycles limit reached.")
+         end
+         writelog("setup.popCommand")
 
-
-
-
-
-
+         setup.popCommand()
+         love.timer.sleep(0.01)
+         state = chan:demand(requestThreadDemandTimeout)
+         i = i + 1
+      end
 
       writelog("state ", tostring(state))
 

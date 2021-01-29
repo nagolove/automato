@@ -91,12 +91,19 @@ local function isAliveNeighbours(x: number, y: number, threadNum: number): boole
         local state: boolean = chan:demand(requestThreadDemandTimeout) as boolean
 
         --if not state then
-            --writelog("setup.popCommand")
+        local i = 0
+        local limit = 500
+        while not state do
+            if i >= limit then
+                error("Cycles limit reached.")
+            end
+            writelog("setup.popCommand")
 
-            --setup.popCommand()
-            --state = chan:demand(requestThreadDemandTimeout) as boolean
-
-        --end
+            setup.popCommand()
+            love.timer.sleep(0.01)
+            state = chan:demand(requestThreadDemandTimeout) as boolean
+            i = i + 1
+        end
 
         writelog("state ", tostring(state))
 
