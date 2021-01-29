@@ -8,6 +8,8 @@ require "love"
 local inspect = require "inspect"
 local serpent = require "serpent"
 
+-- иногда возникает ошибка загрузки модулей при повторном старте
+-- возможно не завершаются потоки?
 love.filesystem.setRequirePath("scenes/automato/?.lua")
 
 require "external"
@@ -57,16 +59,19 @@ local checkStep = false
 -- команды таблички управления нитью
 local commands: ThreadCommandsStore = {}
 
+local logName = string.format("thread%d.txt", threadNum)
+print("logName", logName)
 
-local chan = love.thread.getChannel("msg" .. threadNum)
-local data = love.thread.getChannel("data" .. threadNum)
-local request = love.thread.getChannel("request" .. threadNum)
+local msgChan = love.thread.getChannel("msg" .. threadNum)
+local dataChan = love.thread.getChannel("data" .. threadNum)
+local requestChan = love.thread.getChannel("request" .. threadNum)
+local cellrequestChan = love.thread.getChannel("cellrequest" .. threadNum)
 
-local actionsModule = require "cell-actions"
+local cellActions = require "cell-actions"
 
 local function getCodeValues(): {string}
   local codeValues = {}
-  for k, _ in pairs(actionsModule.actions) do
+  for k, _ in pairs(cellActions.actions) do
     
     -- XXX
     if k == "left" then k = "left2"
@@ -199,7 +204,7 @@ function gatherStatistic(cells: {Cell}): Statistic
     maxEnergy = maxEnergy,
     minEnergy = minEnergy,
     midEnergy = sumEnergy / #cells,
-    allEated = actionsModule.getAllEated(),
+    allEated = cellActions.getAllEated(),
   }
 end
 
@@ -329,6 +334,8 @@ function initialEmit(iter: number)
         local steps = 5
         local cell = initCellOneCommandCode("left", steps)
         cell.color = {0, 0, math.random()}
+        cell.pos.x = 30
+        cell.pos.y = 1
     end
     if threadNum == 2 then
         --local steps = 5
@@ -437,8 +444,8 @@ local function pushDrawList()
         })
     end
     -- нужное-ли условие?
-    if data:getCount() < maxDataChannelCount then
-        data:push(drawlist)
+    if dataChan:getCount() < maxDataChannelCount then
+        dataChan:push(drawlist)
     end
 end
 
@@ -447,7 +454,7 @@ function commands.info()
         cells = #cells,
         meals = #meal
     }
-    request:push(serpent.dump(info))
+    requestChan:push(serpent.dump(info))
 end
 
 function commands.stop()
@@ -456,12 +463,12 @@ end
 
 function commands.getobject()
     print("commands.getobject")
-    local x, y: number, number = chan:pop() as number, chan:pop() as number
+    local x, y: number, number = msgChan:pop() as number, msgChan:pop() as number
     local ok, errmsg: boolean, string = pcall(function()
         if grid then
             local cell = grid[x][y]
             if cell then
-                request:push(serpent.dump(cell))
+                requestChan:push(serpent.dump(cell))
             end
         end
     end)
@@ -479,20 +486,29 @@ function commands.continuos()
   checkStep = false
 end
 
+local function writelog(...: string)
+    local buf = ""
+    for i = 1, select("#", ...) do
+        buf = buf .. select(i, ...)
+    end
+    love.filesystem.append(logName, buf .. "\n")
+end
+
 function commands.isalive()
-    local x, y = chan:pop() as number, chan:pop() as number  
-    --print("isalive", threadNum, "x, y", x, y)
+    local x, y = msgChan:pop() as number, msgChan:pop() as number  
+    writelog(string.format("isalive %d x, y %d %d", threadNum, x, y))
     local ok, errmsg: boolean, string = pcall(function()
         if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
             local cell = grid[x][y]
-            --print("cell", inspect(cell))
+            writelog(string.format("cell %s", inspect(cell)))
             --local state: boolean = cell.energy and cell.energy > 0
             local state = false
             if cell.energy and cell.energy > 0 then
                 state = true
             end
+            writelog(string.format("pushed state %s", state))
             --print("pushed state", state)
-            request:push(state)
+            cellrequestChan:push(state)
         end
     end)
     if not ok then
@@ -501,7 +517,7 @@ function commands.isalive()
 end
 
 function commands.insertcell()
-  local newcellfun, err = load(chan:pop() as string)
+  local newcellfun, err = load(msgChan:pop() as string)
   if err then
     error(string.format("insertcell %s", err))
   end
@@ -512,7 +528,7 @@ function commands.insertcell()
 end
 
 local function popCommand()
-  local cmd: ThreadCommands = chan:pop() as ThreadCommands
+  local cmd: ThreadCommands = msgChan:pop() as ThreadCommands
   --local cmd: string = chan:pop() as string
   if cmd then
     local command = commands[cmd]
@@ -567,18 +583,19 @@ local function doSetup()
     -- первый запуск корутины, прогревочный 
     coroutine.resume(experimentCoro)
 
-    actionsModule.init({
+    cellActions.init({
         threadNum = threadNum,
         getGrid = getGrid,
         gridSize = gridSize,
         initCell = initCell,
         schema = schema,
         foodenergy = initialSetup.foodenergy,
-        popCommand = popCommand
+        popCommand = popCommand,
+        writelog = writelog,
     })
 
     -- установка ссылки на таблицу действий - язык клетки.
-    actions = actionsModule.actions
+    actions = cellActions.actions
 end
 
 -- флажок устанавливается когда корутина эксперимента закончилась

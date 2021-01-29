@@ -39,6 +39,7 @@ global type CellActionsInit = record
     popCommand: function
     -- сколько прибавляется энергии за съеденную еду
     foodenergy: number
+    writelog: function(...:string)
 end
 
 global type Statistic = record

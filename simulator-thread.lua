@@ -8,6 +8,8 @@ require("love")
 local inspect = require("inspect")
 local serpent = require("serpent")
 
+
+
 love.filesystem.setRequirePath("scenes/automato/?.lua")
 
 require("external")
@@ -57,16 +59,19 @@ local checkStep = false
 
 local commands = {}
 
+local logName = string.format("thread%d.txt", threadNum)
+print("logName", logName)
 
-local chan = love.thread.getChannel("msg" .. threadNum)
-local data = love.thread.getChannel("data" .. threadNum)
-local request = love.thread.getChannel("request" .. threadNum)
+local msgChan = love.thread.getChannel("msg" .. threadNum)
+local dataChan = love.thread.getChannel("data" .. threadNum)
+local requestChan = love.thread.getChannel("request" .. threadNum)
+local cellrequestChan = love.thread.getChannel("cellrequest" .. threadNum)
 
-local actionsModule = require("cell-actions")
+local cellActions = require("cell-actions")
 
 local function getCodeValues()
    local codeValues = {}
-   for k, _ in pairs(actionsModule.actions) do
+   for k, _ in pairs(cellActions.actions) do
 
 
       if k == "left" then k = "left2"
@@ -199,7 +204,7 @@ function gatherStatistic(cells)
       maxEnergy = maxEnergy,
       minEnergy = minEnergy,
       midEnergy = sumEnergy / #cells,
-      allEated = actionsModule.getAllEated(),
+      allEated = cellActions.getAllEated(),
    }
 end
 
@@ -329,6 +334,8 @@ function initialEmit(iter)
       local steps = 5
       local cell = initCellOneCommandCode("left", steps)
       cell.color = { 0, 0, math.random() }
+      cell.pos.x = 30
+      cell.pos.y = 1
    end
    if threadNum == 2 then
 
@@ -437,8 +444,8 @@ local function pushDrawList()
       })
    end
 
-   if data:getCount() < maxDataChannelCount then
-      data:push(drawlist)
+   if dataChan:getCount() < maxDataChannelCount then
+      dataChan:push(drawlist)
    end
 end
 
@@ -447,7 +454,7 @@ function commands.info()
       cells = #cells,
       meals = #meal,
    }
-   request:push(serpent.dump(info))
+   requestChan:push(serpent.dump(info))
 end
 
 function commands.stop()
@@ -456,12 +463,12 @@ end
 
 function commands.getobject()
    print("commands.getobject")
-   local x, y = chan:pop(), chan:pop()
+   local x, y = msgChan:pop(), msgChan:pop()
    local ok, errmsg = pcall(function()
       if grid then
          local cell = grid[x][y]
          if cell then
-            request:push(serpent.dump(cell))
+            requestChan:push(serpent.dump(cell))
          end
       end
    end)
@@ -479,20 +486,29 @@ function commands.continuos()
    checkStep = false
 end
 
-function commands.isalive()
-   local x, y = chan:pop(), chan:pop()
+local function writelog(...)
+   local buf = ""
+   for i = 1, select("#", ...) do
+      buf = buf .. select(i, ...)
+   end
+   love.filesystem.append(logName, buf .. "\n")
+end
 
+function commands.isalive()
+   local x, y = msgChan:pop(), msgChan:pop()
+   writelog(string.format("isalive %d x, y %d %d", threadNum, x, y))
    local ok, errmsg = pcall(function()
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
          local cell = grid[x][y]
-
+         writelog(string.format("cell %s", inspect(cell)))
 
          local state = false
          if cell.energy and cell.energy > 0 then
             state = true
          end
+         writelog(string.format("pushed state %s", state))
 
-         request:push(state)
+         cellrequestChan:push(state)
       end
    end)
    if not ok then
@@ -501,7 +517,7 @@ function commands.isalive()
 end
 
 function commands.insertcell()
-   local newcellfun, err = load(chan:pop())
+   local newcellfun, err = load(msgChan:pop())
    if err then
       error(string.format("insertcell %s", err))
    end
@@ -512,7 +528,7 @@ function commands.insertcell()
 end
 
 local function popCommand()
-   local cmd = chan:pop()
+   local cmd = msgChan:pop()
 
    if cmd then
       local command = commands[cmd]
@@ -567,7 +583,7 @@ local function doSetup()
 
    coroutine.resume(experimentCoro)
 
-   actionsModule.init({
+   cellActions.init({
       threadNum = threadNum,
       getGrid = getGrid,
       gridSize = gridSize,
@@ -575,10 +591,11 @@ local function doSetup()
       schema = schema,
       foodenergy = initialSetup.foodenergy,
       popCommand = popCommand,
+      writelog = writelog,
    })
 
 
-   actions = actionsModule.actions
+   actions = cellActions.actions
 end
 
 

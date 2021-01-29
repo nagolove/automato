@@ -41,6 +41,8 @@ end
 -- лучшее название для переменной
 local setup: CellActionsInit = {}
 
+local writelog: function(...: string)
+
 -- записать текущее положение клетки в ее табличку передвижений
 local function pushPosition(cell: Cell)
     if not cell.moves then
@@ -62,7 +64,10 @@ local requestThreadDemandTimeout = 0.02
 
 -- проверяет жива ли клетка в определенном потоке
 local function isAliveNeighbours(x: number, y: number, threadNum: number): boolean
-    print("threadNum", threadNum)
+    writelog(string.format("isAliveNeighbours(%d, %d, %d)", x, y, threadNum))
+
+    --print("threadNum", threadNum)
+
     local msgChan = love.thread.getChannel("msg" .. threadNum)
     msgChan:push("isalive")
     msgChan:push(x)
@@ -74,20 +79,24 @@ local function isAliveNeighbours(x: number, y: number, threadNum: number): boole
     if threadNum == curThreadNum then
         return isAlive(x, y)
     else
-        local threadName = "request" .. threadNum
-        print("request to", threadName)
+        local threadName = "cellrequest" .. threadNum
+
+        writelog("request to", threadName)
+
         local chan = love.thread.getChannel(threadName)
         local state: boolean = chan:demand(requestThreadDemandTimeout) as boolean
 
         if not state then
-            print("setup.popCommand")
+            writelog("setup.popCommand")
+
             setup.popCommand()
             state = chan:demand(requestThreadDemandTimeout) as boolean
-            print("state", state)
+
         end
 
-        print(state)
-        assert(state ~= nil, "no answer from " .. threadName .. " thread")
+        writelog("state ", tostring(state))
+
+        --assert(state ~= nil, "no answer from " .. threadName .. " thread")
         return state
 
         --return true
@@ -217,10 +226,10 @@ end
 -- непонятно куда выкладывать значения из стека.
 -- либо другие функции должны напрямую работать со стеком или
 -- должны быть регистры в виде переменных внутри клетки.
-function actions.popmem_pos(cell: Cell): boolean
+function actions.popmem_pos(_: Cell): boolean
 end
 
-function actions.pushmem_pos(cell: Cell): boolean
+function actions.pushmem_pos(_: Cell): boolean
     --table.insert(cell.mem, cell.pos.x)
     --table.insert(cell.mem, cell.pos.y)
 end
@@ -357,6 +366,7 @@ end
 -- возвращает true если найдена пустая клетка, {x, y} координаты.
 -- иначе false
 -- XXX not tested anymore
+--[[
 local function findFreePos(x: number, y: number): boolean, Pos
     local pos: Pos = {}
     listNeighbours(x, y, function(xp: number, yp: number, value: Cell): boolean
@@ -369,6 +379,7 @@ local function findFreePos(x: number, y: number): boolean, Pos
     end)
     return true, pos
 end
+--]]
 
 -- если достаточно энергии(>0), то клетка
 function actions.cross(cell: Cell): boolean
@@ -403,6 +414,8 @@ local function init(t: CellActionsInit)
     schema = t.schema
     ENERGY = t.foodenergy
     setup = shallowCopy(t)
+
+    writelog = t.writelog
 
     print("t", inspect(t))
     allEated = 0

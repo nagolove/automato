@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local table = _tl_compat and _tl_compat.table or table; require("external")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("external")
 require("types")
 require("mtschemes")
 require("love")
@@ -41,6 +41,8 @@ end
 
 local setup = {}
 
+local writelog
+
 
 local function pushPosition(cell)
    if not cell.moves then
@@ -62,7 +64,10 @@ local requestThreadDemandTimeout = 0.02
 
 
 local function isAliveNeighbours(x, y, threadNum)
-   print("threadNum", threadNum)
+   writelog(string.format("isAliveNeighbours(%d, %d, %d)", x, y, threadNum))
+
+
+
    local msgChan = love.thread.getChannel("msg" .. threadNum)
    msgChan:push("isalive")
    msgChan:push(x)
@@ -74,20 +79,24 @@ local function isAliveNeighbours(x, y, threadNum)
    if threadNum == curThreadNum then
       return isAlive(x, y)
    else
-      local threadName = "request" .. threadNum
-      print("request to", threadName)
+      local threadName = "cellrequest" .. threadNum
+
+      writelog("request to", threadName)
+
       local chan = love.thread.getChannel(threadName)
       local state = chan:demand(requestThreadDemandTimeout)
 
       if not state then
-         print("setup.popCommand")
+         writelog("setup.popCommand")
+
          setup.popCommand()
          state = chan:demand(requestThreadDemandTimeout)
-         print("state", state)
+
       end
 
-      print(state)
-      assert(state ~= nil, "no answer from " .. threadName .. " thread")
+      writelog("state ", tostring(state))
+
+
       return state
 
 
@@ -217,10 +226,10 @@ end
 
 
 
-function actions.popmem_pos(cell)
+function actions.popmem_pos(_)
 end
 
-function actions.pushmem_pos(cell)
+function actions.pushmem_pos(_)
 
 
 end
@@ -357,18 +366,20 @@ end
 
 
 
-local function findFreePos(x, y)
-   local pos = {}
-   listNeighbours(x, y, function(xp, yp, value)
-      if (not value.energy) and (not value.food) then
-         pos.x = xp
-         pos.y = yp
-         return true
-      end
-      return false
-   end)
-   return true, pos
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function actions.cross(cell)
@@ -403,6 +414,8 @@ local function init(t)
    schema = t.schema
    ENERGY = t.foodenergy
    setup = shallowCopy(t)
+
+   writelog = t.writelog
 
    print("t", inspect(t))
    allEated = 0

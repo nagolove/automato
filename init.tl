@@ -326,17 +326,17 @@ local function checkValidThreadCount(threadCount: number): number
     return threadCount
 end
 
-print("checkValidThreadCount(1)", checkValidThreadCount(1))
-print("checkValidThreadCount(2)", checkValidThreadCount(2))
-print("checkValidThreadCount(3)", checkValidThreadCount(3))
-print("checkValidThreadCount(4)", checkValidThreadCount(4))
-print("checkValidThreadCount(5)", checkValidThreadCount(5))
-print("checkValidThreadCount(6)", checkValidThreadCount(6))
-print("checkValidThreadCount(7)", checkValidThreadCount(7))
-print("checkValidThreadCount(8)", checkValidThreadCount(8))
-print("checkValidThreadCount(9)", checkValidThreadCount(9))
-print("checkValidThreadCount(10)", checkValidThreadCount(10))
-print("checkValidThreadCount(19)", checkValidThreadCount(19))
+--print("checkValidThreadCount(1)", checkValidThreadCount(1))
+--print("checkValidThreadCount(2)", checkValidThreadCount(2))
+--print("checkValidThreadCount(3)", checkValidThreadCount(3))
+--print("checkValidThreadCount(4)", checkValidThreadCount(4))
+--print("checkValidThreadCount(5)", checkValidThreadCount(5))
+--print("checkValidThreadCount(6)", checkValidThreadCount(6))
+--print("checkValidThreadCount(7)", checkValidThreadCount(7))
+--print("checkValidThreadCount(8)", checkValidThreadCount(8))
+--print("checkValidThreadCount(9)", checkValidThreadCount(9))
+--print("checkValidThreadCount(10)", checkValidThreadCount(10))
+--print("checkValidThreadCount(19)", checkValidThreadCount(19))
 
 local function printThreadsInfo()
     if threadsInfo then
@@ -552,9 +552,11 @@ local function init()
     threadsInfo = {{cells = 0, meals = 0}}
     infoTimer:every(0.1, function(_: number)
         local info = sim.getThreadsInfo()
-        print("infO", inspect(info))
+        --print("infO", inspect(info))
         if info then
             threadsInfo = info
+        else
+            print("no info")
         end
     end)
 end
@@ -562,7 +564,7 @@ end
 local function quit()
 end
 
-local function mousemoved(x: number, y: number, dx: number, dy: number)
+local function mousemoved(x: number, y: number, _: number, _: number)
     local w, h = gr.getDimensions()
     local tlx, tly, brx, bry = 0, 0, w, h
 
@@ -575,6 +577,14 @@ local function mousemoved(x: number, y: number, dx: number, dy: number)
         x = math.floor(x / getPixSize()),
         y = math.floor(y / getPixSize())
     }
+end
+
+local function wheelmoved(x: number, y: number)
+    if y == -1 then
+        keyconfig.send("zoomin")
+    else
+        keyconfig.send("zoomout")
+    end
 end
 
 return {
@@ -595,5 +605,6 @@ return {
     update = update,
     keypressed = keypressed,
     mousemoved = mousemoved,
+    wheelmoved = wheelmoved
 }
 
