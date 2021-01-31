@@ -29,6 +29,8 @@ local next = next
 
 
 
+local profi = require("profi")
+
 
 local viewState = "sim"
 
@@ -360,8 +362,42 @@ local function printThreadsInfo()
    end
 end
 
+
+local ismodal = false
+
+local presetsNames = {}
+local presets
+local selectedPreset = 1
+
+local function activatePreset(num)
+   local p = presets[num]
+
+   for k, v in pairs(p) do
+      print(k, v)
+
+      local has = (commonSetup)[k]
+      if has ~= nil then
+         (commonSetup)[k] = v
+      end
+   end
+
+
+
+end
+
 local function drawSim()
    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
+
+
+   local num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
+   if status then
+      selectedPreset = num
+      activatePreset(num)
+   end
+
+   if imgui.Button("save preset") then
+
+   end
 
    imgui.Text(string.format("mode %s", getMode()))
 
@@ -394,11 +430,17 @@ local function drawSim()
 
    if imgui.Button("reset silumation") then
       collectgarbage()
+      profi:stop()
+      profi:setSortMethod("duration")
+      profi:writeReport("init-profile-1.txt")
+      profi:setSortMethod("count")
+      profi:writeReport("init-profile-2.txt")
       sim.shutdown()
    end
 
    if imgui.Button("start") then
       sim.create(commonSetup)
+      profi:start()
 
    end
 
@@ -411,6 +453,11 @@ local function drawSim()
 
 
 
+
+
+   if sim.getMode() ~= "stop" then
+      imgui.Text(string.format("uptime %d sec", sim.getUptime()))
+   end
 
    printThreadsInfo()
 
@@ -435,6 +482,7 @@ local function draw()
       cam:attach()
       drawGrid()
       drawCells()
+
 
       cam:detach()
    elseif viewState == "graph" then
@@ -517,7 +565,7 @@ local function update(dt)
    sim.step()
 
 
-   checkMouse()
+
 
    local isDown = love.keyboard.isDown
    if isDown("z") then
@@ -536,11 +584,29 @@ local function keypressed(key)
       setViewState("sim")
    elseif key == "2" then
       setViewState("graph")
-   end
-   if key == "p" then
+   elseif key == "p" then
       nextMode()
    elseif key == "s" then
       sim.doStep()
+   elseif key == "space" then
+
+
+      if sim.getMode() == "stop" then
+         sim.create(commonSetup)
+      else
+         sim.step()
+      end
+   end
+end
+
+local function loadPresets()
+   local chunk, errmsg = love.filesystem.load("scenes/automato/presets.lua")
+   print("chunk, errmsg", chunk, errmsg)
+   presets = (chunk)()
+   print("presets", inspect(presets))
+   for _, v in ipairs(presets) do
+      print("v", v.name)
+      table.insert(presetsNames, v.name)
    end
 end
 
@@ -572,6 +638,8 @@ local function init()
          print("no info")
       end
    end)
+
+   loadPresets()
 end
 
 local function quit()
@@ -585,6 +653,7 @@ local function mousemoved(x, y, _, _)
       tlx, tly = cam:worldCoords(tlx, tly)
       brx, bry = cam:worldCoords(brx, bry)
    end
+
 
    underCursor = {
       x = math.floor(x / getPixSize()),

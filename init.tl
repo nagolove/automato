@@ -29,6 +29,8 @@ global type ViewState = enum
     "graph"
 end
 
+local profi = require "profi"
+
 -- режит отображения "sim" или "graph"
 local viewState: ViewState = "sim"
 
@@ -360,8 +362,39 @@ local function printThreadsInfo()
     end
 end
 
+-- открыт ли модальный диалог(пока только сохранение пресета)
+local ismodal = false
+
+local presetsNames: {string} = {}
+local presets: {Simulator.Preset}
+local selectedPreset = 1
+
+local function activatePreset(num: number)
+    local p = presets[num]
+    -- решить задачу циклом
+    for k, v in pairs(p as {any:any}) do
+        print(k, v)
+        --local has: boolean = (commonSetup as {string: string})[k as string]
+        local has = (commonSetup as {string: string})[k as string]
+        if has ~= nil then
+            (commonSetup as {string: any})[k as string] = v 
+        end
+    end
+end
+
 local function drawSim()
     imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
+
+    --imgui.ListBox("presets", 1, simPresets, #simPresets)
+    local num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
+    if status then
+        selectedPreset = num
+        activatePreset(num)
+    end
+
+    if imgui.Button("save preset") then
+
+    end
 
     imgui.Text(string.format("mode %s", getMode()))
 
@@ -394,11 +427,17 @@ local function drawSim()
 
     if imgui.Button("reset silumation") then
         collectgarbage()
+        profi:stop()
+        profi:setSortMethod("duration")
+        profi:writeReport("init-profile-1.txt")
+        profi:setSortMethod("count")
+        profi:writeReport("init-profile-2.txt")
         sim.shutdown()
     end
 
     if imgui.Button("start") then
         sim.create(commonSetup)
+        profi:start()
         --sim.setMode("step")
     end
 
@@ -411,6 +450,11 @@ local function drawSim()
     --if sim.getStatistic() and sim.getStatistic().allEated then
         --imgui.LabelText(sim.getStatistic().allEated, "all eated")
     --end
+
+    -- не имеет смысла для пошагового режима
+    if sim.getMode() ~= "stop" then
+        imgui.Text(string.format("uptime %d sec", sim.getUptime()))
+    end
 
     printThreadsInfo()
 
@@ -435,6 +479,7 @@ local function draw()
         cam:attach()
         drawGrid()
         drawCells()
+
         --drawStatisticTable()
         cam:detach()
     elseif viewState == "graph" then
@@ -517,7 +562,7 @@ local function update(dt: number)
     sim.step()
     
     --updateGraphic()
-    checkMouse()
+    --checkMouse()
 
     local isDown = love.keyboard.isDown
     if isDown("z") then
@@ -536,11 +581,29 @@ local function keypressed(key: string)
         setViewState("sim")
     elseif key == "2" then
         setViewState("graph")
-    end
-    if key == "p" then
+    elseif key == "p" then
         nextMode()
     elseif key == "s" then
         sim.doStep()
+    elseif key == "space" then
+        --[[ TODO Запуск и пауза/продолжение ]]
+
+        if sim.getMode() == "stop" then
+            sim.create(commonSetup)
+        else
+            sim.step()
+        end
+    end
+end
+
+local function loadPresets()
+    local chunk, errmsg = love.filesystem.load("scenes/automato/presets.lua")
+    print("chunk, errmsg", chunk, errmsg)
+    presets = (chunk as function)() as {Simulator.Preset}
+    print("presets", inspect(presets))
+    for _, v in ipairs(presets) do
+        print("v", v.name)
+        table.insert(presetsNames, v.name)
     end
 end
 
@@ -572,6 +635,8 @@ local function init()
             print("no info")
         end
     end)
+
+    loadPresets()
 end
 
 local function quit()

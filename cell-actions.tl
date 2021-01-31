@@ -41,6 +41,8 @@ end
 -- лучшее название для переменной
 local setup: CellActionsInit = {}
 
+local maxSavedPositions = 64
+
 local writelog: function(...: string)
 
 -- записать текущее положение клетки в ее табличку передвижений
@@ -48,11 +50,16 @@ local function pushPosition(cell: Cell)
     if not cell.moves then
         cell.moves = {}
     end
-    if #cell.moves >= 2 then
-        local lastX, lastY = cell.moves[#cell.moves - 1], cell.moves[#cell.moves]
+    local moves = cell.moves
+    if #moves >= 2 then
+        local lastX, lastY = moves[#moves - 1], cell.moves[#moves]
         if lastX ~= cell.pos.x and lastY ~= cell.pos.y then
-            table.insert(cell.moves, cell.pos.x)
-            table.insert(cell.moves, cell.pos.y)
+            if #moves > maxSavedPositions then
+                table.remove(moves, 1)
+                table.remove(moves, 2)
+            end
+            table.insert(moves, cell.pos.x)
+            table.insert(moves, cell.pos.y)
         end
     else
         table.insert(cell.moves, cell.pos.x)

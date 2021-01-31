@@ -105,6 +105,18 @@ global type ThreadInfo = record
 end
 
 global type Simulator = record
+
+    -- Очень похоже на CommonSetup, объеденить?
+    type Preset = record
+        name: string
+        nofood: boolean
+        cellsNum: number
+        denergy: number
+        foodenergy: number
+        gridSize: number
+        threadCount: number
+    end
+
     create: function(CommonSetup)
     -- послать всем потокам выключение
     shutdown: function()
@@ -120,5 +132,7 @@ global type Simulator = record
     getGridSize : function(): number
     getSchema : function()
     getThreadsInfo: function(): {ThreadInfo}
+    -- время симуляции в секундах
+    getUptime: function(): number
 end
 

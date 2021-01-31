@@ -2,6 +2,9 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 local serpent = require("serpent")
 
 
+
+
+
 package.path = "./scenes/automato/?.lua;" .. package.path
 print("package.path", package.path)
 
@@ -14,6 +17,8 @@ require("mtschemes")
 local threads = {}
 local gridSize
 local mtschema
+
+local starttime
 
 
 local threadCount = -1
@@ -153,6 +158,8 @@ function Simulator.create(commonSetup)
 
    local processorCount = love.system.getProcessorCount()
    print("processorCount", processorCount)
+
+   starttime = love.timer.getTime()
 end
 
 
@@ -294,5 +301,12 @@ function Simulator.shutdown()
    print("Simulator.shutdown()")
    sendStopClearChannels()
 end
+
+function Simulator.getUptime()
+   return love.timer.getTime() - starttime
+end
+
+
+
 
 return Simulator

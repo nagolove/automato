@@ -1,6 +1,9 @@
 local inspect = require "inspect"
 local serpent = require "serpent"
 
+--local profi = require "profi"
+--profi:start()
+
 --local tabular = require "tabular"
 package.path = "./scenes/automato/?.lua;" .. package.path
 print("package.path", package.path)
@@ -14,6 +17,8 @@ require "mtschemes"
 local threads: {love.thread.Thread} = {}
 local gridSize: number
 local mtschema: {MtSchema}
+
+local starttime: number
 
 -- количество потоков
 local threadCount: number = -1
@@ -153,6 +158,8 @@ function Simulator.create(commonSetup: CommonSetup)
 
     local processorCount = love.system.getProcessorCount()
     print("processorCount", processorCount)
+
+    starttime = love.timer.getTime()
 end
 
 
@@ -294,5 +301,12 @@ function Simulator.shutdown()
     print("Simulator.shutdown()")
     sendStopClearChannels()
 end
+
+function Simulator.getUptime(): number
+    return love.timer.getTime() - starttime
+end
+
+--profi:stop()
+--profi:writeReport("simulator-profile.txt")
 
 return Simulator

@@ -554,7 +554,7 @@ local function popCommand()
          if command then
             command()
          else
-            error(string.format("Unknown command", cmd))
+            error(string.format("Unknown command '%s'", cmd))
          end
       end
    until not cmd
