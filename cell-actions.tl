@@ -302,7 +302,7 @@ end
 -- аналогично eat8, но перемещается на место съеденной клетки.
 function actions.eat8move(cell: Cell): boolean
     local pos = cell.pos
-    local newt: Pos = copy(pos as {any: any}) as Pos
+    local newt: Pos = shallowCopy(pos as {any: any}) as Pos
     for _, displacement in ipairs(around) do
         newt.x = newt.x + displacement[1]
         newt.y = newt.y + displacement[2]

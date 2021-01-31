@@ -9,6 +9,7 @@ require "love"
 love.filesystem.setRequirePath("scenes/automato/?.lua")
 
 require "external"
+require "common"
 require "types"
 
 package.path = package.path .. ";scenes/automato/?.lua"
@@ -366,20 +367,21 @@ end
 local ismodal = false
 
 local presetsNames: {string} = {}
-local presets: {Simulator.Preset}
+local presets: {CommonSetup} = {}
 local selectedPreset = 1
 
 local function activatePreset(num: number)
-    local p = presets[num]
-    -- решить задачу циклом
-    for k, v in pairs(p as {any:any}) do
-        print(k, v)
-        --local has: boolean = (commonSetup as {string: string})[k as string]
-        local has = (commonSetup as {string: string})[k as string]
-        if has ~= nil then
-            (commonSetup as {string: any})[k as string] = v 
-        end
-    end
+    commonSetup = shallowCopy(presets[num])
+    --local p = presets[num]
+    ---- решить задачу циклом
+    --for k, v in pairs(p as {any:any}) do
+        --print(k, v)
+        ----local has: boolean = (commonSetup as {string: string})[k as string]
+        --local has = (commonSetup as {string: string})[k as string]
+        --if has ~= nil then
+            --(commonSetup as {string: any})[k as string] = v 
+        --end
+    --end
 end
 
 local function drawSim()
@@ -599,11 +601,17 @@ end
 local function loadPresets()
     local chunk, errmsg = love.filesystem.load("scenes/automato/presets.lua")
     print("chunk, errmsg", chunk, errmsg)
-    presets = (chunk as function)() as {Simulator.Preset}
+    local loadedPresets = (chunk as function)() as {string: CommonSetup}
     print("presets", inspect(presets))
-    for _, v in ipairs(presets) do
-        print("v", v.name)
-        table.insert(presetsNames, v.name)
+    for k, v in pairs(loadedPresets) do
+        table.insert(presetsNames, k)
+        for k1, v1 in pairs(commonSetup as {string: any}) do
+            local tmp: {string: any} = v as {string: any}
+            if tmp[k1] == nil then
+                tmp[k1] = v1
+            end
+        end
+        table.insert(presets, v)
     end
 end
 

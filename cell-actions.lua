@@ -302,7 +302,7 @@ end
 
 function actions.eat8move(cell)
    local pos = cell.pos
-   local newt = copy(pos)
+   local newt = shallowCopy(pos)
    for _, displacement in ipairs(around) do
       newt.x = newt.x + displacement[1]
       newt.y = newt.y + displacement[2]

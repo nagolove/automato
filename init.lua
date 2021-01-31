@@ -9,6 +9,7 @@ require("love")
 love.filesystem.setRequirePath("scenes/automato/?.lua")
 
 require("external")
+require("common")
 require("types")
 
 package.path = package.path .. ";scenes/automato/?.lua"
@@ -366,20 +367,18 @@ end
 local ismodal = false
 
 local presetsNames = {}
-local presets
+local presets = {}
 local selectedPreset = 1
 
 local function activatePreset(num)
-   local p = presets[num]
+   commonSetup = shallowCopy(presets[num])
 
-   for k, v in pairs(p) do
-      print(k, v)
 
-      local has = (commonSetup)[k]
-      if has ~= nil then
-         (commonSetup)[k] = v
-      end
-   end
+
+
+
+
+
 
 
 
@@ -602,11 +601,17 @@ end
 local function loadPresets()
    local chunk, errmsg = love.filesystem.load("scenes/automato/presets.lua")
    print("chunk, errmsg", chunk, errmsg)
-   presets = (chunk)()
+   local loadedPresets = (chunk)()
    print("presets", inspect(presets))
-   for _, v in ipairs(presets) do
-      print("v", v.name)
-      table.insert(presetsNames, v.name)
+   for k, v in pairs(loadedPresets) do
+      table.insert(presetsNames, k)
+      for k1, v1 in pairs(commonSetup) do
+         local tmp = v
+         if tmp[k1] == nil then
+            tmp[k1] = v1
+         end
+      end
+      table.insert(presets, v)
    end
 end
 
