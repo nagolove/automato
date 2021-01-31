@@ -22,6 +22,7 @@ local sim = require "simulator"
 local mtschemes = require "mtschemes"
 local startInStepMode = false
 local timer = require "Timer"
+local next = next
 
 global type ViewState = enum
     "sim"
@@ -244,6 +245,14 @@ local function drawCellInfo(cell: Cell)
         return
     end
 
+    -- сделать нормальное выделение клетки под курсором
+    if next(cell as {any:any}) ~= nil then
+        local mx, my = love.mouse.getPosition()
+        gr.setColor(1, 0, 0)
+        --gr.circle("line", mx, my, pixSize * cam.scale)
+        gr.circle("line", mx, my, 5)
+    end
+
     local msg: string
     for k, v in pairs(cell as {any: any}) do
         if k ~= "code" then
@@ -251,7 +260,7 @@ local function drawCellInfo(cell: Cell)
             --local functor: function<T>(T): T = nil
 
             --local function functor(a: number): number return a end
-            local a: any
+            local a: any = v
             local tp = type(v)
             if tp == "number" then
                 fmt = "%d"
@@ -342,6 +351,9 @@ local function printThreadsInfo()
     if threadsInfo then
         for k, v in ipairs(threadsInfo) do
             imgui.Text(string.format("thread %d cells %d meals %d", k, v.cells, v.meals))
+            if v.stepsPerSecond then
+                imgui.Text(string.format("iteration per second - %d", v.stepsPerSecond))
+            end
         end
     else
         imgui.Text(string.format("thread %d cells %d meals %d", -1, -1, -1))
@@ -382,7 +394,7 @@ local function drawSim()
 
     if imgui.Button("reset silumation") then
         collectgarbage()
-        sim.create(commonSetup)
+        sim.shutdown()
     end
 
     if imgui.Button("start") then
@@ -404,10 +416,11 @@ local function drawSim()
 
     if underCursor then
         -- XXX FIXME Not work
-        --local cell = getCell(underCursor)
+        local cell = getCell(underCursor)
+        --print("cell", inspect(cell))
 
-        --drawCellInfo(cell)
-        --drawCellPath(cell)
+        drawCellInfo(cell)
+        drawCellPath(cell)
     end
 
     imgui.End()
@@ -573,6 +586,7 @@ local function mousemoved(x: number, y: number, _: number, _: number)
         brx, bry = cam:worldCoords(brx, bry)
     end
 
+    -- не приводятся координаты при движении камеры и масштабировании
     underCursor = {
         x = math.floor(x / getPixSize()),
         y = math.floor(y / getPixSize())

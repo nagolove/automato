@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
 local serpent = require("serpent")
 
 
@@ -26,6 +26,9 @@ local statistic = {}
 function Simulator.getDrawLists()
    local list = {}
    for k, _ in ipairs(threads) do
+
+
+
       local chan = love.thread.getChannel("data" .. k)
       if chan then
          local sublist = chan:demand(0.1)
@@ -35,6 +38,7 @@ function Simulator.getDrawLists()
             end
          end
       end
+
    end
    return list
 end
@@ -47,7 +51,8 @@ function Simulator.getThreadsInfo()
          chan:push("info")
 
          local rchan = love.thread.getChannel("request" .. k)
-         local infostr = rchan:demand(0.02)
+
+         local infostr = rchan:pop()
 
          if infostr then
             local ok, info = serpent.load(infostr)
@@ -81,21 +86,23 @@ end
 
 local function pushMsg2Threads(t)
    for i = 1, threadCount do
+      print("send to 'msg" .. i .. "'")
       love.thread.getChannel("msg" .. i):push(t)
    end
 end
 
 local function sendStopClearChannels()
-   if #threads ~= 0 then
-      pushMsg2Threads("stop")
-      love.timer.sleep(0.05)
-      for i = 1, threadCount do
-         love.thread.getChannel("msg" .. i):clear()
-         love.thread.getChannel("data" .. i):clear()
-         love.thread.getChannel("setup" .. i):clear()
-         love.thread.getChannel("request" .. i):clear()
-      end
+
+   print("sending 'stop'")
+   pushMsg2Threads("stop")
+   love.timer.sleep(0.2)
+   for i = 1, threadCount do
+      love.thread.getChannel("msg" .. i):clear()
+      love.thread.getChannel("data" .. i):clear()
+      love.thread.getChannel("setup" .. i):clear()
+      love.thread.getChannel("request" .. i):clear()
    end
+
 end
 
 function love.threaderror(thread, errstr)
@@ -187,15 +194,31 @@ function Simulator.getIter()
 end
 
 
+
 function Simulator.findThreadByPos(x, y)
-   local ix, iy = math.floor(x / gridSize), math.floor(y / gridSize)
-   local rx, ry = x % gridSize, y % gridSize
+   local fract
+   local _
+   _, fract = math.modf(x)
+   assert(fract == 0.0, string.format("x = %f", x))
+   _, fract = math.modf(y)
+   assert(fract == 0.0, string.format("y = %f", y))
 
 
 
 
 
-   return 1
+
+
+   for k, v in ipairs(mtschema) do
+      local x2, y2 = gridSize + gridSize * v.draw[1], gridSize + gridSize * v.draw[2]
+      local x1, y1 = x2 - gridSize, y2 - gridSize
+
+
+      if x >= x1 and x <= x2 and y >= y1 and y <= y2 then
+         return k
+      end
+   end
+   return -1
 end
 
 
@@ -204,14 +227,21 @@ end
 function Simulator.getObject(x, y)
    local threadNum = Simulator.findThreadByPos(x, y)
 
-   local mchan = love.thread.getChannel("msg")
+   if threadNum == -1 then
+      error(string.format("threadNum == -1 for %d, %d with schema %s", x, y, inspect(mtschema)))
+   end
+
+   local mchan = love.thread.getChannel("msg" .. threadNum)
    mchan:push("getobject")
    mchan:push(x)
    mchan:push(y)
 
-   local rchan = love.thread.getChannel("request" .. threadNum)
+   local rchan = love.thread.getChannel("object" .. threadNum)
 
-   local sobject = rchan:demand(0.1)
+
+   local sobject = rchan:pop()
+
+   print("sobject", sobject)
 
    if not sobject then
       return nil
@@ -220,13 +250,17 @@ function Simulator.getObject(x, y)
 
    local ok, objectfun = serpent.load(sobject)
 
+   print("ok", ok)
+
    if not ok then
 
       logferror("Could'not deserialize cell object")
       return nil
    end
 
-   return objectfun()
+   print("rchan:getCount()", rchan:getCount())
+   print("objectfun", inspect(objectfun))
+   return objectfun
 end
 
 function Simulator.setMode(m)
@@ -254,6 +288,11 @@ end
 
 function Simulator.getGridSize()
    return gridSize
+end
+
+function Simulator.shutdown()
+   print("Simulator.shutdown()")
+   sendStopClearChannels()
 end
 
 return Simulator

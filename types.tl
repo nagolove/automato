@@ -99,11 +99,15 @@ end
 global type ThreadInfo = record
     cells: number
     meals: number
+    -- количество проведенных итераций симулятора за секунду
+    stepsPerSecond: number
     --threadNum: number
 end
 
 global type Simulator = record
     create: function(CommonSetup)
+    -- послать всем потокам выключение
+    shutdown: function()
     setMode : function(m: SimulatorMode)
     getMode : function(): SimulatorMode
     getDrawLists : function(): {DrawNode}

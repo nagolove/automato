@@ -116,7 +116,8 @@ end
 
 -- отослать клетку в другой поток через канал
 local function moveCellToThread(cell: Cell, threadNum: number)
-    print("moveCellToThread", threadNum)
+    --print("moveCellToThread", threadNum)
+
     --local dump: string = serpent.dump(cell)
     local dump = serpent.dump(cell)
     local chan = love.thread.getChannel("msg" .. threadNum)

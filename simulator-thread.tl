@@ -63,11 +63,17 @@ local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
 
 local msgChan = love.thread.getChannel("msg" .. threadNum)
+local readyChan = love.thread.getChannel("ready" .. threadNum)
 local dataChan = love.thread.getChannel("data" .. threadNum)
 local requestChan = love.thread.getChannel("request" .. threadNum)
 local cellrequestChan = love.thread.getChannel("cellrequest" .. threadNum)
+local objectChan = love.thread.getChannel("object" .. threadNum)
 
 local cellActions = require "cell-actions"
+
+local timestamp: number
+local stepsCount = 0
+local stepsPerSecond = 0
 
 local function getCodeValues(): {string}
   local codeValues = {}
@@ -129,7 +135,9 @@ function initCell(t: CellSetup): Cell
   self.id = cellId
   cellId = cellId + 1
   self.energy = math.random(initialSetup.initialEnergy[1], initialSetup.initialEnergy[2])
-  print("self.energy", self.energy)
+
+  --print("self.energy", self.energy)
+
   table.insert(cells, self)
   return self
 end
@@ -272,7 +280,7 @@ function updateCells(cells: {Cell}): {Cell}
       table.insert(alive, c)
     else
       table.insert(removed, c)
-      print("cell removed")
+      --print("cell removed")
     end
   end
   return alive
@@ -453,23 +461,28 @@ end
 function commands.info()
     local info: ThreadInfo = {
         cells = #cells,
-        meals = #meal
+        meals = #meal,
+        stepsPerSecond = stepsPerSecond,
     }
     requestChan:push(serpent.dump(info))
 end
 
 function commands.stop()
-  stop = true
+    print("stop command, break main cycle")
+    stop = true
 end
 
 function commands.getobject()
-    print("commands.getobject")
     local x, y: number, number = msgChan:pop() as number, msgChan:pop() as number
+    print("commands.getobject", x, y)
     local ok, errmsg: boolean, string = pcall(function()
         if grid then
             local cell = grid[x][y]
             if cell then
-                requestChan:push(serpent.dump(cell))
+                --requestChan:push(serpent.dump(cell))
+                local dump = serpent.dump(cell)
+                print("dump", dump)
+                objectChan:push(dump)
             end
         end
     end)
@@ -532,16 +545,19 @@ function commands.insertcell()
 end
 
 local function popCommand()
-  local cmd: ThreadCommands = msgChan:pop() as ThreadCommands
-  --local cmd: string = chan:pop() as string
-  if cmd then
-    local command = commands[cmd]
-    if command then
-      command()
-    else
-      error(string.format("Unknown command", cmd))
-    end
-  end
+    local cmd: ThreadCommands
+    repeat
+        cmd = msgChan:pop() as ThreadCommands
+        --local cmd: string = chan:pop() as string
+        if cmd then
+            local command = commands[cmd]
+            if command then
+                command()
+            else
+                error(string.format("Unknown command", cmd))
+            end
+        end
+    until not cmd
 end
 
 local function doSetup()
@@ -607,7 +623,16 @@ end
 local free = false
 
 local function step()
+    local newtimestamp = love.timer.getTime()
+    if newtimestamp - timestamp >= 1 then
+        stepsPerSecond = stepsCount
+        stepsCount = 0
+        timestamp = newtimestamp
+    end
+
     local ok, errmsg = coroutine.resume(experimentCoro)
+    stepsCount = stepsCount + 1
+
     if not ok and not experimentErrorPrinted then
         experimentErrorPrinted = true
         free = true
@@ -617,6 +642,8 @@ end
 
 local function main()
     local syncChan = love.thread.getChannel("sync")
+    readyChan:push("ready")
+    timestamp = love.timer.getTime()
     while not stop do
         popCommand()
 
@@ -644,7 +671,11 @@ local function main()
             love.timer.sleep(0.002)
         end
     end
+    readyChan:clear()
+    readyChan:push("free")
 end
 
 doSetup()
 main()
+
+print("thread", threadNum, "done")
