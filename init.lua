@@ -14,18 +14,21 @@ require("types")
 
 package.path = package.path .. ";scenes/automato/?.lua"
 
-local keyconfig = require("keyconfig")
-local imgui = require("imgui")
 local cam = require("camera").new()
-local inspect = require("inspect")
 local gr = love.graphics
-local sim = require("simulator")
+local imgui = require("imgui")
+local inspect = require("inspect")
+local prof = require("jprof")
+local keyconfig = require("keyconfig")
 local mtschemes = require("mtschemes")
+local next = next
+local sim = require("simulator")
 local startInStepMode = false
 local timer = require("Timer")
-local next = next
 
- ViewState = {}
+PROF_CAPTURE = true
+
+local ViewState = {}
 
 
 
@@ -372,21 +375,10 @@ local selectedPreset = 1
 
 local function activatePreset(num)
    commonSetup = shallowCopy(presets[num])
-
-
-
-
-
-
-
-
-
-
 end
 
 local function drawSim()
    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
-
 
    local num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
    if status then
@@ -428,18 +420,24 @@ local function drawSim()
    end
 
    if imgui.Button("reset silumation") then
-      collectgarbage()
-      profi:stop()
-      profi:setSortMethod("duration")
-      profi:writeReport("init-profile-1.txt")
-      profi:setSortMethod("count")
-      profi:writeReport("init-profile-2.txt")
+
+
+
+
+
+
+
       sim.shutdown()
+
+      prof.pop()
+      prof.write('prof.mpack')
+      print("written")
    end
 
    if imgui.Button("start") then
+      prof.push()
       sim.create(commonSetup)
-      profi:start()
+
 
    end
 
