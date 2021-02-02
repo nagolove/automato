@@ -10,7 +10,7 @@ local serpent = require("serpent")
 
 
 
-love.filesystem.setRequirePath("scenes/automato/?.lua")
+love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 
 require("external")
 require("log")
@@ -61,6 +61,8 @@ local commands = {}
 
 local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
+
+
 
 local msgChan = love.thread.getChannel("msg" .. threadNum)
 local readyChan = love.thread.getChannel("ready" .. threadNum)
@@ -513,6 +515,8 @@ function commands.isalive()
    if not x or not y or not threadNum then
       assert(string.format("x, y " .. x .. " " .. y .. " threadNum " .. threadNum))
    end
+   print(x, y, threadNum)
+   print(type(x), type(y), type(threadNum))
    writelog(string.format("isalive %d x, y %d %d", threadNum, x, y))
    local ok, errmsg = pcall(function()
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then

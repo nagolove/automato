@@ -6,7 +6,7 @@
 --Клетки питаются едой(зеленый цвет) и имеют конечный запас энергии.
 --]]
 require "love"
-love.filesystem.setRequirePath("scenes/automato/?.lua")
+love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 
 require "external"
 require "common"
@@ -50,7 +50,9 @@ local mouseCapture: MouseCapture
 local underCursor = {}
 
 -- канва для рисования графиков
-local graphCanvas = gr.newCanvas(gr.getWidth() * 4, gr.getHeight())
+-- проверить на максильный размер при запуске на телефоне
+print("graphics size", gr.getWidth(), gr.getHeight())
+local graphCanvas = gr.newCanvas(gr.getWidth(), gr.getHeight())
 
 -- цвета графиков
 local MAX_ENERGY_COLOR = {1, 0.5, 0.7, 1}

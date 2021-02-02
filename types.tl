@@ -1,5 +1,5 @@
 require "love"
-love.filesystem.setRequirePath("scenes/automato/?.lua")
+love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 require "mtschemes"
 
 global type Pos = record

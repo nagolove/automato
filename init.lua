@@ -6,7 +6,7 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 
 
 require("love")
-love.filesystem.setRequirePath("scenes/automato/?.lua")
+love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 
 require("external")
 require("common")
@@ -50,7 +50,9 @@ local mouseCapture
 local underCursor = {}
 
 
-local graphCanvas = gr.newCanvas(gr.getWidth() * 4, gr.getHeight())
+
+print("graphics size", gr.getWidth(), gr.getHeight())
+local graphCanvas = gr.newCanvas(gr.getWidth(), gr.getHeight())
 
 
 local MAX_ENERGY_COLOR = { 1, 0.5, 0.7, 1 }
