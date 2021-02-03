@@ -1,5 +1,6 @@
 local inspect = require "inspect"
 local serpent = require "serpent"
+local struct = require "struct"
 
 --local profi = require "profi"
 --profi:start()
@@ -304,6 +305,33 @@ end
 
 function Simulator.getUptime(): number
     return love.timer.getTime() - starttime
+end
+
+function Simulator.writeState(): string
+    -- сперва выставить паузу для всех нитей
+    -- послать сообщение каждой нити о сохранении
+    -- прочитать все полученные результаты
+    -- объеденить результаты
+    -- отключить паузу для потоков
+
+    for i = 1, threadCount do
+        local msgChan = love.thread.getChannel("msg" .. i)
+        msgChan:push("writeState")
+    end
+
+    local t = {}
+
+    for i = 1, threadCount do
+        local stateChan = love.thread.getChannel("state" .. i)
+        -- XXX Может все завесить навечно
+        local res: string = stateChan:demand() as string
+        local len = struct.pack("<d", #res)
+        table.insert(t, len)
+        table.insert(t, res)
+    end
+
+    local fullData = table.concat(t)
+    return love.data.compress("string", "zlib", fullData, 9) as string
 end
 
 --profi:stop()

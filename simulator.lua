@@ -1,5 +1,6 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
 local serpent = require("serpent")
+local struct = require("struct")
 
 
 
@@ -304,6 +305,33 @@ end
 
 function Simulator.getUptime()
    return love.timer.getTime() - starttime
+end
+
+function Simulator.writeState()
+
+
+
+
+
+
+   for i = 1, threadCount do
+      local msgChan = love.thread.getChannel("msg" .. i)
+      msgChan:push("writeState")
+   end
+
+   local t = {}
+
+   for i = 1, threadCount do
+      local stateChan = love.thread.getChannel("state" .. i)
+
+      local res = stateChan:demand()
+      local len = struct.pack("<d", #res)
+      table.insert(t, len)
+      table.insert(t, res)
+   end
+
+   local fullData = table.concat(t)
+   return love.data.compress("string", "zlib", fullData, 9)
 end
 
 

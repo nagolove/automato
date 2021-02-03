@@ -327,14 +327,15 @@ function actions.eat8move(cell)
    end
 end
 
-
-
-
-
-
-
-
  NeighboursCallback = {}
+
+
+
+
+
+
+
+
 
 local function listNeighbours(x, y, cb)
    for _, displacement in ipairs(around) do
@@ -391,21 +392,18 @@ end
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+local function findFreePos(x, y)
+   local pos = {}
+   listNeighbours(x, y, function(xp, yp, value)
+      if (not value.energy) and (not value.food) then
+         pos.x = xp
+         pos.y = yp
+         return true
+      end
+      return false
+   end)
+   return true, pos
+end
 
 
 function actions.cross(cell)
@@ -428,7 +426,13 @@ function actions.cross(cell)
 
 
 
-   return false
+
+
+
+
+
+
+
 end
 
 local function init(t)

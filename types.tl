@@ -18,11 +18,13 @@ global type Cell = record
     food: boolean   -- является ли клетка едой
     wantdivide: boolean
     id: number
+    generation: number
 end
 
 global type CellSetup = record
     pos: Pos
     code: {string}
+    generation: number
 end
 
 global type Cells = {Cell}
@@ -74,6 +76,7 @@ global type CommonSetup = record
     denergy: number
     foodenergy: number
     mode: SimulatorMode
+    emitInvSpeed: number
 end
 
 global type ThreadCommandsStore = record
@@ -84,16 +87,26 @@ global type ThreadCommandsStore = record
     isalive: function
     insertcell: function
     info: function
+    writestate: function
 end
 
 global type ThreadCommands = enum
+    -- прервать главный цикл, завершить поток
     "stop"
+    -- получить информацию об клетке в определенной точке
     "getobject"
+    -- сделать шаг симуляции
     "step"
+    -- перейти в последовательный режим
     "continuos"
+    -- проверить жива ли клетка в определенной позиции
     "isalive"
+    -- вставить переданную клетку в список клеток
     "insertcell"
+    -- получить информацию по нити
     "info"
+
+    "writestate"
 end
 
 global type ThreadInfo = record
@@ -118,6 +131,8 @@ global type Simulator = record
     end
 
     create: function(CommonSetup)
+    -- записать состояние симулятора для последующего восстановления
+    writeState: function(): string
     -- послать всем потокам выключение
     shutdown: function()
     setMode : function(m: SimulatorMode)

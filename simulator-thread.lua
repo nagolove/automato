@@ -7,6 +7,7 @@ require("love")
 
 local inspect = require("inspect")
 local serpent = require("serpent")
+local struct = require("struct")
 
 
 
@@ -59,6 +60,10 @@ local checkStep = false
 
 local commands = {}
 
+local lastEmitIter = 0
+
+local emitInvSpeed = 100
+
 local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
 
@@ -70,6 +75,7 @@ local dataChan = love.thread.getChannel("data" .. threadNum)
 local requestChan = love.thread.getChannel("request" .. threadNum)
 local cellrequestChan = love.thread.getChannel("cellrequest" .. threadNum)
 local objectChan = love.thread.getChannel("object" .. threadNum)
+local stateChan = love.thread.getChannel("state" .. threadNum)
 
 local cellActions = require("cell-actions")
 
@@ -129,15 +135,19 @@ function initCell(t)
       self.pos.y = math.random(1, gridSize)
    end
    if t.code then
-      self.code = copy(t.code)
+      self.code = shallowCopy(t.code)
    else
       self.code = genCode()
+   end
+   if t.generation then
+      self.generation = self.generation + 1
+   else
+      self.generation = 1
    end
    self.ip = 1
    self.id = cellId
    cellId = cellId + 1
    self.energy = math.random(initialSetup.initialEnergy[1], initialSetup.initialEnergy[2])
-
 
 
    table.insert(cells, self)
@@ -238,22 +248,37 @@ function emitFoodInRandomPoint()
    end
 end
 
+local foodGenerationSpeed = 0.1
+local accum = 0
+
+
+
 
 function emitFood(iter)
    if initialSetup.nofood then
       return
    end
 
-
-   for i = 1, math.log(iter) * 10 do
-      local emited, _ = emitFoodInRandomPoint()
-      if not emited then
+   accum = accum + foodGenerationSpeed
 
 
+
+
+
+
+   if accum > 1 then
+      accum = 0
+      for i = 0, math.floor(accum) do
+
+         local emited, _ = emitFoodInRandomPoint()
+         if not emited then
+
+
+         end
       end
+
    end
 end
-
 
 
 
@@ -326,21 +351,10 @@ end
 
 
 
-function initialEmit(iter)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+function emitCell(iter)
    if threadNum == 1 then
 
 
@@ -354,9 +368,19 @@ function initialEmit(iter)
 
    end
 
+   print("cellsNum", cellsNum)
 
-   for i = 1, cellsNum do
-      initCell()
+   while true do
+
+      if cellId >= cellsNum then
+         break
+      end
+      if iter - lastEmitIter >= emitInvSpeed then
+         print("iter", iter)
+         initCell()
+         lastEmitIter = iter
+      end
+      iter = coroutine.yield()
    end
 end
 
@@ -371,7 +395,9 @@ local function updateMeal(meal)
 end
 
 function experiment()
-   local initialEmitCoro = coroutine.create(initialEmit)
+   local cellEmitCoro = coroutine.create(emitCell)
+   iter = 0
+   lastEmitIter = 0
 
    grid = getFalseGrid()
    updateGrid()
@@ -382,16 +408,16 @@ function experiment()
    print("hello from coro")
    print("#cells", #cells)
 
-   coroutine.resume(initialEmitCoro)
+   coroutine.resume(cellEmitCoro, iter)
    print("start with", #cells, "cells")
 
 
    while true do
 
 
-
-
-
+      if cellEmitCoro and not coroutine.resume(cellEmitCoro, iter) then
+         cellEmitCoro = nil
+      end
 
 
 
@@ -515,9 +541,11 @@ function commands.isalive()
    if not x or not y or not threadNum then
       assert(string.format("x, y " .. x .. " " .. y .. " threadNum " .. threadNum))
    end
-   print(x, y, threadNum)
-   print(type(x), type(y), type(threadNum))
-   writelog(string.format("isalive %d x, y %d %d", threadNum, x, y))
+
+
+
+
+
    local ok, errmsg = pcall(function()
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
          local cell = grid[x][y]
@@ -533,7 +561,7 @@ function commands.isalive()
       end
    end)
    if not ok then
-      error(errmsg)
+      error("isalive error: " .. errmsg)
    end
 end
 
@@ -545,7 +573,23 @@ function commands.insertcell()
    local newcell = newcellfun()
    newcell.id = cellId
    cellId = cellId + 1
+
+
    table.insert(cells, newcell)
+end
+
+function commands.writestate()
+   local opts = { fatal = true }
+   local cellsStr = serpent.dump(cells, opts)
+   local mealStr = serpent.dump(meal, opts)
+   local result = {}
+
+   local lenMarker = struct.pack("<ddd", threadNum, #cellsStr, #mealStr)
+   table.insert(result, lenMarker)
+   table.insert(result, cellsStr)
+   table.insert(result, mealStr)
+
+   stateChan:push(table.concat(result))
 end
 
 local function popCommand()
@@ -580,7 +624,7 @@ local function doSetup()
    gridSize = initialSetup.gridSize
    codeLen = initialSetup.codeLen
    cellsNum = initialSetup.cellsNum
-
+   emitInvSpeed = initialSetup.emitInvSpeed
 
    local sschema = love.thread.getChannel(setupName):pop()
 

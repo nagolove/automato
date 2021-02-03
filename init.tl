@@ -86,6 +86,7 @@ local commonSetup: CommonSetup = {
     nofood = false,
     denergy = 1,
     foodenergy = 10,
+    emitInvSpeed = 1
 }
 local maxCellsNum = 5000
 
@@ -308,7 +309,6 @@ local function drawCellPath(cell: Cell)
     end
 end
 
-
 local function nextMode()
     if mode == "continuos" then
         mode = "step"
@@ -379,6 +379,11 @@ local function activatePreset(num: number)
     commonSetup = shallowCopy(presets[num])
 end
 
+local function writeState()
+    local res = sim.writeState()
+    love.filesystem.write("sim.data", res)
+end
+
 local function drawSim()
     imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
@@ -404,6 +409,9 @@ local function drawSim()
 
     commonSetup.cellsNum, status = imgui.SliderFloat("initial population", commonSetup.cellsNum, 0, maxCellsNum)
     commonSetup.cellsNum = math.ceil(commonSetup.cellsNum)
+
+    commonSetup.emitInvSpeed, status = imgui.SliderFloat("inverted emmision speed", commonSetup.emitInvSpeed, 0, 200)
+    commonSetup.emitInvSpeed = math.ceil(commonSetup.emitInvSpeed)
 
     commonSetup.denergy, status = imgui.SliderFloat("decrease enerby by", commonSetup.denergy, 0, 1)
 
@@ -445,6 +453,10 @@ local function drawSim()
 
     if imgui.Button("step") then
         sim.step()
+    end
+
+    if imgui.Button("write state") then
+        writeState()
     end
 
     --imgui.Text(replaceCaret(inspect(sim.getStatistic)) as string)

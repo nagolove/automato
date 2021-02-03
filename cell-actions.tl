@@ -327,15 +327,16 @@ function actions.eat8move(cell: Cell): boolean
     end
 end
 
+global type NeighboursCallback = function(number, number, any): boolean
+
+-- FIXME поиск должен рандоминизировать начальное положение что-бы 
+-- исключить влияние порядка обхода клеток.
+
 -- вызывает коллбэк вида function(x, y, value) для всех доступных соседей
 -- клетки. x, y - целочисленные координаты клетки в решетке. value - значение
 -- решетки по текущим координатам.
 -- Если коллбэк функция возвращает false, то дальнейшие вызовы прерываются, 
 -- управление возвращается.
--- FIXME поиск должен рандоминизировать начальное положение что-бы 
--- исключить влияние порядка обхода клеток.
-global type NeighboursCallback = function(number, number, any): boolean
-
 local function listNeighbours(x: number, y: number, cb: NeighboursCallback)
     for _, displacement in ipairs(around) do
         local nx, ny = x + displacement[1], y + displacement[2]
@@ -389,10 +390,8 @@ local function test_mixCode()
 end
 --test_mixCode()
 
--- возвращает true если найдена пустая клетка, {x, y} координаты.
--- иначе false
--- XXX not tested anymore
---[[
+-- возвращает true если найдена пустая клетка, {x, y} координаты иначе false
+-- XXX возвращает true и пустую позицию
 local function findFreePos(x: number, y: number): boolean, Pos
     local pos: Pos = {}
     listNeighbours(x, y, function(xp: number, yp: number, value: Cell): boolean
@@ -405,30 +404,35 @@ local function findFreePos(x: number, y: number): boolean, Pos
     end)
     return true, pos
 end
---]]
 
--- если достаточно энергии(>0), то клетка
+-- деление клетки
 function actions.cross(cell: Cell): boolean
+    --XXX Не работает
     --[[
     if cell.energy > 0 then
         cell.wantdivide = true
+        -- найти соседей клетки
         listNeighbours(cell.pos.x, cell.pos.y, function(x: number, y: number, value: Cell): boolean
+            -- сосед тоже хочет делиться
             if value.wantdivide then
+                print("cell.pos", cell.pos.x, cell.pos.y)
+                -- поиск свободной ячейки для новой клетки
                 local found, pos = findFreePos(cell.pos.x, cell.pos.y)
                 if found then
                     local t = {
                         pos = {x = pos.x, y = pos.y},
                         code = mixCode(cell, getGrid()[x][y])
                     }
-                    print("new cell!")
+                    print(pos.x, pos.y)
+                    print(string.format("new cell at (%d, %d)", pos.x, pos.y))
                     initCell(t)
                 end
             end
             return false
         end)
     end
-    --]]
     return false
+    --]]
 end
 
 local function init(t: CellActionsInit)
