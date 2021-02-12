@@ -19,13 +19,13 @@ local threads: {love.thread.Thread} = {}
 local gridSize: number
 local mtschema: {MtSchema}
 
-local starttime: number
+local starttime: number = 0
 
 -- количество потоков
 local threadCount: number = -1
 
 -- режим работы - протяженный, пошаговый или стоп
-local mode = "stop" -- "step"
+local mode: SimulatorMode = "stop" -- "step"
 
 local statistic: Statistic = {}
 
@@ -111,7 +111,8 @@ local function sendStopClearChannels()
     --end
 end
 
-function love.threaderror(thread: love.thread.Thread, errstr: string)
+--function love.threaderror(thread: love.thread.Thread, errstr: string)
+function love.threaderror(_: love.thread.Thread, errstr: string)
     print("Some thread failed with " .. errstr)    
 end
 
@@ -164,14 +165,14 @@ function Simulator.create(commonSetup: CommonSetup)
 end
 
 
-local function getThreadsLog()
-    local logChan = love.thread.getChannel("log")
-    local msg: {any} = logChan:pop() as {any}
-    while msg do
-        print(msg[1], msg[2])
-        msg = logChan:pop() as {any}
-    end
-end
+--local function getThreadsLog()
+    --local logChan = love.thread.getChannel("log")
+    --local msg: {any} = logChan:pop() as {any}
+    --while msg do
+        --print(msg[1], msg[2])
+        --msg = logChan:pop() as {any}
+    --end
+--end
 
 function Simulator.step()
     if mode == "stop" then
@@ -256,7 +257,7 @@ function Simulator.getObject(x: number, y: number): Cell
     end
 
     --local objectfun, err: function, boolean = serpent.load(sobject)
-    local ok, objectfun: boolean, function = serpent.load(sobject)
+    local ok, object: boolean, Cell = serpent.load(sobject) as (boolean, Cell)
 
     print("ok", ok)
 
@@ -267,8 +268,8 @@ function Simulator.getObject(x: number, y: number): Cell
     end
 
     print("rchan:getCount()", rchan:getCount())
-    print("objectfun", inspect(objectfun))
-    return objectfun as Cell
+    print("object", inspect(object))
+    return object
 end
 
 function Simulator.setMode(m: SimulatorMode)

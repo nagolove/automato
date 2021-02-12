@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("external")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("external")
 require("types")
 require("mtschemes")
 require("love")
@@ -337,76 +337,85 @@ end
 
 
 
-local function listNeighbours(x, y, cb)
-   for _, displacement in ipairs(around) do
-      local nx, ny = x + displacement[1], y + displacement[2]
-      if nx >= 1 and nx < gridSize and ny >= 1 and ny < gridSize then
-         if not cb(nx, ny, getGrid()[nx][ny]) then
-            break
-         end
-      end
-   end
-end
-
-
-local function mixCode(cell1, cell2)
-   local rnd = math.random()
-   local first, second
-   if rnd > 0.5 then
-      first, second = cell1, cell2
-   else
-      first, second = cell2, cell1
-   end
-   local newcode = {}
-   local i = 1
-   local pushed
-
-   repeat
-      pushed = false
-      if i <= #cell1.code then
-         table.insert(newcode, first.code[i])
-         pushed = true
-      end
-      if i <= #cell2.code then
-         table.insert(newcode, second.code[i])
-         pushed = true
-      end
-      i = i + 1
-   until not pushed
-
-   return newcode
-end
-
-local function test_mixCode()
-   math.randomseed(love.timer.getTime())
-   print("mixCode", inspect(mixCode({ code = { "left", "right", "up" } },
-   { code = { "eat", "eat", "eat" } })))
-
-   print("mixCode", inspect(mixCode({ code = { "left", "right", "up" } },
-   { code = { "eat", "eat" } })))
-
-   print("mixCode", inspect(mixCode({ code = { "left", "right", "up" } },
-   { code = { "eat", "eat", "down", "down", "down" } })))
-end
 
 
 
 
-local function findFreePos(x, y)
-   local pos = {}
-   listNeighbours(x, y, function(xp, yp, value)
-      if (not value.energy) and (not value.food) then
-         pos.x = xp
-         pos.y = yp
-         return true
-      end
-      return false
-   end)
-   return true, pos
-end
 
 
-function actions.cross(cell)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function actions.cross()
 
 
 

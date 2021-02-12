@@ -85,6 +85,7 @@ local stepsPerSecond = 0
 
 local function getCodeValues()
    local codeValues = {}
+
    for k, _ in pairs(cellActions.actions) do
 
 
@@ -254,7 +255,7 @@ local accum = 0
 
 
 
-function emitFood(iter)
+function emitFood(_)
    if initialSetup.nofood then
       return
    end
@@ -313,16 +314,16 @@ function updateCells(cells)
    return alive
 end
 
-local function initCellOneCommandCode(command, steps)
-   local cell = initCell()
-   print("cell.energy", cell.energy)
-   cell.code = {}
-   for i = 1, steps do
-      table.insert(cell.code, command)
-   end
 
-   return cell
-end
+
+
+
+
+
+
+
+
+
 
 
 
@@ -596,13 +597,14 @@ local function popCommand()
    local cmd
    repeat
       cmd = msgChan:pop()
-
       if cmd then
          local command = commands[cmd]
          if command then
             command()
          else
-            error(string.format("Unknown command '%s'", cmd))
+
+            logerror(string.format("Unknown command '%s'", cmd))
+
          end
       end
    until not cmd
@@ -634,9 +636,9 @@ local function doSetup()
    end
    local schemaRestored = schemafun()
    print("schemaRestored", inspect(schemaRestored))
-   schema = flatCopy(schemaRestored)
+   schema = shallowCopy(schemaRestored)
 
-   drawCoefficients = flatCopy(schemaRestored.draw)
+   drawCoefficients = shallowCopy(schemaRestored.draw)
 
    print("schema", inspect(schema))
    print("drawCoefficients", inspect(drawCoefficients))
@@ -706,7 +708,7 @@ local function main()
          end
          pushDrawList()
 
-         local syncMsg = syncChan:demand(0.001)
+         local _ = syncChan:demand(0.001)
 
 
 

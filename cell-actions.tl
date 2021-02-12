@@ -337,6 +337,7 @@ global type NeighboursCallback = function(number, number, any): boolean
 -- решетки по текущим координатам.
 -- Если коллбэк функция возвращает false, то дальнейшие вызовы прерываются, 
 -- управление возвращается.
+--[[
 local function listNeighbours(x: number, y: number, cb: NeighboursCallback)
     for _, displacement in ipairs(around) do
         local nx, ny = x + displacement[1], y + displacement[2]
@@ -347,8 +348,10 @@ local function listNeighbours(x: number, y: number, cb: NeighboursCallback)
         end
     end
 end
+--]]
 
 -- return code, not cell
+--[[
 local function mixCode(cell1: Cell, cell2: Cell): {string}
     local rnd = math.random()
     local first, second: Cell, Cell
@@ -376,7 +379,9 @@ local function mixCode(cell1: Cell, cell2: Cell): {string}
 
     return newcode
 end
+--]]
 
+--[[
 local function test_mixCode()
     math.randomseed(love.timer.getTime())
     print("mixCode", inspect(mixCode({code={"left", "right", "up"}},
@@ -388,10 +393,12 @@ local function test_mixCode()
     print("mixCode", inspect(mixCode({code={"left", "right", "up"}},
     {code={"eat", "eat", "down", "down", "down"}})))
 end
+--]]
 --test_mixCode()
 
 -- возвращает true если найдена пустая клетка, {x, y} координаты иначе false
 -- XXX возвращает true и пустую позицию
+--[[
 local function findFreePos(x: number, y: number): boolean, Pos
     local pos: Pos = {}
     listNeighbours(x, y, function(xp: number, yp: number, value: Cell): boolean
@@ -404,9 +411,11 @@ local function findFreePos(x: number, y: number): boolean, Pos
     end)
     return true, pos
 end
+--]]
 
 -- деление клетки
-function actions.cross(cell: Cell): boolean
+--function actions.cross(cell: Cell): boolean
+function actions.cross(): boolean
     --XXX Не работает
     --[[
     if cell.energy > 0 then

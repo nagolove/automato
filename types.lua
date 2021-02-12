@@ -21,6 +21,20 @@ require("mtschemes")
 
 
 
+ CommonSetup = {}
+
+
+
+
+
+
+
+
+
+
+
+
+
  CellSetup = {}
 
 
@@ -60,20 +74,6 @@ require("mtschemes")
 
 
  SimulatorMode = {}
-
-
-
-
-
- CommonSetup = {}
-
-
-
-
-
-
-
-
 
 
 

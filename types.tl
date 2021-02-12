@@ -21,6 +21,20 @@ global type Cell = record
     generation: number
 end
 
+global type CommonSetup = record
+    threadCount: number
+    gridSize: number
+    cellsNum: number
+    -- разброс границы энергии клетки при создании, массив двух элементов
+    initialEnergy: {number, number}
+    codeLen: number
+    nofood: boolean
+    denergy: number
+    foodenergy: number
+    mode: SimulatorMode
+    emitInvSpeed: number
+end
+
 global type CellSetup = record
     pos: Pos
     code: {string}
@@ -65,20 +79,6 @@ global type SimulatorMode = enum
     "stop"
 end
 
-global type CommonSetup = record
-    threadCount: number
-    gridSize: number
-    cellsNum: number
-    -- разброс границы энергии клетки при создании, массив двух элементов
-    initialEnergy: {number, number}
-    codeLen: number
-    nofood: boolean
-    denergy: number
-    foodenergy: number
-    mode: SimulatorMode
-    emitInvSpeed: number
-end
-
 global type ThreadCommandsStore = record
     stop: function
     getobject: function
@@ -105,7 +105,7 @@ global type ThreadCommands = enum
     "insertcell"
     -- получить информацию по нити
     "info"
-
+    -- сохранить состояние на диск
     "writestate"
 end
 

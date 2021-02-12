@@ -19,7 +19,7 @@ local threads = {}
 local gridSize
 local mtschema
 
-local starttime
+local starttime = 0
 
 
 local threadCount = -1
@@ -111,7 +111,8 @@ local function sendStopClearChannels()
 
 end
 
-function love.threaderror(thread, errstr)
+
+function love.threaderror(_, errstr)
    print("Some thread failed with " .. errstr)
 end
 
@@ -164,14 +165,14 @@ function Simulator.create(commonSetup)
 end
 
 
-local function getThreadsLog()
-   local logChan = love.thread.getChannel("log")
-   local msg = logChan:pop()
-   while msg do
-      print(msg[1], msg[2])
-      msg = logChan:pop()
-   end
-end
+
+
+
+
+
+
+
+
 
 function Simulator.step()
    if mode == "stop" then
@@ -256,7 +257,7 @@ function Simulator.getObject(x, y)
    end
 
 
-   local ok, objectfun = serpent.load(sobject)
+   local ok, object = serpent.load(sobject)
 
    print("ok", ok)
 
@@ -267,8 +268,8 @@ function Simulator.getObject(x, y)
    end
 
    print("rchan:getCount()", rchan:getCount())
-   print("objectfun", inspect(objectfun))
-   return objectfun
+   print("object", inspect(object))
+   return object
 end
 
 function Simulator.setMode(m)

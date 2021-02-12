@@ -1,30 +1,31 @@
 --[[
---Клеточный автомат-симулятор. Действие происходит на плоском поле в клетку,
---замкнутом на себя.
---Создается популяция клеток которые двигаются по сгенерированной случайным
---образом программе из простого языка.
---Клетки питаются едой(зеленый цвет) и имеют конечный запас энергии.
+Клеточный автомат-симулятор. Действие происходит на плоском поле в клетку, 
+замкнутом на себя. Создается популяция клеток которые двигаются по 
+сгенерированной случайным образом программе из простого языка.
+Клетки питаются едой(зеленый цвет) и имеют конечный запас энергии.
+Цель игры - создать и развить долгоживущюю популяцию.
 --]]
+
 require "love"
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
-
+package.path = package.path .. ";scenes/automato/?.lua"
+require "imgui"
 require "external"
 require "common"
 require "types"
+require "simulator-render"
 
-package.path = package.path .. ";scenes/automato/?.lua"
-
-local cam = require "camera".new()
+local camera = require "camera"
 local gr = love.graphics
 local imgui = require "imgui"
 local inspect = require "inspect"
-local prof = require "jprof"
 local keyconfig = require "keyconfig"
 local mtschemes = require "mtschemes"
-local next = next
+local prof = require "jprof"
 local sim = require "simulator"
 local startInStepMode = false
 local timer = require "Timer"
+--local profi = require "profi"
 
 global PROF_CAPTURE = true
 
@@ -33,40 +34,27 @@ local type ViewState = enum
     "graph"
 end
 
-local profi = require "profi"
-
 -- режит отображения "sim" или "graph"
 local viewState: ViewState = "sim"
-
--- если ~= nil, то содержит табличку с координатами клетки под курсором
-local record MouseCapture
-    x: number
-    y: number
-    dx: number
-    dy: number
-end
-
-local mouseCapture: MouseCapture
-local underCursor = {}
+local underCursor: Pos = {}
+local simulatorRender: SimulatorRender
+local cam: Camera
 
 -- канва для рисования графиков
 -- проверить на максильный размер при запуске на телефоне
 print("graphics size", gr.getWidth(), gr.getHeight())
-local graphCanvas = gr.newCanvas(gr.getWidth(), gr.getHeight())
+--local graphCanvas = gr.newCanvas(gr.getWidth(), gr.getHeight())
 
 -- цвета графиков
-local MAX_ENERGY_COLOR = {1, 0.5, 0.7, 1}
-local MID_ENERGY_COLOR = {0.8, 0.3, 0.7, 1}
-local MIN_ENERGY_COLOR = {0.6, 0.1, 1, 1}
+--local MAX_ENERGY_COLOR = {1, 0.5, 0.7, 1}
+--local MID_ENERGY_COLOR = {0.8, 0.3, 0.7, 1}
+--local MIN_ENERGY_COLOR = {0.6, 0.1, 1, 1}
 
 -- ?? инфа с последним изменением статистики 
 --local lastGraphicPoint
 
 -- режим работы - непрерывный или пошаговый continuos, bystep
 local mode: SimulatorMode = "continuos"
-
--- размер клетки поля в пикселях
-local pixSize: number = 10
 
 --[[
 --Начальные установки симуляции
@@ -88,95 +76,19 @@ local commonSetup: CommonSetup = {
     foodenergy = 10,
     emitInvSpeed = 1
 }
+
 local maxCellsNum = 5000
-
-local gridLineWidth = 1
 local infoTimer: Timer = timer.new()
-
 local threadsInfo: {ThreadInfo}
 
 local function getMode(): SimulatorMode
     return mode
 end
 
-function drawCells()
-    local drawlist = sim.getDrawLists()
-    if drawlist then
-        for _, v in ipairs(drawlist) do
-            if v.food then
-                gr.setColor(0, 1, 0)
-                local x, y = (v.x - 1)* pixSize, (v.y - 1) * pixSize
-                local w, h = pixSize, pixSize
-                gr.rectangle("fill", x, y, w, h)
-            else
-                if v.color then
-                    gr.setColor(v.color)
-                else
-                    gr.setColor(0.5, 0.5, 0.5)
-                end
-                local x, y = (v.x - 1)* pixSize, (v.y - 1) * pixSize
-                local w, h = pixSize, pixSize
-                gr.rectangle("fill", x, y, w, h)
-            end
-        end
-    end
-end
-
-function drawGrid()
-    --if sim.getMode() == "stop" then
-        --gr.setColor(1, 1, 1)
-        --gr.print("No simulation", 100, 100)
-    --else
-    do
-        gr.setColor(0.5, 0.5, 0.5)
-        local gridSize = commonSetup.gridSize
-
-        if not gridSize then
-            return
-        end
-
-        --local schema = sim.getSchema()
-        local schema: MtSchema
-        local ok, errmsg: boolean, string = pcall(function()
-            schema = mtschemes[commonSetup.threadCount]
-        end)
-        if not ok then
-            print("Could'not require 'mtschemes'")
-        end
-
-        local oldWidth = {gr.getColor()}
-        gr.setLineWidth(gridLineWidth)
-        if schema then
-            for _, v in pairs(schema as {any: any}) do
-                local dx, dy = (v as MtSchema).draw[1] * pixSize * gridSize, (v as MtSchema).draw[2] * pixSize * gridSize
-                for i = 0, gridSize do
-                    -- vert
-                    local x1, y1 = math.floor(dx + i * pixSize), math.floor(dy + 0)
-                    local x2, y2 = math.floor(dx + i * pixSize), math.floor(dy + gridSize * pixSize)
-                    gr.line(x1, y1, x2, y2)
-                    -- hor
-                    x1, y1 = dx + 0, dy + i * pixSize
-                    x2, y2= dx + gridSize * pixSize, dy + i * pixSize
-                    gr.line(x1, y1, x2, y2)
-                end
-            end
-        else
-            local dx, dy = 0, 0
-            for i = 0, gridSize do
-                -- vert
-                gr.line(dx + i * pixSize, dy + 0, dx + i * pixSize, dy + gridSize * pixSize)
-                -- hor
-                gr.line(dx + 0, dy + i * pixSize, dx + gridSize * pixSize, dy + i * pixSize)
-            end
-        end
-        gr.setLineWidth(table.unpack(oldWidth))
-    end
-end
-
-function drawStatisticTable()
+--[[
+local function drawStatisticTable()
     local y0 = 0
     gr.setColor(1, 0, 0)
---    gr.print(string.format("iteration %d", sim.getIter()), 0, y0)
     y0 = y0 + gr.getFont():getHeight()
     local statistic = sim.getStatistic()
     if statistic then
@@ -197,38 +109,40 @@ function drawStatisticTable()
         end
     end
 end
+--]]
 
-function drawAxises()
-    gr.setColor(0, 1, 0)
-    local w, h = gr.getDimensions()
-    gr.setLineWidth(3)
-    gr.line(0, h, 0, 0)
-    gr.line(0, h, w, h)
-    gr.setLineWidth(1)
-end
+--function drawAxises()
+    --gr.setColor(0, 1, 0)
+    --local w, h = gr.getDimensions()
+    --gr.setLineWidth(3)
+    --gr.line(0, h, 0, 0)
+    --gr.line(0, h, w, h)
+    --gr.setLineWidth(1)
+--end
 
-local function drawLegends()
-    local y0 = 0
+--local function drawLegends()
+    --local y0 = 0
 
-    gr.setColor(MAX_ENERGY_COLOR)
-    gr.print("max energy", 0, y0)
-    y0 = y0 + gr.getFont():getHeight()
+    --gr.setColor(MAX_ENERGY_COLOR)
+    --gr.print("max energy", 0, y0)
+    --y0 = y0 + gr.getFont():getHeight()
 
-    gr.setColor(MID_ENERGY_COLOR)
-    gr.print("mid energy", 0, y0)
-    y0 = y0 + gr.getFont():getHeight()
+    --gr.setColor(MID_ENERGY_COLOR)
+    --gr.print("mid energy", 0, y0)
+    --y0 = y0 + gr.getFont():getHeight()
 
-    gr.setColor(MIN_ENERGY_COLOR)
-    gr.print("min energy", 0, y0)
-    y0 = y0 + gr.getFont():getHeight()
-end
+    --gr.setColor(MIN_ENERGY_COLOR)
+    --gr.print("min energy", 0, y0)
+    --y0 = y0 + gr.getFont():getHeight()
+--end
 
-local function drawGraphs()
-    drawAxises()
-    drawLegends()
-    gr.draw(graphCanvas as gr.Drawable)
-end
+--local function drawGraphs()
+    --drawAxises()
+    --drawLegends()
+    --gr.draw(graphCanvas as gr.Drawable)
+--end
 
+-- возвращает структуру клетки под курсором pos
 local function getCell(pos: Pos): Cell
     if not pos or not pos.x or not pos.y then
         return nil
@@ -283,28 +197,6 @@ local function drawCellInfo(cell: Cell)
             end
             msg = string.format(fmt, a)
             imgui.LabelText(k as string, msg)
-        end
-    end
-end
-
-local function getPixSize(): number
-    return pixSize
-end
-
-local function drawCellPath(cell: Cell)
-    if cell and cell.moves and #cell.moves >= 4 then
-        local pixels = getPixSize()
-        local half = pixels / 2
-        local prevx, prevy = cell.moves[1], cell.moves[2]
-        local i = 3
-        while i <= #cell.moves do
-            gr.setColor(1, 0, 0)
-            gr.line(prevx * pixels + half, 
-                prevy * pixels + half, 
-                cell.moves[i] * pixels + half, 
-                cell.moves[i + 1] * pixels + half)
-            prevx, prevy = cell.moves[i], cell.moves[i + 1]
-            i = i + 2
         end
     end
 end
@@ -369,7 +261,7 @@ local function printThreadsInfo()
 end
 
 -- открыт ли модальный диалог(пока только сохранение пресета)
-local ismodal = false
+--local ismodal = false
 
 local presetsNames: {string} = {}
 local presets: {CommonSetup} = {}
@@ -384,10 +276,11 @@ local function writeState()
     love.filesystem.write("sim.data", res)
 end
 
-local function drawSim()
+local function drawui()
     imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
-    local num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
+    local num, status: number, boolean
+    num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
     if status then
         selectedPreset = num
         activatePreset(num)
@@ -404,8 +297,6 @@ local function drawSim()
     end
 
     commonSetup.nofood = imgui.Checkbox("no food", commonSetup.nofood)
-
-    local status: boolean
 
     commonSetup.cellsNum, status = imgui.SliderFloat("initial population", commonSetup.cellsNum, 0, maxCellsNum)
     commonSetup.cellsNum = math.ceil(commonSetup.cellsNum)
@@ -446,6 +337,8 @@ local function drawSim()
 
     if imgui.Button("start") then
         prof.push()
+        cam = camera.new()
+        simulatorRender = SimulatorRender.new(commonSetup, cam)
         sim.create(commonSetup)
         --profi:start()
         --sim.setMode("step")
@@ -478,46 +371,37 @@ local function drawSim()
         --print("cell", inspect(cell))
 
         drawCellInfo(cell)
-        drawCellPath(cell)
+        simulatorRender:drawCellPath(cell)
     end
 
     imgui.End()
 end
 
-local function drawui()
-    drawSim()
-end
-
 local function draw()
     if viewState == "sim" then
-        cam:attach()
-        drawGrid()
-        drawCells()
-
-        --drawStatisticTable()
-        cam:detach()
+        simulatorRender:draw()
     elseif viewState == "graph" then
 --        drawGraphs()
     end
 end
 
-local function checkMouse()
-    if love.mouse.isDown(1) then
-        if not mouseCapture then
-            mouseCapture = { 
-                x = love.mouse.getX(),
-                y = love.mouse.getY(),
-                dx = 0,
-                dy = 0,
-            }
-        else
-            mouseCapture.dx = mouseCapture.x - love.mouse.getX()
-            mouseCapture.dy = mouseCapture.y - love.mouse.getY()
-        end
-    else
-        mouseCapture = nil
-    end
-end
+--local function checkMouse()
+    --if love.mouse.isDown(1) then
+        --if not mouseCapture then
+            --mouseCapture = { 
+                --x = love.mouse.getX(),
+                --y = love.mouse.getY(),
+                --dx = 0,
+                --dy = 0,
+            --}
+        --else
+            --mouseCapture.dx = mouseCapture.x - love.mouse.getX()
+            --mouseCapture.dy = mouseCapture.y - love.mouse.getY()
+        --end
+    --else
+        --mouseCapture = nil
+    --end
+--end
 
 --[[
 local function updateGraphic()
@@ -571,19 +455,12 @@ end
 local function update(dt: number)
     infoTimer:update(dt)
 
-    controlCamera(cam)
+    --controlCamera(cam)
 
     sim.step()
     
     --updateGraphic()
     --checkMouse()
-
-    local isDown = love.keyboard.isDown
-    if isDown("z") then
-        --cam:zoom(1.01)
-    elseif isDown("x") then
-        --cam:zoom(0.99)
-    end
 end
 
 function setViewState(stateName: ViewState)
@@ -632,14 +509,9 @@ local function init()
     local mx, my = love.mouse.getPosition()
     underCursor = {x = mx, y = my}
 
-    keyconfig.bindKeyDown("zoomout", {"z"}, function()
-        print("zoout")
-        cam:zoom(1.01)
-    end, "zoom camera out")
-
-    keyconfig.bindKeyDown("zoomin", {"x"}, function()
-        cam:zoom(0.99)
-    end, "zoom camera in")
+    cam = camera.new()
+    simulatorRender = SimulatorRender.new(commonSetup, cam)
+    bindCameraControl(keyconfig, cam)
 
     keyconfig.bindKeyPressed("exit", {"escape"}, function()
         love.event.quit()
@@ -656,6 +528,7 @@ local function init()
         end
     end)
 
+    print("simulatorRender", inspect(simulatorRender))
     loadPresets()
 end
 
@@ -671,14 +544,17 @@ local function mousemoved(x: number, y: number, _: number, _: number)
         brx, bry = cam:worldCoords(brx, bry)
     end
 
+    print("simulatorRender2", inspect(simulatorRender))
+    --simulatorRender:p()
+    print(simulatorRender.cam)
     -- не приводятся координаты при движении камеры и масштабировании
     underCursor = {
-        x = math.floor(x / getPixSize()),
-        y = math.floor(y / getPixSize())
+        x = math.floor(x / simulatorRender:getPixSize()),
+        y = math.floor(y / simulatorRender:getPixSize())
     }
 end
 
-local function wheelmoved(x: number, y: number)
+local function wheelmoved(_: number, y: number)
     if y == -1 then
         keyconfig.send("zoomin")
     else
@@ -687,8 +563,6 @@ local function wheelmoved(x: number, y: number)
 end
 
 return {
-    getPixSize = getPixSize,
-
     getMode = getMode,
     nextMode = nextMode,
 
@@ -706,4 +580,4 @@ return {
     mousemoved = mousemoved,
     wheelmoved = wheelmoved
 }
-
+--]]

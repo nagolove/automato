@@ -1,28 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local inter = require("inter")
-
-
-
-
-
-
-require("example2")
-
-function compareTypes()
-   local Type1 = {}
-   local Type2 = {}
-   local Type3 = {}
-   local v1 = { 1, 2, 3 }
-   local v2 = { 0, 0 }
-
-
-end
-
-local var
-local var2
-
-local inspect = require("inspect")
-
-local Map = {}
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pairs = _tl_compat and _tl_compat.pairs or pairs; local Map = {}
 local Seq = {}
 
 local a = { 1, 2, 3 }

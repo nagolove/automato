@@ -85,7 +85,8 @@ local stepsPerSecond = 0
 
 local function getCodeValues(): {string}
   local codeValues = {}
-  for k, _ in pairs(cellActions.actions) do
+  -- FIXME Сделал странное преобразование типов
+  for k, _ in pairs(cellActions.actions as {string:string}) do
     
     -- XXX
     --if k == "left" then k = "left2"
@@ -254,7 +255,7 @@ local accum = 0
 --[[
 Сделать возможность генерации пищи не на каждом шагу симуляции
 --]]
-function emitFood(iter: number)
+function emitFood(_: number)
     if initialSetup.nofood then
         return
     end
@@ -313,16 +314,16 @@ function updateCells(cells: {Cell}): {Cell}
   return alive
 end
 
-local function initCellOneCommandCode(command: string, steps: number): Cell
-    local cell = initCell()
-    print("cell.energy", cell.energy)
-    cell.code = {}
-    for i = 1, steps do
-        table.insert(cell.code, command)
-    end
-    --print("cell.code", inspect(cell.code))
-    return cell
-end
+--local function initCellOneCommandCode(command: string, steps: number): Cell
+    --local cell = initCell()
+    --print("cell.energy", cell.energy)
+    --cell.code = {}
+    --for i = 1, steps do
+        --table.insert(cell.code, command)
+    --end
+    ----print("cell.code", inspect(cell.code))
+    --return cell
+--end
 
 --[[ XXX Not compiled
 local function cloneCell(cell: Cell, newx: number, newy: number): Cell
@@ -596,13 +597,14 @@ local function popCommand()
     local cmd: ThreadCommands
     repeat
         cmd = msgChan:pop() as ThreadCommands
-        --local cmd: string = chan:pop() as string
         if cmd then
             local command = commands[cmd]
             if command then
                 command()
             else
-                error(string.format("Unknown command '%s'", cmd))
+                -- TODO Восстановление после ошибки
+                logerror(string.format("Unknown command '%s'", cmd))
+                --msgChan:clear()
             end
         end
     until not cmd
@@ -634,9 +636,9 @@ local function doSetup()
     end
     local schemaRestored: MtSchema = schemafun() as MtSchema
     print("schemaRestored", inspect(schemaRestored))
-    schema = flatCopy(schemaRestored as table) as MtSchema
+    schema = shallowCopy(schemaRestored)
 
-    drawCoefficients = flatCopy(schemaRestored.draw) as {number, number}
+    drawCoefficients = shallowCopy(schemaRestored.draw)
 
     print("schema", inspect(schema))
     print("drawCoefficients", inspect(drawCoefficients))
@@ -706,7 +708,7 @@ local function main()
             end
             pushDrawList()
 
-            local syncMsg: any = syncChan:demand(0.001)
+            local _: any = syncChan:demand(0.001)
             --local syncMsg = syncChan:demand()
             --local syncMsg = syncChan:pop()
             --print(threadNum, syncMsg)
