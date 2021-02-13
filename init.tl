@@ -24,6 +24,7 @@ local prof = require "jprof"
 local sim = require "simulator"
 local startInStepMode = false
 local timer = require "Timer"
+local binds = require "binds"
 --local profi = require "profi"
 
 global PROF_CAPTURE = true
@@ -516,11 +517,25 @@ local function init()
 
     cam = camera.new()
     simulatorRender = SimulatorRender.new(commonSetup, cam)
-    bindCameraControl(keyconfig, cam)
+    binds.bindCameraControl(keyconfig, cam)
 
-    keyconfig.bindKeyPressed("exit", {"escape"}, function()
-        love.event.quit()
-    end, "close program")
+    --[[
+    keyconfig.bindKeyPressed(
+        "pressed",                  -- keypressed or isdown
+        {"escape"},                 -- сочетание модификаторов и клавиш
+        function(sc: Shortcut)
+            love.event.quit()
+            return false, sc
+        end, 
+        "close program",            -- описание
+        "exit"                      -- дополнительный аргумент
+    )
+    --]]
+
+    --keyconfig.bindKeyPressed("exit", {"escape"}, function(sc: Shortcut)
+        --love.event.quit()
+        --return false, sc
+    --end, "close program")
 
     threadsInfo = {{cells = 0, meals = 0}}
     infoTimer:every(0.1, function(_: number)
