@@ -19,6 +19,7 @@ global record SimulatorRender
     draw: function(SimulatorRender)
     drawGrid: function(SimulatorRender)
     drawCells: function(SimulatorRender)
+    cameraToCenter: function(SimulatorRender)
 
     update: function(SimulatorRender, number)
 
@@ -36,24 +37,38 @@ local SimulatorRender_mt: metatable<SimulatorRender> = {
 -- размер клетки поля в пикселях
 local pixSize: number = 10
 local gridLineWidth = 1
+local fieldWidthPixels, fieldHeightPixels = 0, 0
 
 function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRender
     local self: SimulatorRender = {
         commonSetup = shallowCopy(commonSetup),
         cam = cam,
     }
-    return setmetatable(self, SimulatorRender_mt)
+    setmetatable(self, SimulatorRender_mt)
+    print("fieldWidthPixels, fieldHeightPixels", fieldWidthPixels, fieldHeightPixels)
+    self:draw()
+    self:cameraToCenter()
+    return self
+end
+
+function SimulatorRender:cameraToCenter()
+    local w, h = gr.getDimensions()
+    -- TODO разобрать формулу, не работает как надо, на половину ширины
+    local dx, dy = - (w - fieldWidthPixels) / 4, - (h - fieldHeightPixels) / 4
+    print("camera position", self.cam:position())
+    print("dx, dy", dx, dy)
+    --self.cam:lookAt(0, 0)
+    self.cam:move(dx, dy)
 end
 
 function SimulatorRender:draw()
-    --self.cam:attach()
+    self.cam:attach()
     self:drawGrid()
     self:drawCells()
-    --self.cam:detach()
+    self.cam:detach()
 end
 
 function SimulatorRender:update(_: number)
-    
 end
 
 function SimulatorRender:drawCells()
@@ -106,10 +121,12 @@ function SimulatorRender:drawGrid()
                 -- vert
                 local x1, y1 = math.floor(dx + i * pixSize), math.floor(dy + 0)
                 local x2, y2 = math.floor(dx + i * pixSize), math.floor(dy + gridSize * pixSize)
+                fieldHeightPixels = y2 - y1
                 gr.line(x1, y1, x2, y2)
                 -- hor
                 x1, y1 = dx + 0, dy + i * pixSize
                 x2, y2= dx + gridSize * pixSize, dy + i * pixSize
+                fieldWidthPixels = x2 - x1
                 gr.line(x1, y1, x2, y2)
             end
         end

@@ -308,9 +308,17 @@ local function drawui()
    commonSetup.foodenergy, status = imgui.SliderFloat("food energy", commonSetup.foodenergy, 0, 10)
 
    commonSetup.gridSize, status = imgui.SliderInt("grid size", commonSetup.gridSize, 10, 100)
+   if status then
+      simulatorRender:draw()
+      simulatorRender:cameraToCenter()
+   end
 
    commonSetup.threadCount, status = imgui.SliderInt("thread count", commonSetup.threadCount, 1, 9)
    commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
+   if status then
+      simulatorRender:draw()
+      simulatorRender:cameraToCenter()
+   end
 
    status = imgui.Checkbox("start in step mode", startInStepMode)
    startInStepMode = status
@@ -525,7 +533,7 @@ local function init()
       end
    end)
 
-   print("simulatorRender", inspect(simulatorRender))
+
    loadPresets()
 end
 
@@ -541,7 +549,7 @@ local function mousemoved(x, y, _, _)
       brx, bry = cam:worldCoords(brx, bry)
    end
 
-   print("simulatorRender2", inspect(simulatorRender))
+
 
    print(simulatorRender.cam)
 
