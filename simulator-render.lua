@@ -45,10 +45,6 @@ function SimulatorRender.new(commonSetup, cam)
    return setmetatable(self, SimulatorRender_mt)
 end
 
-function SimulatorRender:p()
-   print("hi")
-end
-
 function SimulatorRender:draw()
 
    self:drawGrid()
@@ -56,10 +52,14 @@ function SimulatorRender:draw()
 
 end
 
+function SimulatorRender:update(_)
+
+end
+
 function SimulatorRender:drawCells()
-   print("SimulatorRender:drawCells")
    local drawlist = sim.getDrawLists()
-   print("drawlist", inspect(drawlist))
+
+
    if drawlist then
       for _, v in ipairs(drawlist) do
          if v.food then

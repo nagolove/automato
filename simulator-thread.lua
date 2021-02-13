@@ -61,11 +61,25 @@ local emitInvSpeed = 100
 local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
 
+local ChannelsTypes = {
+   "cellrequest",
+   "data",
+   "msg",
+   "object",
+   "ready",
+   "request",
+   "state",
+}
+
 local function initChannels()
+   print(string.format("--- Thread %d initialize channels. ---", threadNum))
    local result = {}
    for _, v in ipairs(ChannelsTypes) do
-      result[v] = love.thread.getChannel(v .. tostring(threadNum))
+      local name = v .. tostring(threadNum)
+      print("get", name)
+      result[v] = love.thread.getChannel(name)
    end
+   print("--- ---")
    return result
 end
 

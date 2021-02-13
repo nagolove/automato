@@ -26,14 +26,27 @@ local threadCount = -1
 
 local mode = "stop"
 
-local function initChannels(threadNumber)
+local ChannelsTypes = {
+   "cellrequest",
+   "data",
+   "msg",
+   "object",
+   "ready",
+   "request",
+   "state",
+}
+
+local function initChannels(n)
+   print("--- Simulator initialize channels. ---")
    local result = {}
    for _, v in ipairs(ChannelsTypes) do
-      result[v] = love.thread.getChannel(v .. tostring(threadNumber))
+      local name = v .. tostring(n)
+      print("get", name)
+      result[v] = love.thread.getChannel(name)
    end
+   print("--- ---")
    return result
 end
-
 
 local channels = {}
 
@@ -45,6 +58,7 @@ function Simulator.getDrawLists()
 
 
       local datachannel = channels[k].data
+      print("datachannel", inspect(datachannel))
       if datachannel then
 
          local sublist = datachannel:demand(0.1)
@@ -146,7 +160,8 @@ function Simulator.create(commonSetup)
    end
 
    for i = 1, threadCount do
-      table.insert(channels, initChannels())
+      print("Channels for thread", i)
+      table.insert(channels, initChannels(i))
 
       local setupName = "setup" .. i
       love.thread.getChannel(setupName):push(commonSetup)

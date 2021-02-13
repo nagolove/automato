@@ -454,7 +454,7 @@ local function update(dt)
    infoTimer:update(dt)
 
 
-
+   simulatorRender:update(dt)
    sim.step()
 
 

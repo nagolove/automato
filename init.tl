@@ -454,7 +454,7 @@ local function update(dt: number)
     infoTimer:update(dt)
 
     --controlCamera(cam)
-
+    simulatorRender:update(dt)
     sim.step()
     
     --updateGraphic()

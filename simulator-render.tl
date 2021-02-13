@@ -20,7 +20,7 @@ global record SimulatorRender
     drawGrid: function(SimulatorRender)
     drawCells: function(SimulatorRender)
 
-    update: function(SimulatorRender)
+    update: function(SimulatorRender, number)
 
     getPixSize: function(): number
     p: function
@@ -45,10 +45,6 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
     return setmetatable(self, SimulatorRender_mt)
 end
 
-function SimulatorRender:p()
-    print("hi")
-end
-
 function SimulatorRender:draw()
     --self.cam:attach()
     self:drawGrid()
@@ -56,10 +52,14 @@ function SimulatorRender:draw()
     --self.cam:detach()
 end
 
+function SimulatorRender:update(_: number)
+    
+end
+
 function SimulatorRender:drawCells()
-    print("SimulatorRender:drawCells")
     local drawlist: {DrawNode} = sim.getDrawLists()
-    print("drawlist", inspect(drawlist))
+    --print("SimulatorRender:drawCells")
+    --print("drawlist", inspect(drawlist))
     if drawlist then
         for _, v in ipairs(drawlist) do
             if v.food then
