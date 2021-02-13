@@ -1,36 +1,30 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local coroutine = _tl_compat and _tl_compat.coroutine or coroutine; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local load = _tl_compat and _tl_compat.load or load; local math = _tl_compat and _tl_compat.math or math; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("mobdebug").start()
-local threadNum = ...
-print("thread", threadNum, "is running")
-
-require("love.filesystem")
-require("love")
-
-local inspect = require("inspect")
-local serpent = require("serpent")
-local struct = require("struct")
-
-
-
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
-
-require("external")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local coroutine = _tl_compat and _tl_compat.coroutine or coroutine; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local load = _tl_compat and _tl_compat.load or load; local math = _tl_compat and _tl_compat.math or math; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("love.filesystem")
 require("log")
 require("love.timer")
 require("mtschemes")
 require("types")
+require("love")
 
+
+love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
+
+require("mobdebug").start()
+
+local threadNum = ...
+print("thread", threadNum, "is running")
+
+local inspect = require("inspect")
+local serpent = require("serpent")
+local struct = require("struct")
 local maxDataChannelCount = 10
-
 local randseed = love.timer.getTime()
+
 math.randomseed(randseed)
-
-
 
 local initialSetup
 
 
 local cells = {}
-
 
 
 
@@ -67,15 +61,26 @@ local emitInvSpeed = 100
 local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
 
+local function initChannels()
+   local result = {}
+   for _, v in ipairs(ChannelsTypes) do
+      result[v] = love.thread.getChannel(v .. tostring(threadNum))
+   end
+   return result
+end
+
+local channels = initChannels()
 
 
-local msgChan = love.thread.getChannel("msg" .. threadNum)
-local readyChan = love.thread.getChannel("ready" .. threadNum)
-local dataChan = love.thread.getChannel("data" .. threadNum)
-local requestChan = love.thread.getChannel("request" .. threadNum)
-local cellrequestChan = love.thread.getChannel("cellrequest" .. threadNum)
-local objectChan = love.thread.getChannel("object" .. threadNum)
-local stateChan = love.thread.getChannel("state" .. threadNum)
+
+
+
+
+
+
+
+
+
 
 local cellActions = require("cell-actions")
 
@@ -482,8 +487,9 @@ local function pushDrawList()
       })
    end
 
-   if dataChan:getCount() < maxDataChannelCount then
-      dataChan:push(drawlist)
+
+   if channels.data:getCount() < maxDataChannelCount then
+      channels.data:push(drawlist)
    end
 end
 
@@ -493,7 +499,7 @@ function commands.info()
       meals = #meal,
       stepsPerSecond = stepsPerSecond,
    }
-   requestChan:push(serpent.dump(info))
+   channels.request:push(serpent.dump(info))
 end
 
 function commands.stop()
@@ -502,7 +508,7 @@ function commands.stop()
 end
 
 function commands.getobject()
-   local x, y = msgChan:pop(), msgChan:pop()
+   local x, y = channels.msg:pop(), channels.msg:pop()
    print("commands.getobject", x, y)
    local ok, errmsg = pcall(function()
       if grid then
@@ -511,7 +517,7 @@ function commands.getobject()
 
             local dump = serpent.dump(cell)
             print("dump", dump)
-            objectChan:push(dump)
+            channels.object:push(dump)
          end
       end
    end)
@@ -538,7 +544,7 @@ local function writelog(...)
 end
 
 function commands.isalive()
-   local x, y = msgChan:pop(), msgChan:pop()
+   local x, y = channels.msg:pop(), channels.msg:pop()
    if not x or not y or not threadNum then
       assert(string.format("x, y " .. x .. " " .. y .. " threadNum " .. threadNum))
    end
@@ -558,7 +564,7 @@ function commands.isalive()
          end
          writelog(string.format("pushed state %s", state))
 
-         cellrequestChan:push(state)
+         channels.cellrequest:push(state)
       end
    end)
    if not ok then
@@ -567,7 +573,7 @@ function commands.isalive()
 end
 
 function commands.insertcell()
-   local newcellfun, err = load(msgChan:pop())
+   local newcellfun, err = load(channels.msg:pop())
    if err then
       error(string.format("insertcell %s", err))
    end
@@ -590,13 +596,13 @@ function commands.writestate()
    table.insert(result, cellsStr)
    table.insert(result, mealStr)
 
-   stateChan:push(table.concat(result))
+   channels.state:push(table.concat(result))
 end
 
 local function popCommand()
    local cmd
    repeat
-      cmd = msgChan:pop()
+      cmd = channels.msg:pop()
       if cmd then
          local command = commands[cmd]
          if command then
@@ -692,7 +698,7 @@ end
 
 local function main()
    local syncChan = love.thread.getChannel("sync")
-   readyChan:push("ready")
+   channels.ready:push("ready")
    timestamp = love.timer.getTime()
    while not stop do
       popCommand()
@@ -721,8 +727,8 @@ local function main()
          love.timer.sleep(0.002)
       end
    end
-   readyChan:clear()
-   readyChan:push("free")
+   channels.ready:clear()
+   channels.ready:push("free")
 end
 
 doSetup()

@@ -117,6 +117,18 @@ global type ThreadInfo = record
     --threadNum: number
 end
 
+global type ChannelsTypes = enum
+    "cellrequest" -- = love.thread.getChannel("cellrequest" .. threadNum)
+    "data" -- = love.thread.getChannel("data" .. threadNum)
+    "msg" -- = love.thread.getChannel("msg" .. threadNum)
+    "object" -- = love.thread.getChannel("object" .. threadNum)
+    "ready" -- = love.thread.getChannel("ready" .. threadNum)
+    "request" -- = love.thread.getChannel("request" .. threadNum)
+    "state" -- = love.thread.getChannel("state" .. threadNum)
+end
+
+global type Channels = {string: love.thread.Channel}
+
 global type Simulator = record
 
     -- Очень похоже на CommonSetup, объеденить?

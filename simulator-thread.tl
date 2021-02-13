@@ -1,36 +1,30 @@
-require("mobdebug").start()
-local threadNum: number = ... as number
-print("thread", threadNum, "is running")
-
 require "love.filesystem"
-require "love"
-
-local inspect = require "inspect"
-local serpent = require "serpent"
-local struct = require "struct"
-
--- иногда возникает ошибка загрузки модулей при повторном старте
--- возможно не завершаются потоки?
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
-
-require "external"
 require "log"
 require "love.timer"
 require "mtschemes"
 require "types"
+require "love"
+-- иногда возникает ошибка загрузки модулей при повторном старте
+-- возможно не завершаются потоки?
+love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 
+require("mobdebug").start()
+
+local threadNum: number = ... as number
+print("thread", threadNum, "is running")
+
+local inspect = require "inspect"
+local serpent = require "serpent"
+local struct = require "struct"
 local maxDataChannelCount = 10
-
 local randseed: number = love.timer.getTime()
+
 math.randomseed(randseed)
 
---package.path = package.path .. ";scenes/automato/?.lua"
---local grid = require "grid".new()
 local initialSetup: CommonSetup
 
 -- массив всех клеток
 local cells: Cells = {}
-
 -- массив массивов [x][y] с клетками по индексам
 -- TODO Переработать интерфейс взаимодействия с сеткой на использования класса
 -- Grid на основе C-массива 2Д
@@ -67,15 +61,26 @@ local emitInvSpeed = 100
 local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
 
---[[
---]]
-local msgChan = love.thread.getChannel("msg" .. threadNum)
-local readyChan = love.thread.getChannel("ready" .. threadNum)
-local dataChan = love.thread.getChannel("data" .. threadNum)
-local requestChan = love.thread.getChannel("request" .. threadNum)
-local cellrequestChan = love.thread.getChannel("cellrequest" .. threadNum)
-local objectChan = love.thread.getChannel("object" .. threadNum)
-local stateChan = love.thread.getChannel("state" .. threadNum)
+local function initChannels(): Channels
+    local result: Channels = {}
+    for _, v in ipairs(ChannelsTypes as {string}) do
+        result[v] = love.thread.getChannel(v .. tostring(threadNum))
+    end
+    return result
+end
+
+local channels: Channels = initChannels()
+
+--chanels.cellrequest:push()
+--chanels.cellrequest:pop()
+
+--local cellrequestChan = love.thread.getChannel("cellrequest" .. threadNum)
+--local dataChan = love.thread.getChannel("data" .. threadNum)
+--local msgChan = love.thread.getChannel("msg" .. threadNum)
+--local objectChan = love.thread.getChannel("object" .. threadNum)
+--local readyChan = love.thread.getChannel("ready" .. threadNum)
+--local requestChan = love.thread.getChannel("request" .. threadNum)
+--local stateChan = love.thread.getChannel("state" .. threadNum)
 
 local cellActions = require "cell-actions"
 
@@ -482,8 +487,9 @@ local function pushDrawList()
         })
     end
     -- нужное-ли условие?
-    if dataChan:getCount() < maxDataChannelCount then
-        dataChan:push(drawlist)
+    --if dataChan:getCount() < maxDataChannelCount then
+    if channels.data:getCount() < maxDataChannelCount then
+        channels.data:push(drawlist)
     end
 end
 
@@ -493,7 +499,7 @@ function commands.info()
         meals = #meal,
         stepsPerSecond = stepsPerSecond,
     }
-    requestChan:push(serpent.dump(info))
+    channels.request:push(serpent.dump(info))
 end
 
 function commands.stop()
@@ -502,7 +508,7 @@ function commands.stop()
 end
 
 function commands.getobject()
-    local x, y: number, number = msgChan:pop() as number, msgChan:pop() as number
+    local x, y: number, number = channels.msg:pop() as number, channels.msg:pop() as number
     print("commands.getobject", x, y)
     local ok, errmsg: boolean, string = pcall(function()
         if grid then
@@ -511,7 +517,7 @@ function commands.getobject()
                 --requestChan:push(serpent.dump(cell))
                 local dump = serpent.dump(cell)
                 print("dump", dump)
-                objectChan:push(dump)
+                channels.object:push(dump)
             end
         end
     end)
@@ -538,7 +544,7 @@ local function writelog(...: string)
 end
 
 function commands.isalive()
-    local x, y = msgChan:pop() as number, msgChan:pop() as number  
+    local x, y = channels.msg:pop() as number, channels.msg:pop() as number  
     if not x or not y or not threadNum then
         assert(string.format("x, y " ..  x .. " " .. y .. " threadNum " .. threadNum))
     end
@@ -558,7 +564,7 @@ function commands.isalive()
             end
             writelog(string.format("pushed state %s", state))
             --print("pushed state", state)
-            cellrequestChan:push(state)
+            channels.cellrequest:push(state)
         end
     end)
     if not ok then
@@ -567,7 +573,7 @@ function commands.isalive()
 end
 
 function commands.insertcell()
-  local newcellfun, err = load(msgChan:pop() as string)
+  local newcellfun, err = load(channels.msg:pop() as string)
   if err then
     error(string.format("insertcell %s", err))
   end
@@ -590,13 +596,13 @@ function commands.writestate()
     table.insert(result, cellsStr)
     table.insert(result, mealStr)
     
-    stateChan:push(table.concat(result))
+    channels.state:push(table.concat(result))
 end
 
 local function popCommand()
     local cmd: ThreadCommands
     repeat
-        cmd = msgChan:pop() as ThreadCommands
+        cmd = channels.msg:pop() as ThreadCommands
         if cmd then
             local command = commands[cmd]
             if command then
@@ -692,7 +698,7 @@ end
 
 local function main()
     local syncChan = love.thread.getChannel("sync")
-    readyChan:push("ready")
+    channels.ready:push("ready")
     timestamp = love.timer.getTime()
     while not stop do
         popCommand()
@@ -721,8 +727,8 @@ local function main()
             love.timer.sleep(0.002)
         end
     end
-    readyChan:clear()
-    readyChan:push("free")
+    channels.ready:clear()
+    channels.ready:push("free")
 end
 
 doSetup()

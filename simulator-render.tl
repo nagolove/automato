@@ -2,12 +2,11 @@ require "love"
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 package.path = package.path .. ";scenes/automato/?.lua"
 require "imgui"
-require "external"
 require "common"
 require "types"
 
 local gr = love.graphics
---local inspect = require "inspect"
+local inspect = require "inspect"
 --local keyconfig = require "keyconfig"
 local mtschemes = require "mtschemes"
 --local prof = require "jprof"
@@ -51,14 +50,16 @@ function SimulatorRender:p()
 end
 
 function SimulatorRender:draw()
-    self.cam:attach()
+    --self.cam:attach()
     self:drawGrid()
     self:drawCells()
-    self.cam:detach()
+    --self.cam:detach()
 end
 
 function SimulatorRender:drawCells()
-    local drawlist = sim.getDrawLists()
+    print("SimulatorRender:drawCells")
+    local drawlist: {DrawNode} = sim.getDrawLists()
+    print("drawlist", inspect(drawlist))
     if drawlist then
         for _, v in ipairs(drawlist) do
             if v.food then

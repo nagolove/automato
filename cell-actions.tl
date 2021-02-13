@@ -1,4 +1,3 @@
-require "external"
 require "types"
 require "mtschemes"
 require "love"

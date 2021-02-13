@@ -2,12 +2,11 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 package.path = package.path .. ";scenes/automato/?.lua"
 require("imgui")
-require("external")
 require("common")
 require("types")
 
 local gr = love.graphics
-
+local inspect = require("inspect")
 
 local mtschemes = require("mtschemes")
 
@@ -51,14 +50,16 @@ function SimulatorRender:p()
 end
 
 function SimulatorRender:draw()
-   self.cam:attach()
+
    self:drawGrid()
    self:drawCells()
-   self.cam:detach()
+
 end
 
 function SimulatorRender:drawCells()
+   print("SimulatorRender:drawCells")
    local drawlist = sim.getDrawLists()
+   print("drawlist", inspect(drawlist))
    if drawlist then
       for _, v in ipairs(drawlist) do
          if v.food then

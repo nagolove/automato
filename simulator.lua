@@ -9,17 +9,16 @@ local struct = require("struct")
 package.path = "./scenes/automato/?.lua;" .. package.path
 print("package.path", package.path)
 
-require("love")
-require("external")
 require("log")
-require("types")
+require("love")
 require("mtschemes")
+require("types")
 
-local threads = {}
 local gridSize
 local mtschema
-
 local starttime = 0
+local statistic = {}
+local threads = {}
 
 
 local threadCount = -1
@@ -27,7 +26,16 @@ local threadCount = -1
 
 local mode = "stop"
 
-local statistic = {}
+local function initChannels(threadNumber)
+   local result = {}
+   for _, v in ipairs(ChannelsTypes) do
+      result[v] = love.thread.getChannel(v .. tostring(threadNumber))
+   end
+   return result
+end
+
+
+local channels = {}
 
 function Simulator.getDrawLists()
    local list = {}
@@ -35,9 +43,11 @@ function Simulator.getDrawLists()
 
 
 
-      local chan = love.thread.getChannel("data" .. k)
-      if chan then
-         local sublist = chan:demand(0.1)
+
+      local datachannel = channels[k].data
+      if datachannel then
+
+         local sublist = datachannel:demand(0.1)
          if sublist then
             for _, v1 in ipairs(sublist) do
                table.insert(list, v1)
@@ -118,6 +128,7 @@ end
 
 function Simulator.create(commonSetup)
    print("--------------------------------------------")
+
    print("commonSetup", inspect(commonSetup))
 
    sendStopClearChannels()
@@ -135,6 +146,8 @@ function Simulator.create(commonSetup)
    end
 
    for i = 1, threadCount do
+      table.insert(channels, initChannels())
+
       local setupName = "setup" .. i
       love.thread.getChannel(setupName):push(commonSetup)
       love.thread.getChannel(setupName):push(serpent.dump(mtschema[i]))

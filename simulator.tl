@@ -9,17 +9,16 @@ local struct = require "struct"
 package.path = "./scenes/automato/?.lua;" .. package.path
 print("package.path", package.path)
 
-require "love"
-require "external"
 require "log"
-require "types"
+require "love"
 require "mtschemes"
+require "types"
 
-local threads: {love.thread.Thread} = {}
 local gridSize: number
 local mtschema: {MtSchema}
-
 local starttime: number = 0
+local statistic: Statistic = {}
+local threads: {love.thread.Thread} = {}
 
 -- количество потоков
 local threadCount: number = -1
@@ -27,7 +26,16 @@ local threadCount: number = -1
 -- режим работы - протяженный, пошаговый или стоп
 local mode: SimulatorMode = "stop" -- "step"
 
-local statistic: Statistic = {}
+local function initChannels(threadNumber: number): Channels
+    local result: Channels = {}
+    for _, v in ipairs(ChannelsTypes as {string}) do
+        result[v] = love.thread.getChannel(v .. tostring(threadNumber))
+    end
+    return result
+end
+
+--local channels: Channels = initChannels()
+local channels: {Channels} = {}
 
 function Simulator.getDrawLists(): {DrawNode}
     local list = {}
@@ -35,9 +43,11 @@ function Simulator.getDrawLists(): {DrawNode}
         -- тормозная строчка?
         --local readyChan = love.thread.getChannel("ready" .. k)
         --if readyChan:peek() == "ready" then
-            local chan = love.thread.getChannel("data" .. k)
-            if chan then
-                local sublist: {DrawNode} = chan:demand(0.1) as {DrawNode}
+            --local chan = love.thread.getChannel("data" .. k)
+            local datachannel = channels[k].data
+            if datachannel then
+                --local sublist: {DrawNode} = chan:pop() as {DrawNode}
+                local sublist: {DrawNode} = datachannel:demand(0.1) as {DrawNode}
                 if sublist then
                     for _, v1 in ipairs(sublist) do
                         table.insert(list, v1)
@@ -118,6 +128,7 @@ end
 
 function Simulator.create(commonSetup: CommonSetup)
     print("--------------------------------------------")
+
     print("commonSetup", inspect(commonSetup))
 
     sendStopClearChannels()
@@ -135,6 +146,8 @@ function Simulator.create(commonSetup: CommonSetup)
     end
 
     for i = 1, threadCount do
+        table.insert(channels, initChannels())
+
         local setupName = "setup" .. i
         love.thread.getChannel(setupName):push(commonSetup)
         love.thread.getChannel(setupName):push(serpent.dump(mtschema[i]))

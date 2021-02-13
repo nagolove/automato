@@ -117,4 +117,16 @@ require("mtschemes")
 
 
 
+ ChannelsTypes = {}
+
+
+
+
+
+
+
+
+
+ Channels = {}
+
  Simulator = {Preset = {}, }

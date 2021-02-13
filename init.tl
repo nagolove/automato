@@ -9,11 +9,10 @@
 require "love"
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 package.path = package.path .. ";scenes/automato/?.lua"
-require "imgui"
-require "external"
 require "common"
-require "types"
+require "imgui"
 require "simulator-render"
+require "types"
 
 local camera = require "camera"
 local gr = love.graphics
@@ -337,7 +336,6 @@ local function drawui()
 
     if imgui.Button("start") then
         prof.push()
-        cam = camera.new()
         simulatorRender = SimulatorRender.new(commonSetup, cam)
         sim.create(commonSetup)
         --profi:start()
@@ -478,12 +476,11 @@ local function keypressed(key: string)
         sim.doStep()
     elseif key == "space" then
         --[[ TODO Запуск и пауза/продолжение ]]
-
-        if sim.getMode() == "stop" then
-            sim.create(commonSetup)
-        else
-            sim.step()
-        end
+        --if sim.getMode() == "stop" then
+            --sim.create(commonSetup)
+        --else
+            --sim.step()
+        --end
     end
 end
 
