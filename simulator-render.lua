@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local table = _tl_compat and _tl_compat.table or table; local _tl_table_unpack = unpack or table.unpack; require("love")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local table = _tl_compat and _tl_compat.table or table; local _tl_table_unpack = unpack or table.unpack; require("love")
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 package.path = package.path .. ";scenes/automato/?.lua"
 require("imgui")
@@ -30,6 +30,9 @@ local sim = require("simulator")
 
 
 
+
+
+
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
@@ -37,24 +40,29 @@ local SimulatorRender_mt = {
 
 local pixSize = 10
 local gridLineWidth = 1
-local fieldWidthPixels, fieldHeightPixels = 0, 0
 
 function SimulatorRender.new(commonSetup, cam)
    local self = {
       commonSetup = shallowCopy(commonSetup),
       cam = cam,
+      fieldWidthPixels = 0,
+      fieldHeightPixels = 0,
+      canvas = nil,
    }
-   setmetatable(self, SimulatorRender_mt)
-   print("fieldWidthPixels, fieldHeightPixels", fieldWidthPixels, fieldHeightPixels)
+   self = setmetatable(self, SimulatorRender_mt)
    self:draw()
    self:cameraToCenter()
+   print("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
+   self.canvas = gr.newCanvas(self.fieldWidthPixels, self.fieldHeightPixels)
+   self:draw()
+   assert(self.canvas)
    return self
 end
 
 function SimulatorRender:cameraToCenter()
    local w, h = gr.getDimensions()
 
-   local dx, dy = -(w - fieldWidthPixels) / 4, -(h - fieldHeightPixels) / 4
+   local dx, dy = -(w - self.fieldWidthPixels) / 4, -(h - self.fieldHeightPixels) / 4
    print("camera position", self.cam:position())
    print("dx, dy", dx, dy)
 
@@ -62,10 +70,39 @@ function SimulatorRender:cameraToCenter()
 end
 
 function SimulatorRender:draw()
-   self.cam:attach()
-   self:drawGrid()
-   self:drawCells()
-   self.cam:detach()
+   if not self.canvas then
+      self:drawGrid()
+      self:drawCells()
+   else
+
+
+      gr.setColor({ 1, 1, 1, 1 })
+      gr.setCanvas(self.canvas)
+      gr.clear({ 1, 1, 1, 1 })
+
+      self:drawGrid()
+      self:drawCells()
+
+      gr.setCanvas()
+      print("SimulatorRender:draw() self.canvas", self.canvas)
+      gr.setColor({ 1, 1, 1, 1 })
+      gr.draw(self.canvas, 0, 0)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   end
 end
 
 function SimulatorRender:update(_)
@@ -121,12 +158,12 @@ function SimulatorRender:drawGrid()
 
             local x1, y1 = math.floor(dx + i * pixSize), math.floor(dy + 0)
             local x2, y2 = math.floor(dx + i * pixSize), math.floor(dy + gridSize * pixSize)
-            fieldHeightPixels = y2 - y1
+            self.fieldHeightPixels = y2 - y1
             gr.line(x1, y1, x2, y2)
 
             x1, y1 = dx + 0, dy + i * pixSize
             x2, y2 = dx + gridSize * pixSize, dy + i * pixSize
-            fieldWidthPixels = x2 - x1
+            self.fieldWidthPixels = x2 - x1
             gr.line(x1, y1, x2, y2)
          end
       end

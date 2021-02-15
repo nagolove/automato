@@ -24,6 +24,7 @@ local prof = require("jprof")
 local sim = require("simulator")
 local startInStepMode = false
 local timer = require("Timer")
+local binds = require("binds")
 
 
 PROF_CAPTURE = true
@@ -79,6 +80,7 @@ local commonSetup = {
 local maxCellsNum = 5000
 local infoTimer = timer.new()
 local threadsInfo
+
 
 local function getMode()
    return mode
@@ -275,6 +277,11 @@ local function writeState()
    love.filesystem.write("sim.data", res)
 end
 
+local function start()
+   simulatorRender = SimulatorRender.new(commonSetup, cam)
+   sim.create(commonSetup)
+end
+
 local function drawui()
    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
@@ -308,14 +315,14 @@ local function drawui()
    commonSetup.foodenergy, status = imgui.SliderFloat("food energy", commonSetup.foodenergy, 0, 10)
 
    commonSetup.gridSize, status = imgui.SliderInt("grid size", commonSetup.gridSize, 10, 100)
-   if status then
+   if simulatorRender and status then
       simulatorRender:draw()
       simulatorRender:cameraToCenter()
    end
 
    commonSetup.threadCount, status = imgui.SliderInt("thread count", commonSetup.threadCount, 1, 9)
    commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
-   if status then
+   if simulatorRender and status then
       simulatorRender:draw()
       simulatorRender:cameraToCenter()
    end
@@ -343,9 +350,7 @@ local function drawui()
    end
 
    if imgui.Button("start") then
-      prof.push()
-      simulatorRender = SimulatorRender.new(commonSetup, cam)
-      sim.create(commonSetup)
+      start()
 
 
    end
@@ -385,7 +390,13 @@ end
 
 local function draw()
    if viewState == "sim" then
+      local zazor = 10
       simulatorRender:draw()
+
+      gr.push()
+      local canvasx, canvasy = simulatorRender.fieldWidthPixels + zazor, 0
+      gr.draw(simulatorRender.canvas, canvasx, canvasy)
+      gr.pop()
    elseif viewState == "graph" then
 
    end
@@ -516,13 +527,23 @@ local function init()
 
    cam = camera.new()
    simulatorRender = SimulatorRender.new(commonSetup, cam)
-   bindCameraControl(keyconfig, cam)
 
-   keyconfig.bindKeyPressed("exit", { "escape" }, function()
+   binds.bindCameraControl(cam)
+   local Shortcut = KeyConfig.Shortcut
+
+   KeyConfig.bind(
+   "keypressed",
+   { key = "escape" },
+   function(sc)
       love.event.quit()
-   end, "close program")
+      return false, sc
+   end,
+   "close program",
+   "exit")
+
 
    threadsInfo = { { cells = 0, meals = 0 } }
+
    infoTimer:every(0.1, function(_)
       local info = sim.getThreadsInfo()
 
@@ -535,6 +556,7 @@ local function init()
 
 
    loadPresets()
+   print("automato init done.")
 end
 
 local function quit()
@@ -551,7 +573,7 @@ local function mousemoved(x, y, _, _)
 
 
 
-   print(simulatorRender.cam)
+
 
    underCursor = {
       x = math.floor(x / simulatorRender:getPixSize()),

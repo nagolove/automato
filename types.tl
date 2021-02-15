@@ -110,9 +110,12 @@ global type ThreadCommands = enum
 end
 
 global type ThreadInfo = record
+    -- сколько на момент запроса живых клетор
     cells: number
+    -- сколько на момент запроса клеток еды
     meals: number
-    -- количество проведенных итераций симулятора за секунду
+    -- средннее с начала работы количество проведенных итераций симулятора за 
+    -- секунду.
     stepsPerSecond: number
     --threadNum: number
 end

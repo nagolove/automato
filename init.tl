@@ -80,6 +80,7 @@ local commonSetup: CommonSetup = {
 local maxCellsNum = 5000
 local infoTimer: Timer = timer.new()
 local threadsInfo: {ThreadInfo}
+--local simulatorCanvas: love.graphics.Canvas
 
 local function getMode(): SimulatorMode
     return mode
@@ -276,6 +277,11 @@ local function writeState()
     love.filesystem.write("sim.data", res)
 end
 
+local function start()
+    simulatorRender = SimulatorRender.new(commonSetup, cam)
+    sim.create(commonSetup)
+end
+
 local function drawui()
     imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
@@ -309,14 +315,14 @@ local function drawui()
     commonSetup.foodenergy, status = imgui.SliderFloat("food energy", commonSetup.foodenergy, 0, 10)
 
     commonSetup.gridSize, status = imgui.SliderInt("grid size", commonSetup.gridSize, 10, 100)
-    if status then
+    if simulatorRender and status then
         simulatorRender:draw()
         simulatorRender:cameraToCenter()
     end
 
     commonSetup.threadCount, status = imgui.SliderInt("thread count", commonSetup.threadCount, 1, 9)
     commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
-    if status then
+    if simulatorRender and status then
         simulatorRender:draw()
         simulatorRender:cameraToCenter()
     end
@@ -344,9 +350,7 @@ local function drawui()
     end
 
     if imgui.Button("start") then
-        prof.push()
-        simulatorRender = SimulatorRender.new(commonSetup, cam)
-        sim.create(commonSetup)
+        start()
         --profi:start()
         --sim.setMode("step")
     end
@@ -386,7 +390,13 @@ end
 
 local function draw()
     if viewState == "sim" then
+        local zazor: number = 10
         simulatorRender:draw()
+
+        gr.push()
+        local canvasx, canvasy = simulatorRender.fieldWidthPixels + zazor, 0
+        gr.draw(simulatorRender.canvas as love.graphics.Drawable, canvasx, canvasy)
+        gr.pop()
     elseif viewState == "graph" then
 --        drawGraphs()
     end
@@ -517,27 +527,23 @@ local function init()
 
     cam = camera.new()
     simulatorRender = SimulatorRender.new(commonSetup, cam)
-    binds.bindCameraControl(keyconfig, cam)
 
-    --[[
-    keyconfig.bindKeyPressed(
-        "pressed",                  -- keypressed or isdown
-        {"escape"},                 -- сочетание модификаторов и клавиш
-        function(sc: Shortcut)
+    binds.bindCameraControl(cam)
+    local Shortcut = KeyConfig.Shortcut
+
+    KeyConfig.bind(
+        "keypressed",
+        { key = "escape" }, 
+        function(sc: Shortcut): boolean, Shortcut
             love.event.quit()
             return false, sc
         end, 
-        "close program",            -- описание
-        "exit"                      -- дополнительный аргумент
+        "close program",
+        "exit"
     )
-    --]]
-
-    --keyconfig.bindKeyPressed("exit", {"escape"}, function(sc: Shortcut)
-        --love.event.quit()
-        --return false, sc
-    --end, "close program")
 
     threadsInfo = {{cells = 0, meals = 0}}
+
     infoTimer:every(0.1, function(_: number)
         local info = sim.getThreadsInfo()
         --print("infO", inspect(info))
@@ -550,6 +556,7 @@ local function init()
 
     --print("simulatorRender", inspect(simulatorRender))
     loadPresets()
+    print("automato init done.")
 end
 
 local function quit()
@@ -566,7 +573,7 @@ local function mousemoved(x: number, y: number, _: number, _: number)
 
     --print("simulatorRender2", inspect(simulatorRender))
     --simulatorRender:p()
-    print(simulatorRender.cam)
+    --print(simulatorRender.cam)
     -- не приводятся координаты при движении камеры и масштабировании
     underCursor = {
         x = math.floor(x / simulatorRender:getPixSize()),
