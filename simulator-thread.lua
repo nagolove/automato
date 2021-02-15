@@ -13,15 +13,17 @@ require("mobdebug").start()
 local threadNum = ...
 print("thread", threadNum, "is running")
 
+require('cell')
+
 local inspect = require("inspect")
 local serpent = require("serpent")
 local struct = require("struct")
 local maxDataChannelCount = 10
 local randseed = love.timer.getTime()
 
-math.randomseed(randseed)
+local rng = love.math.newRandomGenerator(randseed)
 
-local initialSetup
+local istate
 
 
 local cells = {}
@@ -40,7 +42,7 @@ local iter = 0
 
 local statistic = {}
 
-local meal = {}
+local meals = {}
 
 local stop = false
 
@@ -62,12 +64,19 @@ local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
 
 local ChannelsTypes = {
+
    "cellrequest",
-   "data",
+
+   "drawlist",
+
    "msg",
+
    "object",
+
    "ready",
+
    "request",
+
    "state",
 }
 
@@ -84,23 +93,16 @@ local function initChannels()
 end
 
 local channels = initChannels()
-
-
-
-
-
-
-
-
-
-
-
-
 local cellActions = require("cell-actions")
+
 
 local timestamp
 local stepsCount = 0
 local stepsPerSecond = 0
+
+
+
+local free = false
 
 local function getCodeValues()
    local codeValues = {}
@@ -131,72 +133,9 @@ function genCode()
    local code = {}
    local len = #codeValues
    for i = 1, codeLen do
-      table.insert(code, codeValues[math.random(1, len)])
+      table.insert(code, codeValues[rng:random(1, len)])
    end
    return code
-end
-
-local cellId = 0
-
-
-
-function initCell(t)
-   t = t or {}
-   local self = {}
-   self.pos = {}
-   if t.pos and t.pos.x then
-      self.pos.x = t.pos.x
-   else
-      self.pos.x = math.random(1, gridSize)
-   end
-   if t.pos and t.pos.y then
-      self.pos.y = t.pos.y
-   else
-      self.pos.y = math.random(1, gridSize)
-   end
-   if t.code then
-      self.code = shallowCopy(t.code)
-   else
-      self.code = genCode()
-   end
-   if t.generation then
-      self.generation = self.generation + 1
-   else
-      self.generation = 1
-   end
-   self.ip = 1
-   self.id = cellId
-   cellId = cellId + 1
-   self.energy = math.random(initialSetup.initialEnergy[1], initialSetup.initialEnergy[2])
-
-
-   table.insert(cells, self)
-   return self
-end
-
-function updateCell(cell)
-
-   if cell.ip >= #cell.code then
-      cell.ip = 1
-   end
-
-   if cell.energy > 0 then
-      local code = cell.code[cell.ip]
-
-
-
-
-      local isremoved = not actions[code](cell)
-
-
-
-      cell.ip = cell.ip + 1
-      cell.energy = cell.energy - initialSetup.denergy
-      return isremoved, cell
-   else
-      print("cell died with energy", cell.energy, "moves", inspect(cell.moves))
-      return false, cell
-   end
 end
 
 
@@ -217,7 +156,7 @@ function updateGrid()
    for _, v in ipairs(cells) do
       grid[v.pos.x][v.pos.y] = v
    end
-   for _, v in ipairs(meal) do
+   for _, v in ipairs(meals) do
       grid[v.pos.x][v.pos.y] = v
    end
 end
@@ -226,7 +165,7 @@ end
 
 function gatherStatistic(cells)
    local maxEnergy = 0
-   local minEnergy = initialSetup.initialEnergy[2]
+   local minEnergy = istate.initialEnergy[2]
    local sumEnergy = 0
    for _, v in ipairs(cells) do
       if v.energy > maxEnergy then
@@ -251,8 +190,8 @@ end
 
 
 function emitFoodInRandomPoint()
-   local x = math.random(1, gridSize)
-   local y = math.random(1, gridSize)
+   local x = rng:random(1, gridSize)
+   local y = rng:random(1, gridSize)
    local t = grid[x][y]
 
    if not t.energy then
@@ -260,7 +199,7 @@ function emitFoodInRandomPoint()
          food = true,
          pos = { x = x, y = y },
       }
-      table.insert(meal, self)
+      table.insert(meals, self)
       grid[x][y] = self
       return true, grid[x][y]
    else
@@ -275,7 +214,7 @@ local accum = 0
 
 
 function emitFood(_)
-   if initialSetup.nofood then
+   if istate.nofood then
       return
    end
 
@@ -322,12 +261,13 @@ end
 function updateCells(cells)
    local alive = {}
    for _, cell in ipairs(cells) do
-      local isalive, c = updateCell(cell)
+      local isalive = cell:update()
       if isalive then
-         table.insert(alive, c)
+         table.insert(alive, cell)
       else
-         table.insert(removed, c)
+         table.insert(removed, cell)
 
+         statistic.died = statistic.died + 1
       end
    end
    return alive
@@ -376,13 +316,13 @@ local function genPosition()
    local cy = 0
    local i, limit = 0, 1000
    while true do
-      cx = love.math.random(1, initialSetup.gridSize)
-      cy = love.math.random(1, initialSetup.gridSize)
+      cx = rng:random(1, istate.gridSize)
+      cy = rng:random(1, istate.gridSize)
       local len = dist(
       cx, cy,
-      initialSetup.spreadPoint.x, initialSetup.spreadPoint.y)
+      istate.spreadPoint.x, istate.spreadPoint.y)
 
-      local ex1 = len < initialSetup.spreadRad
+      local ex1 = len < istate.spreadRad
       local ex2 = grid[cx][cy].food == nil
       local ex3 = grid[cx][cy].energy == nil;
       if ex1 and ex2 and ex3 then
@@ -436,12 +376,10 @@ local function emitCell(iter)
 
 
 
-   for i = 1, initialSetup.cellsNum do
-      local cx = love.math.random(1, initialSetup.gridSize)
-      local cy = love.math.random(1, initialSetup.gridSize)
-      initCell({
-         pos = { x = cx, y = cy },
-      })
+   for i = 1, istate.cellsNum do
+      local cx = rng:random(1, istate.gridSize)
+      local cy = rng:random(1, istate.gridSize)
+      table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
    end
 end
 
@@ -490,7 +428,7 @@ local function experiment()
       cells = updateCells(cells)
 
 
-      meal = updateMeal(meal)
+      meals = updateMeal(meals)
 
 
       grid = getFalseGrid()
@@ -534,7 +472,7 @@ local function pushDrawList()
          drawlist[#drawlist].color = shallowCopy(v.color)
       end
    end
-   for _, v in ipairs(meal) do
+   for _, v in ipairs(meals) do
       table.insert(drawlist, {
          x = v.pos.x + gridSize * drawCoefficients[1],
          y = v.pos.y + gridSize * drawCoefficients[2],
@@ -551,7 +489,7 @@ end
 function commands.info()
    local info = {
       cells = #cells,
-      meals = #meal,
+      meals = #meals,
       stepsPerSecond = stepsPerSecond,
    }
    channels.request:push(serpent.dump(info))
@@ -633,8 +571,8 @@ function commands.insertcell()
       error(string.format("insertcell %s", err))
    end
    local newcell = newcellfun()
-   newcell.id = cellId
-   cellId = cellId + 1
+   newcell.id = istate.cellId
+   istate.cellId = istate.cellId + 1
 
 
    table.insert(cells, newcell)
@@ -643,13 +581,13 @@ end
 function commands.writestate()
    local opts = { fatal = true }
    local cellsStr = serpent.dump(cells, opts)
-   local mealStr = serpent.dump(meal, opts)
+   local mealsStr = serpent.dump(meals, opts)
    local result = {}
 
-   local lenMarker = struct.pack("<ddd", threadNum, #cellsStr, #mealStr)
+   local lenMarker = struct.pack("<ddd", threadNum, #cellsStr, #mealsStr)
    table.insert(result, lenMarker)
    table.insert(result, cellsStr)
-   table.insert(result, mealStr)
+   table.insert(result, mealsStr)
 
    channels.state:push(table.concat(result))
 end
@@ -673,21 +611,22 @@ end
 
 local function doSetup()
    local setupName = "setup" .. threadNum
-   initialSetup = love.thread.getChannel(setupName):pop()
+   istate = love.thread.getChannel(setupName):pop()
+   istate.rg = rng
 
-   if initialSetup.mode == "step" then
+   if istate.mode == "step" then
       commands.step()
-   elseif initialSetup.mode == "continuos" then
+   elseif istate.mode == "continuos" then
       commands.continuos()
    end
 
    print("thread", threadNum)
-   print("initialSetup", inspect(initialSetup))
+   print("istate", inspect(istate))
 
-   gridSize = initialSetup.gridSize
-   codeLen = initialSetup.codeLen
-   cellsNum = initialSetup.cellsNum
-   emitInvSpeed = initialSetup.emitInvSpeed
+   gridSize = istate.gridSize
+   codeLen = istate.codeLen
+   cellsNum = istate.cellsNum
+   emitInvSpeed = istate.emitInvSpeed
 
    local sschema = love.thread.getChannel(setupName):pop()
 
@@ -718,20 +657,20 @@ local function doSetup()
       threadNum = threadNum,
       getGrid = getGrid,
       gridSize = gridSize,
-      initCell = initCell,
+      initCell = Cell.new,
       schema = schema,
-      foodenergy = initialSetup.foodenergy,
+      foodenergy = istate.foodenergy,
       popCommand = popCommand,
       writelog = writelog,
    })
 
 
    actions = cellActions.actions
+
+   istate.rg = rng
+   istate.cellActions = cellActions.actions
+   cellInitInternal(istate)
 end
-
-
-
-local free = false
 
 local function step()
    local newtimestamp = love.timer.getTime()

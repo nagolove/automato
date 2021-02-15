@@ -19,7 +19,13 @@ global type Cell = record
     wantdivide: boolean
     id: number
     generation: number
+
+    new: function(t: CellSetup): Cell
+    print: function(Cell)
+    update: function(Cell): boolean
 end
+
+global type CellActions = {string: function(Cell): boolean}
 
 global type CommonSetup = record
     threadCount: number
@@ -37,6 +43,9 @@ global type CommonSetup = record
     spreadPoint: Pos
     -- радиус в клетках окружности функции разбрасывания клеток
     spreadRad: number
+    rg: love.math.RandomGenerator
+    cellId:number
+    cellActions: CellActions
 end
 
 global type CellSetup = record
