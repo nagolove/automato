@@ -59,11 +59,43 @@ global type CellActionsInit = record
 end
 
 global type Statistic = record
+
+    enum Types
+        "cells"
+        "iterations"
+        "meals"
+        "born"
+        "died"
+    end
+
     allEated: number
     maxEnergy: number
     minEnergy: number
     midEnergy: number
     iterAverage: number
+
+    -- количество клеток
+    cells: number
+    -- пройдено итераций
+    iterations: number
+    -- количество клеток еды
+    meals: number
+    -- количество рожденных клеток
+    born: number
+    -- количество умерших клеток
+    died: number
+
+    --[[
+    Как собирать и где хранить информацию: 
+        самая старая клетка, 
+        клетка с наибольшим значением энергии,
+        клетка с наименьшим значением энергии,
+        самая молодая клетка,
+        клетка прошедшая самый длинный путь
+        клетка прошедшая самый короткий путь
+        клетка съевшая больше всех остальных других клеток
+        клетка съевшая меньше всех других клеток
+    --]]
 end
 
 global type DrawNode = record
