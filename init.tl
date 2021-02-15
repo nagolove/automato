@@ -369,9 +369,12 @@ local function drawui()
         --imgui.LabelText(sim.getStatistic().allEated, "all eated")
     --end
 
-    -- не имеет смысла для пошагового режима
-    if sim.getMode() ~= "stop" then
-        imgui.Text(string.format("uptime %d sec", sim.getUptime()))
+    imgui.Text(string.format("uptime %d sec", sim.getUptime()))
+    -- можно запрашивать не каждый кадр
+    local st: Statistic = sim.getStatistic()
+
+    for k, v in pairs(st as {Statistic.Types:number}) do
+        imgui.Text(string.format("%s: %d", st[k], v))
     end
 
     printThreadsInfo()
@@ -394,8 +397,10 @@ local function draw()
         simulatorRender:draw()
 
         gr.push()
+        simulatorRender.cam:attach()
         local canvasx, canvasy = simulatorRender.fieldWidthPixels + zazor, 0
         gr.draw(simulatorRender.canvas as love.graphics.Drawable, canvasx, canvasy)
+        simulatorRender.cam:detach()
         gr.pop()
     elseif viewState == "graph" then
 --        drawGraphs()
@@ -520,14 +525,7 @@ local function loadPresets()
     end
 end
 
-local function init()
-    math.randomseed(love.timer.getTime())
-    local mx, my = love.mouse.getPosition()
-    underCursor = {x = mx, y = my}
-
-    cam = camera.new()
-    simulatorRender = SimulatorRender.new(commonSetup, cam)
-
+local function bindKeys()
     binds.bindCameraControl(cam)
     local Shortcut = KeyConfig.Shortcut
 
@@ -541,6 +539,62 @@ local function init()
         "close program",
         "exit"
     )
+
+    KeyConfig.bind(
+        "keypressed",
+        { mod = { "alt" }, key = "1" }, 
+        function(sc: Shortcut): boolean, Shortcut
+            love.event.quit()
+            return false, sc
+        end, 
+        "Show graph1",
+        "graph1"
+    )
+
+    KeyConfig.bind(
+        "keypressed",
+        { mod = { "alt" }, key = "2" }, 
+        function(sc: Shortcut): boolean, Shortcut
+            love.event.quit()
+            return false, sc
+        end, 
+        "Show graph2",
+        "graph2"
+    )
+
+    KeyConfig.bind(
+        "isdown",
+        { mod = { "lctrl" }, key = "3" }, 
+        function(sc: Shortcut): boolean, Shortcut
+            love.event.quit()
+            return false, sc
+        end, 
+        "Show graph3",
+        "graph3"
+    )
+
+    KeyConfig.bind(
+        "isdown",
+        { mod = { "lctrl" }, key = "4" }, 
+        function(sc: Shortcut): boolean, Shortcut
+            love.event.quit()
+            return false, sc
+        end, 
+        "Show graph4",
+        "graph4"
+    )
+
+end
+
+local function init()
+    math.randomseed(love.timer.getTime())
+    local mx, my = love.mouse.getPosition()
+    underCursor = {x = mx, y = my}
+
+    cam = camera.new()
+    simulatorRender = SimulatorRender.new(commonSetup, cam)
+
+    bindKeys()
 
     threadsInfo = {{cells = 0, meals = 0}}
 

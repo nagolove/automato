@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local table = _tl_compat and _tl_compat.table or table; local _tl_table_unpack = unpack or table.unpack; require("love")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local _tl_table_unpack = unpack or table.unpack; require("love")
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 package.path = package.path .. ";scenes/automato/?.lua"
 require("imgui")
@@ -33,13 +33,18 @@ local sim = require("simulator")
 
 
 
+
+
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
 
 
 local pixSize = 10
-local gridLineWidth = 1
+
+local gridLineWidth = 2
+
+local canvasmultfactor = 4
 
 function SimulatorRender.new(commonSetup, cam)
    local self = {
@@ -48,12 +53,23 @@ function SimulatorRender.new(commonSetup, cam)
       fieldWidthPixels = 0,
       fieldHeightPixels = 0,
       canvas = nil,
+      cellCanvas = gr.newCanvas(pixSize, pixSize),
+      mealCanvas = gr.newCanvas(pixSize, pixSize),
    }
    self = setmetatable(self, SimulatorRender_mt)
-   self:draw()
+   self:computeGrid()
    self:cameraToCenter()
    print("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
-   self.canvas = gr.newCanvas(self.fieldWidthPixels, self.fieldHeightPixels)
+
+   self.canvas = gr.newCanvas(
+   self.fieldWidthPixels * canvasmultfactor,
+   self.fieldHeightPixels * canvasmultfactor)
+
+
+   self.canvas:newImageData():encode('png', "simulator-render-canvas.png")
+   self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas.png')
+   self.mealCanvas:newImageData():encode('png', 'simulator-render-meal-canvas.png')
+
    self:draw()
    assert(self.canvas)
    return self
@@ -70,23 +86,40 @@ function SimulatorRender:cameraToCenter()
 end
 
 function SimulatorRender:draw()
-   if not self.canvas then
-      self:drawGrid()
-      self:drawCells()
-   else
 
+   self:drawGrid()
+   self:drawCells()
+
+   do
 
       gr.setColor({ 1, 1, 1, 1 })
       gr.setCanvas(self.canvas)
-      gr.clear({ 1, 1, 1, 1 })
+
+      gr.clear({ 0, 0, 0, 1 })
 
       self:drawGrid()
       self:drawCells()
 
       gr.setCanvas()
       print("SimulatorRender:draw() self.canvas", self.canvas)
+
+      self.cam:attach()
       gr.setColor({ 1, 1, 1, 1 })
-      gr.draw(self.canvas, 0, 0)
+
+      local sx, sy = 1, 1
+
+
+      gr.draw(
+      self.canvas,
+      0,
+      0,
+      0.0,
+      sx,
+      sy)
+
+
+
+      self.cam:detach()
 
 
 
@@ -108,28 +141,82 @@ end
 function SimulatorRender:update(_)
 end
 
+local mealcolor = { 0, 1, 0, 1 }
+
+local cellcolor = { 1, 0, 0, 1 }
+
+function SimulatorRender:setupCanvases()
+   if not self.cellCanvas and not self.mealCanvas then
+      error("No cellCanvas created!")
+   end
+
+   gr.setCanvas(self.mealCanvas)
+   gr.setColor(mealcolor)
+   gr.clear(0, 0, 0, 1)
+   gr.rectangle("fill", 0, 0, pixSize, pixSize)
+   gr.setCanvas()
+
+   gr.setCanvas(self.cellCanvas)
+   gr.clear(0, 0, 0, 1)
+   gr.setColor(cellcolor)
+   gr.rectangle("fill", 0, 0, pixSize, pixSize)
+   gr.setCanvas()
+end
+
 function SimulatorRender:drawCells()
    local drawlist = sim.getDrawLists()
 
 
-   if drawlist then
-      for _, v in ipairs(drawlist) do
-         if v.food then
-            gr.setColor(0, 1, 0)
-            local x, y = (v.x - 1) * pixSize, (v.y - 1) * pixSize
-            local w, h = pixSize, pixSize
-            gr.rectangle("fill", x, y, w, h)
+   if not drawlist then
+      return
+   end
+
+   for _, node in ipairs(drawlist) do
+      local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
+      if node.food then
+         gr.setColor(1, 1, 1, 1)
+         gr.draw(self.mealCanvas, x, y)
+      else
+         if node.color then
+            gr.setColor(node.color)
          else
-            if v.color then
-               gr.setColor(v.color)
-            else
-               gr.setColor(0.5, 0.5, 0.5)
-            end
-            local x, y = (v.x - 1) * pixSize, (v.y - 1) * pixSize
-            local w, h = pixSize, pixSize
-            gr.rectangle("fill", x, y, w, h)
+            gr.setColor(cellcolor)
+         end
+         gr.draw(self.cellCanvas, x, y)
+      end
+   end
+end
+
+function SimulatorRender:computeGrid()
+   local gridSize = self.commonSetup.gridSize
+
+   if not gridSize then
+      return
+   end
+
+   local schema
+   local ok, errmsg = pcall(function()
+      schema = mtschemes[self.commonSetup.threadCount]
+   end)
+   if not ok then
+      print("Could'not require 'mtschemes'", errmsg)
+   end
+
+   if schema then
+      for _, v in pairs(schema) do
+         local dx, dy = (v).draw[1] * pixSize * gridSize, (v).draw[2] * pixSize * gridSize
+         for i = 0, gridSize do
+            local x1, y1 = math.floor(dx + i * pixSize), math.floor(dy + 0)
+            local x2, y2 = math.floor(dx + i * pixSize), math.floor(dy + gridSize * pixSize)
+            self.fieldHeightPixels = y2 - y1
+            x1, y1 = dx + 0, dy + i * pixSize
+            x2, y2 = dx + gridSize * pixSize, dy + i * pixSize
+            self.fieldWidthPixels = x2 - x1
          end
       end
+   else
+      error(string.format(
+      "No schema for %d", self.commonSetup.threadCount))
    end
 end
 

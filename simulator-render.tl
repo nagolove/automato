@@ -24,22 +24,27 @@ global record SimulatorRender
     update: function(SimulatorRender, number)
 
     getPixSize: function(): number
-    p: function
+    computeGrid: function
 
     commonSetup: CommonSetup
     cam: Camera
     fieldWidthPixels: number
     fieldHeightPixels: number
     canvas: love.graphics.Canvas
+    cellCanvas: love.graphics.Canvas
+    mealCanvas: gr.Canvas
 end
 
 local SimulatorRender_mt: metatable<SimulatorRender> = {
     __index = SimulatorRender,
 }
 
--- размер клетки поля в пикселях
+-- размер клетки поля суб канваса в пикселях
 local pixSize: number = 10
-local gridLineWidth = 1
+-- ширина линий сетки
+local gridLineWidth = 2
+-- во сколько раз полотно больше размера картинки
+local canvasmultfactor = 4
 
 function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRender
     local self: SimulatorRender = {
@@ -48,12 +53,23 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
         fieldWidthPixels = 0,
         fieldHeightPixels = 0,
         canvas = nil,
+        cellCanvas = gr.newCanvas(pixSize, pixSize),
+        mealCanvas = gr.newCanvas(pixSize, pixSize),
     }
     self = setmetatable(self, SimulatorRender_mt)
-    self:draw()
+    self:computeGrid()
     self:cameraToCenter()
     print("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
-    self.canvas = gr.newCanvas(self.fieldWidthPixels, self.fieldHeightPixels)
+
+    self.canvas = gr.newCanvas(
+        self.fieldWidthPixels * canvasmultfactor, 
+        self.fieldHeightPixels * canvasmultfactor
+    )
+
+    self.canvas:newImageData():encode('png', "simulator-render-canvas.png")
+    self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas.png')
+    self.mealCanvas:newImageData():encode('png', 'simulator-render-meal-canvas.png')
+
     self:draw()
     assert(self.canvas)
     return self
@@ -70,23 +86,40 @@ function SimulatorRender:cameraToCenter()
 end
 
 function SimulatorRender:draw()
-    if not self.canvas then
+    --if not self.canvas then
         self:drawGrid()
         self:drawCells()
-    else
-
+    --else
+    do
         --
         gr.setColor{1, 1, 1, 1}
         gr.setCanvas(self.canvas)
-        gr.clear{1, 1, 1, 1}
-        --self.cam:attach()
+        --gr.clear{1, 1, 1, 1}
+        gr.clear{0, 0, 0, 1}
+
         self:drawGrid()
         self:drawCells()
-        --self.cam:detach()
+
         gr.setCanvas()
         print("SimulatorRender:draw() self.canvas", self.canvas)
+
+        self.cam:attach()
         gr.setColor{1, 1, 1, 1}
-        gr.draw(self.canvas as love.graphics.Drawable, 0, 0)
+        --local sx, sy = 0.5, 0.5
+        local sx, sy = 1, 1 
+
+        --
+        gr.draw(
+            self.canvas as love.graphics.Drawable,
+            0, 
+            0, 
+            0.0,
+            sx,
+            sy
+        )
+        --]]
+
+        self.cam:detach()
         --]]
 
         --[[
@@ -108,28 +141,82 @@ end
 function SimulatorRender:update(_: number)
 end
 
+local mealcolor = {0, 1, 0, 1}
+--local cellcolor = {0.5, 0.5, 0.5, 1}
+local cellcolor = {1, 0, 0, 1}
+
+function SimulatorRender:setupCanvases()
+    if not self.cellCanvas and not self.mealCanvas then
+        error("No cellCanvas created!")
+    end
+
+    gr.setCanvas(self.mealCanvas)
+    gr.setColor(mealcolor)
+    gr.clear(0, 0, 0, 1)
+    gr.rectangle("fill", 0, 0, pixSize, pixSize)
+    gr.setCanvas()
+
+    gr.setCanvas(self.cellCanvas)
+    gr.clear(0, 0, 0, 1)
+    gr.setColor(cellcolor)
+    gr.rectangle("fill", 0, 0, pixSize, pixSize)
+    gr.setCanvas()
+end
+
 function SimulatorRender:drawCells()
     local drawlist: {DrawNode} = sim.getDrawLists()
     --print("SimulatorRender:drawCells")
     --print("drawlist", inspect(drawlist))
-    if drawlist then
-        for _, v in ipairs(drawlist) do
-            if v.food then
-                gr.setColor(0, 1, 0)
-                local x, y = (v.x - 1)* pixSize, (v.y - 1) * pixSize
-                local w, h = pixSize, pixSize
-                gr.rectangle("fill", x, y, w, h)
+    if not drawlist then
+        return
+    end
+
+    for _, node in ipairs(drawlist) do
+        local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
+        if node.food then
+            gr.setColor(1, 1, 1, 1)
+            gr.draw(self.mealCanvas as love.graphics.Drawable, x, y)
+        else
+            if node.color then
+                gr.setColor(node.color)
             else
-                if v.color then
-                    gr.setColor(v.color)
-                else
-                    gr.setColor(0.5, 0.5, 0.5)
-                end
-                local x, y = (v.x - 1)* pixSize, (v.y - 1) * pixSize
-                local w, h = pixSize, pixSize
-                gr.rectangle("fill", x, y, w, h)
+                gr.setColor(cellcolor)
+            end
+            gr.draw(self.cellCanvas as love.graphics.Drawable, x, y)
+        end
+    end
+end
+
+function SimulatorRender:computeGrid()
+    local gridSize = self.commonSetup.gridSize
+
+    if not gridSize then
+        return
+    end
+
+    local schema: MtSchema
+    local ok, errmsg: boolean, string = pcall(function()
+        schema = mtschemes[self.commonSetup.threadCount]
+    end)
+    if not ok then
+        print("Could'not require 'mtschemes'", errmsg)
+    end
+
+    if schema then
+        for _, v in pairs(schema as {any: any}) do
+            local dx, dy = (v as MtSchema).draw[1] * pixSize * gridSize, (v as MtSchema).draw[2] * pixSize * gridSize
+            for i = 0, gridSize do
+                local x1, y1 = math.floor(dx + i * pixSize), math.floor(dy + 0)
+                local x2, y2 = math.floor(dx + i * pixSize), math.floor(dy + gridSize * pixSize)
+                self.fieldHeightPixels = y2 - y1
+                x1, y1 = dx + 0, dy + i * pixSize
+                x2, y2= dx + gridSize * pixSize, dy + i * pixSize
+                self.fieldWidthPixels = x2 - x1
             end
         end
+    else
+        error(string.format(
+            "No schema for %d", self.commonSetup.threadCount))
     end
 end
 
