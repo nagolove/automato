@@ -33,11 +33,16 @@ global type CommonSetup = record
     foodenergy: number
     mode: SimulatorMode
     emitInvSpeed: number
+    -- положение центра окружности функции разбрасывания клеток
+    spreadPoint: Pos
+    -- радиус в клетках окружности функции разбрасывания клеток
+    spreadRad: number
 end
 
 global type CellSetup = record
     pos: Pos
     code: {string}
+    --code: {Expression}
     generation: number
 end
 

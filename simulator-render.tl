@@ -16,6 +16,7 @@ local sim = require "simulator"
 global record SimulatorRender
     new: function(commonSetup: CommonSetup, Camera): SimulatorRender
 
+    prerender: function(SimulatorRender)
     draw: function(SimulatorRender)
     drawGrid: function(SimulatorRender)
     drawCells: function(SimulatorRender)
@@ -42,9 +43,23 @@ local SimulatorRender_mt: metatable<SimulatorRender> = {
 -- размер клетки поля суб канваса в пикселях
 local pixSize: number = 10
 -- ширина линий сетки
-local gridLineWidth = 2
+local gridLineWidth = 3
 -- во сколько раз полотно больше размера картинки
-local canvasmultfactor = 4
+local canvasmultfactor = 1
+
+local gridColor = {0.5, 0.5, 0.5}
+local mealcolor = {0, 1, 0, 1}
+local cellcolor1 = {0.5, 0.5, 0.5, 1}
+local cellcolor2 = {0, 0, 1, 1}
+--local black = {0, 0, 0, 1}
+
+local function clearCanvases(canvases: {love.graphics.Canvas}, color: {number})
+    for _, canvas in ipairs(canvases) do
+        gr.setCanvas(canvas)
+        gr.clear(color)
+        gr.setCanvas()
+    end
+end
 
 function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRender
     local self: SimulatorRender = {
@@ -66,12 +81,18 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
         self.fieldHeightPixels * canvasmultfactor
     )
 
+    clearCanvases(
+        { self.canvas, self.cellCanvas, self.mealCanvas },
+        { 0.5, 0, 0, 1}
+    )
+
+    self:prerender()
+    self:draw()
+
     self.canvas:newImageData():encode('png', "simulator-render-canvas.png")
     self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas.png')
     self.mealCanvas:newImageData():encode('png', 'simulator-render-meal-canvas.png')
 
-    self:draw()
-    assert(self.canvas)
     return self
 end
 
@@ -86,12 +107,6 @@ function SimulatorRender:cameraToCenter()
 end
 
 function SimulatorRender:draw()
-    --if not self.canvas then
-        self:drawGrid()
-        self:drawCells()
-    --else
-    do
-        --
         gr.setColor{1, 1, 1, 1}
         gr.setCanvas(self.canvas)
         --gr.clear{1, 1, 1, 1}
@@ -108,7 +123,6 @@ function SimulatorRender:draw()
         --local sx, sy = 0.5, 0.5
         local sx, sy = 1, 1 
 
-        --
         gr.draw(
             self.canvas as love.graphics.Drawable,
             0, 
@@ -117,49 +131,28 @@ function SimulatorRender:draw()
             sx,
             sy
         )
-        --]]
-
         self.cam:detach()
-        --]]
-
-        --[[
-        --gr.setCanvas(self.canvas)
-        gr.setColor{1, 1, 1, 1}
-        self.cam:attach()
-        self:drawGrid()
-        self:drawCells()
-        self.cam:detach()
-        --gr.setCanvas()
-        --print("SimulatorRender:draw() self.canvas", self.canvas)
-        ----if self.canvas then
-        --gr.draw(self.canvas as love.graphics.Drawable, 0, 0)
-        ----end
-        --]]
-    end
 end
 
 function SimulatorRender:update(_: number)
 end
 
-local mealcolor = {0, 1, 0, 1}
---local cellcolor = {0.5, 0.5, 0.5, 1}
-local cellcolor = {1, 0, 0, 1}
-
-function SimulatorRender:setupCanvases()
+function SimulatorRender:prerender()
     if not self.cellCanvas and not self.mealCanvas then
         error("No cellCanvas created!")
     end
 
     gr.setCanvas(self.mealCanvas)
-    gr.setColor(mealcolor)
     gr.clear(0, 0, 0, 1)
+    gr.setColor(mealcolor)
     gr.rectangle("fill", 0, 0, pixSize, pixSize)
     gr.setCanvas()
 
+    local n = 2
     gr.setCanvas(self.cellCanvas)
-    gr.clear(0, 0, 0, 1)
-    gr.setColor(cellcolor)
-    gr.rectangle("fill", 0, 0, pixSize, pixSize)
+    gr.clear(cellcolor1)
+    gr.setColor(cellcolor2)
+    gr.rectangle("fill", n, n, pixSize - 2 * n, pixSize - 2 * n)
     gr.setCanvas()
 end
 
@@ -180,7 +173,7 @@ function SimulatorRender:drawCells()
             if node.color then
                 gr.setColor(node.color)
             else
-                gr.setColor(cellcolor)
+                gr.setColor(1, 1, 1, 1)
             end
             gr.draw(self.cellCanvas as love.graphics.Drawable, x, y)
         end
@@ -221,7 +214,6 @@ function SimulatorRender:computeGrid()
 end
 
 function SimulatorRender:drawGrid()
-    gr.setColor(0.5, 0.5, 0.5)
     local gridSize = self.commonSetup.gridSize
 
     if not gridSize then
@@ -236,8 +228,11 @@ function SimulatorRender:drawGrid()
         print("Could'not require 'mtschemes'", errmsg)
     end
 
-    local oldWidth = {gr.getColor()}
+    local prevwidth = {gr.getColor()}
+
     gr.setLineWidth(gridLineWidth)
+    gr.setColor(gridColor)
+
     if schema then
         for _, v in pairs(schema as {any: any}) do
             local dx, dy = (v as MtSchema).draw[1] * pixSize * gridSize, (v as MtSchema).draw[2] * pixSize * gridSize
@@ -263,7 +258,7 @@ function SimulatorRender:drawGrid()
             gr.line(dx + 0, dy + i * pixSize, dx + gridSize * pixSize, dy + i * pixSize)
         end
     end
-    gr.setLineWidth(table.unpack(oldWidth))
+    gr.setLineWidth(table.unpack(prevwidth))
 end
 
 function SimulatorRender:getPixSize(): number

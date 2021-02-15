@@ -371,10 +371,36 @@ end
 
 
 
+local function genPosition()
+   local cx = 0
+   local cy = 0
+   local i, limit = 0, 1000
+   while true do
+      cx = love.math.random(1, initialSetup.gridSize)
+      cy = love.math.random(1, initialSetup.gridSize)
+      local len = dist(
+      cx, cy,
+      initialSetup.spreadPoint.x, initialSetup.spreadPoint.y)
+
+      local ex1 = len < initialSetup.spreadRad
+      local ex2 = grid[cx][cy].food == nil
+      local ex3 = grid[cx][cy].energy == nil;
+      if ex1 and ex2 and ex3 then
+         return cx, cy
+      end
+      i = i + 1
+      if i > limit then
+         break
+      end
+   end
+   error("Could not generate position")
+   return 0, 0
+end
 
 
 
-function emitCell(iter)
+
+local function emitCell(iter)
    if threadNum == 1 then
 
 
@@ -388,19 +414,34 @@ function emitCell(iter)
 
    end
 
-   print("cellsNum", cellsNum)
 
-   while true do
 
-      if cellId >= cellsNum then
-         break
-      end
-      if iter - lastEmitIter >= emitInvSpeed then
-         print("iter", iter)
-         initCell()
-         lastEmitIter = iter
-      end
-      iter = coroutine.yield()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   for i = 1, initialSetup.cellsNum do
+      local cx = love.math.random(1, initialSetup.gridSize)
+      local cy = love.math.random(1, initialSetup.gridSize)
+      initCell({
+         pos = { x = cx, y = cy },
+      })
    end
 end
 
@@ -414,7 +455,7 @@ local function updateMeal(meal)
    return alive
 end
 
-function experiment()
+local function experiment()
    local cellEmitCoro = coroutine.create(emitCell)
    iter = 0
    lastEmitIter = 0

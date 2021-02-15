@@ -19,7 +19,7 @@ local struct = require "struct"
 local maxDataChannelCount = 10
 local randseed: number = love.timer.getTime()
 
-math.randomseed(randseed)
+local rng = love.math.newRandomGenerator(randseed)
 
 local initialSetup: CommonSetup
 
@@ -40,7 +40,7 @@ local iter: number = 0
 -- таблица общей статистики
 local statistic: Statistic = {}
 -- список еды
-local meal: {Cell} = {}
+local meals: {Cell} = {}
 -- флаг остановки потока 
 local stop = false 
 -- схема многопоточности 
@@ -62,12 +62,18 @@ local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
 
 local ChannelsTypes: {string} = {
+    -- запрос клетки
     "cellrequest", 
-    "data", 
+    "drawlist", 
+    -- прием сообщений с параметрами
     "msg", 
+    -- получение объекта по координатам
     "object",
+    -- готовность клетки?
     "ready",
+    -- запрос?
     "request",
+    -- вернуть сохраненное состояние
     "state",
 }
 
@@ -84,20 +90,7 @@ local function initChannels(): Channels
 end
 
 local channels: Channels = initChannels()
-
---chanels.cellrequest:push()
---chanels.cellrequest:pop()
-
---local cellrequestChan = love.thread.getChannel("cellrequest" .. threadNum)
---local dataChan = love.thread.getChannel("data" .. threadNum)
---local msgChan = love.thread.getChannel("msg" .. threadNum)
---local objectChan = love.thread.getChannel("object" .. threadNum)
---local readyChan = love.thread.getChannel("ready" .. threadNum)
---local requestChan = love.thread.getChannel("request" .. threadNum)
---local stateChan = love.thread.getChannel("state" .. threadNum)
-
 local cellActions = require "cell-actions"
-
 local timestamp: number
 local stepsCount = 0
 local stepsPerSecond = 0
@@ -131,7 +124,7 @@ function genCode(): {string}
   local code = {}
   local len = #codeValues
   for i = 1, codeLen do
-    table.insert(code, codeValues[math.random(1, len)])
+    table.insert(code, codeValues[rng:random(1, len)])
   end
   return code
 end
@@ -147,12 +140,12 @@ function initCell(t: CellSetup): Cell
     if t.pos and t.pos.x then
         self.pos.x = t.pos.x
     else
-        self.pos.x = math.random(1, gridSize)
+        self.pos.x = rng:random(1, gridSize)
     end
     if t.pos and t.pos.y then
         self.pos.y = t.pos.y
     else
-        self.pos.y = math.random(1, gridSize)
+        self.pos.y = rng:random(1, gridSize)
     end
     if t.code then
         self.code = shallowCopy(t.code)
@@ -167,8 +160,9 @@ function initCell(t: CellSetup): Cell
     self.ip = 1
     self.id = cellId
     cellId = cellId + 1
-    self.energy = math.random(initialSetup.initialEnergy[1], initialSetup.initialEnergy[2])
-    --print("self.energy", self.energy)
+    self.energy = rng:random(initialSetup.initialEnergy[1], initialSetup.initialEnergy[2])
+
+    printCell(self)
 
     table.insert(cells, self)
     return self
@@ -251,8 +245,8 @@ end
 
 
 function emitFoodInRandomPoint(): boolean, Cell
-  local x = math.random(1, gridSize)
-  local y = math.random(1, gridSize)
+  local x = rng:random(1, gridSize)
+  local y = rng:random(1, gridSize)
   local t = grid[x][y]
   -- если клетка пустая
   if not t.energy then
@@ -371,23 +365,50 @@ local function cloneCell(cell: Cell, newx: number, newy: number): Cell
 end
 --]]
 
+local function genPosition(): number, number
+    local cx = 0
+    local cy = 0
+    local i, limit = 0, 1000
+    while true do
+        cx = rng:random(1, initialSetup.gridSize)
+        cy = rng:random(1, initialSetup.gridSize)
+        local len = dist(
+            cx, cy, 
+            initialSetup.spreadPoint.x, initialSetup.spreadPoint.y
+        )
+        local ex1 = len < initialSetup.spreadRad
+        local ex2 = grid[cx][cy].food == nil
+        local ex3 = grid[cx][cy].energy == nil;
+        if ex1 and ex2 and ex3 then
+            return cx, cy
+        end
+        i = i + 1
+        if i > limit then
+            break
+        end
+    end
+    error("Could not generate position")
+    return 0, 0
+end
+
 --[[
 Пока только линейный рост колонии
 --]]
-function emitCell(iter: number)
+local function emitCell(iter: number)
     if threadNum == 1 then
         --local steps = 5
         --local cell = initCellOneCommandCode("left", steps)
-        --cell.color = {0, 0, math.random()}
+        --cell.color = {0, 0, rng:random()}
         --cell.pos.x = 30
         --cell.pos.y = 1
     end
     if threadNum == 2 then
         --local steps = 5
         --local cell = initCellOneCommandCode("right", steps)
-        --cell.color = {math.random(), 0, 0}
+        --cell.color = {rng:random(), 0, 0}
     end
 
+    --[[
     print("cellsNum", cellsNum)
     -- не создается нужное количество клеток
     while true do
@@ -397,10 +418,24 @@ function emitCell(iter: number)
         end
         if iter - lastEmitIter >= emitInvSpeed then
             print("iter", iter)
-            initCell()
+            --local cx, cy = genPosition()
+            local cx = love.rng:random(1, initialSetup.gridSize)
+            local cy = love.rng:random(1, initialSetup.gridSize)
+            initCell({ 
+                pos = { x = cx, y = cy }
+            })
             lastEmitIter = iter
         end
         iter = coroutine.yield() as number
+    end
+    --]]
+
+    for i = 1, initialSetup.cellsNum do
+        local cx = love.rng:random(1, initialSetup.gridSize)
+        local cy = love.rng:random(1, initialSetup.gridSize)
+        initCell({ 
+            pos = { x = cx, y = cy }
+        })
     end
 end
 
@@ -414,7 +449,7 @@ local function updateMeal(meal: {Cell}): {Cell}
   return alive
 end
 
-function experiment()
+local function experiment()
     local cellEmitCoro: thread = coroutine.create(emitCell)
     iter = 0
     lastEmitIter = 0
@@ -493,7 +528,7 @@ local function pushDrawList()
             drawlist[#drawlist].color = shallowCopy(v.color)
         end
     end
-    for _, v in ipairs(meal) do
+    for _, v in ipairs(meals) do
         table.insert(drawlist, { 
             x = v.pos.x + gridSize * drawCoefficients[1],
             y = v.pos.y + gridSize * drawCoefficients[2], 
@@ -510,7 +545,7 @@ end
 function commands.info()
     local info: ThreadInfo = {
         cells = #cells,
-        meals = #meal,
+        meals = #meals,
         stepsPerSecond = stepsPerSecond,
     }
     channels.request:push(serpent.dump(info))
@@ -602,13 +637,13 @@ end
 function commands.writestate()
     local opts = {fatal = true}
     local cellsStr = serpent.dump(cells, opts)
-    local mealStr = serpent.dump(meal, opts)
+    local mealsStr = serpent.dump(meals, opts)
     local result = {}
     -- записываю по 4 байта - номер потока, длины строк
-    local lenMarker = struct.pack("<ddd", threadNum, #cellsStr, #mealStr)
+    local lenMarker = struct.pack("<ddd", threadNum, #cellsStr, #mealsStr)
     table.insert(result, lenMarker)
     table.insert(result, cellsStr)
-    table.insert(result, mealStr)
+    table.insert(result, mealsStr)
     
     channels.state:push(table.concat(result))
 end

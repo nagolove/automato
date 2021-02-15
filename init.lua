@@ -279,6 +279,11 @@ end
 
 local function start()
    simulatorRender = SimulatorRender.new(commonSetup, cam)
+   commonSetup.spreadPoint = {
+      x = math.floor(commonSetup.gridSize / 2),
+      y = math.floor(commonSetup.gridSize / 2),
+   }
+   commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
    sim.create(commonSetup)
 end
 

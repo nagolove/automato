@@ -1,4 +1,10 @@
+
+
+
+
+
 require("types")
+require("common")
 
 local inspect = require("inspect")
 
@@ -28,6 +34,7 @@ local OpCodes = {}
 
 
 
+local Operand = {}
 
 
 
@@ -37,40 +44,13 @@ local OpCodes = {}
 
 
 
+local Expression = {}
 
 
 
 
+local Assembler = {}
 
-
-
-
-
-
-
-
-
-
-
-
-
-local Assembler = {Expression = {}, }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-local ByteCode = {}
 
 
 
@@ -89,6 +69,22 @@ local VirtualMachine = {}
 
 
 
+
+
+
+function VirtualMachine.new(bytecode)
+   local self = {
+      code = shallowCopy(bytecode),
+   }
+   self = setmetatable(self, { __index = VirtualMachine })
+end
+
+function VirtualMachine:run()
+   local ip = 1
+   while true do
+      local exp = self.code[ip]
+   end
+end
 
 local asm = Assembler.new()
 local bcode = asm:build()
