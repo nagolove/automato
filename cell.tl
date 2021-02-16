@@ -3,6 +3,7 @@ require "common"
 
 local inspect = require "inspect"
 local istate: CommonSetup
+local stat: Statistic
 local actions: CellActions
 
 -- t.pos, t.code
@@ -47,6 +48,7 @@ end
 
 function Cell:update(): boolean
     -- здесь работа vm
+    local isremoved: boolean
 
     -- прокрутка кода клетки по кругу
     if self.ip >= #self.code then
@@ -56,23 +58,20 @@ function Cell:update(): boolean
     if self.energy > 0 then
         local code = self.code[self.ip]
         --print("code", code)
-
-        --actions[code](cell)
-        
-        local isremoved = not actions[code](self)
-        --local isremoved = actions[code](cell)
-        --print("isremoved", isremoved)
-
+        isremoved = not actions[code](self)
         self.ip = self.ip + 1
         self.energy = self.energy - istate.denergy
-        return isremoved
     else
         print("cell died with energy", self.energy, "moves", inspect(self.moves))
-        return false
+        isremoved = true
+        -- увеличить количество умерших
+        stat.died = stat.died + 1
     end
+    return isremoved
 end
 
-function cellInitInternal(state: CommonSetup)
+function cellInitInternal(state: CommonSetup, s: Statistic)
     istate = shallowCopy(state)
     actions = state.cellActions
+    stat = s
 end

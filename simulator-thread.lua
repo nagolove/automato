@@ -4,6 +4,9 @@ require("love.timer")
 require("mtschemes")
 require("types")
 require("love")
+require("love.math")
+require('cell')
+
 
 
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
@@ -12,8 +15,6 @@ require("mobdebug").start()
 
 local threadNum = ...
 print("thread", threadNum, "is running")
-
-require('cell')
 
 local inspect = require("inspect")
 local serpent = require("serpent")
@@ -63,36 +64,23 @@ local emitInvSpeed = 100
 local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
 
-local ChannelsTypes = {
 
-   "cellrequest",
 
-   "drawlist",
 
-   "msg",
 
-   "object",
+local channels = initChannels(threadNum)
 
-   "ready",
 
-   "request",
 
-   "state",
-}
+for k, v in ipairs(ChannelsTypes) do
+   print("v", v, 'k', k)
 
-local function initChannels()
-   print(string.format("--- Thread %d initialize channels. ---", threadNum))
-   local result = {}
-   for _, v in ipairs(ChannelsTypes) do
-      local name = v .. tostring(threadNum)
-      print("get", name)
-      result[v] = love.thread.getChannel(name)
-   end
-   print("--- ---")
-   return result
+
+
 end
 
-local channels = initChannels()
+print("channels", inspect(channels))
+
 local cellActions = require("cell-actions")
 
 
@@ -274,8 +262,6 @@ function updateCells(cells)
          table.insert(alive, cell)
       else
          table.insert(removed, cell)
-
-         stat.died = stat.died + 1
       end
    end
    return alive
@@ -487,9 +473,11 @@ local function pushDrawList()
    end
 
 
-   if channels.data:getCount() < maxDataChannelCount then
-      channels.data:push(drawlist)
-   end
+   print('pushDrawList', inspect(drawlist))
+   channels.drawlist:push(drawlist)
+
+
+
 end
 
 function commands.info()
@@ -617,7 +605,16 @@ end
 
 local function doSetup()
    local setupName = "setup" .. threadNum
-   istate = love.thread.getChannel(setupName):pop()
+
+   print('\\\\\\\\\\\\\\\\')
+   for k, v in pairs(channels) do
+      print(k, v)
+   end
+   print('\\\\\\\\\\\\\\\\')
+   istate = channels.setup:pop()
+   if not istate then
+      error("No setup for thread " .. threadNum)
+   end
    istate.rg = rng
 
    if istate.mode == "step" then
@@ -675,7 +672,7 @@ local function doSetup()
 
    istate.rg = rng
    istate.cellActions = cellActions.actions
-   cellInitInternal(istate)
+   cellInitInternal(istate, stat)
 end
 
 local function step()
@@ -697,12 +694,11 @@ local function step()
 end
 
 local function main()
-   local syncChan = love.thread.getChannel("sync")
-   channels.ready:push("ready")
+
+
    timestamp = love.timer.getTime()
    while not stop do
       popCommand()
-
       if not free then
          if checkStep then
             if doStep then
@@ -712,23 +708,15 @@ local function main()
          else
             step()
          end
+         print("------- main cycle -----------")
          pushDrawList()
-
-         local _ = syncChan:demand(0.001)
-
-
-
-
          doStep = false
-
-         local iterChan = love.thread.getChannel("iter")
-         iterChan:push(iter)
       else
          love.timer.sleep(0.002)
       end
    end
-   channels.ready:clear()
-   channels.ready:push("free")
+
+
 end
 
 doSetup()

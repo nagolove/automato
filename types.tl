@@ -2,6 +2,8 @@ require "love"
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 require "mtschemes"
 
+local inspect = require "inspect"
+
 global type Pos = record
     x: number
     y: number
@@ -167,6 +169,36 @@ global type ThreadInfo = record
 end
 
 global type Channels = {string: love.thread.Channel}
+
+--global ChannelsTypes<const>: {string} = {
+global ChannelsTypes<const>: {string} = {
+    -- передача настроек инициализации
+    'setup',
+    -- запрос клетки
+    "cellrequest", 
+    -- получить графику для рисования клетки
+    "drawlist", 
+    -- прием сообщений с параметрами
+    "msg", 
+    -- получение объекта по координатам
+    "object",
+    -- готовность клетки?
+    --"ready",
+    -- запрос?
+    "request",
+    -- вернуть сохраненное состояние
+    "state",
+}
+
+function initChannels(n: number): Channels
+    local result: Channels = {}
+    for _, v in ipairs(ChannelsTypes as {string}) do
+        local name = v .. tostring(n)
+        result[v] = love.thread.getChannel(name)
+    end
+    print('initChannels', inspect(result))
+    return result
+end
 
 global type Simulator = record
 

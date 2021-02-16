@@ -107,16 +107,18 @@ function SimulatorRender:cameraToCenter()
 end
 
 function SimulatorRender:draw()
-   gr.setColor({ 1, 1, 1, 1 })
-   gr.setCanvas(self.canvas)
+   do
+      gr.setColor({ 1, 1, 1, 1 })
+      gr.setCanvas(self.canvas)
 
-   gr.clear({ 0, 0, 0, 1 })
+      gr.clear({ 0, 0, 0, 1 })
 
-   self:drawGrid()
-   self:drawCells()
+      self:drawGrid()
+      self:drawCells()
 
-   gr.setCanvas()
-   print("SimulatorRender:draw() self.canvas", self.canvas)
+      gr.setCanvas()
+   end
+
 
    self.cam:attach()
    gr.setColor({ 1, 1, 1, 1 })

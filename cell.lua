@@ -3,6 +3,7 @@ require("common")
 
 local inspect = require("inspect")
 local istate
+local stat
 local actions
 
 
@@ -47,6 +48,7 @@ end
 
 function Cell:update()
 
+   local isremoved
 
 
    if self.ip >= #self.code then
@@ -56,23 +58,20 @@ function Cell:update()
    if self.energy > 0 then
       local code = self.code[self.ip]
 
-
-
-
-      local isremoved = not actions[code](self)
-
-
-
+      isremoved = not actions[code](self)
       self.ip = self.ip + 1
       self.energy = self.energy - istate.denergy
-      return isremoved
    else
       print("cell died with energy", self.energy, "moves", inspect(self.moves))
-      return false
+      isremoved = true
+
+      stat.died = stat.died + 1
    end
+   return isremoved
 end
 
-function cellInitInternal(state)
+function cellInitInternal(state, s)
    istate = shallowCopy(state)
    actions = state.cellActions
+   stat = s
 end

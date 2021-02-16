@@ -84,10 +84,11 @@ local threadsInfo: {ThreadInfo}
 --local simulatorCanvas: love.graphics.Canvas
 
 local function loadLocales()
-    local files = love.filesystem.getDirectoryItems("locales")
+    local localePath = "scenes/automato/locales"
+    local files = love.filesystem.getDirectoryItems(localePath)
     print("locale files", inspect(files))
     for _, v in ipairs(files) do 
-        i18n.loadFile("locales/" .. v, function(path: string): any
+        i18n.loadFile(localePath .. "/" .. v, function(path: string): any
             local chunk, errmsg = love.filesystem.load(path)
             if not chunk then
                 error(errmsg)
@@ -95,6 +96,8 @@ local function loadLocales()
             return chunk
         end) 
     end
+    i18n.setLocale('en')
+    print("i18n", inspect(i18n))
 end
 
 --[[
@@ -289,6 +292,7 @@ local function writeState()
 end
 
 local function start()
+    --if sim.getMode() == "stop" then
     simulatorRender = SimulatorRender.new(commonSetup, cam)
     commonSetup.spreadPoint = { 
         x = math.floor(commonSetup.gridSize / 2),
@@ -298,42 +302,56 @@ local function start()
     commonSetup.mode = 'continuos'
     mode = 'continuos'
     sim.create(commonSetup)
+    --end
 end
 
 local function roundSettings()
     local _, status: number, boolean
 
-    commonSetup.nofood = imgui.Checkbox("no food", commonSetup.nofood)
+    commonSetup.nofood = imgui.Checkbox(i18n("nofood"), commonSetup.nofood)
 
-    commonSetup.cellsNum, status = imgui.SliderFloat("initial population", commonSetup.cellsNum, 0, maxCellsNum)
+    commonSetup.cellsNum, status = imgui.SliderFloat(i18n("initpopulation"), commonSetup.cellsNum, 0, maxCellsNum)
     commonSetup.cellsNum = math.ceil(commonSetup.cellsNum)
 
-    commonSetup.emitInvSpeed, status = imgui.SliderFloat("inverted emmision speed", commonSetup.emitInvSpeed, 0, 200)
+    commonSetup.emitInvSpeed, status = imgui.SliderFloat(i18n("invemmspeed"), commonSetup.emitInvSpeed, 0, 200)
     commonSetup.emitInvSpeed = math.ceil(commonSetup.emitInvSpeed)
 
-    commonSetup.denergy, status = imgui.SliderFloat("decrease enerby by", commonSetup.denergy, 0, 1)
+    commonSetup.denergy, status = imgui.SliderFloat(i18n("decreaseenby"), commonSetup.denergy, 0, 1)
 
-    commonSetup.foodenergy, status = imgui.SliderFloat("food energy", commonSetup.foodenergy, 0, 10)
+    commonSetup.foodenergy, status = imgui.SliderFloat(i18n("foodenergy"), commonSetup.foodenergy, 0, 10)
 
-    commonSetup.gridSize, status = imgui.SliderInt("grid size", commonSetup.gridSize, 10, 100)
+    commonSetup.gridSize, status = imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, 10, 100)
     if simulatorRender and status then
         simulatorRender:draw()
         simulatorRender:cameraToCenter()
     end
 
-    commonSetup.threadCount, status = imgui.SliderInt("thread count", commonSetup.threadCount, 1, 9)
+    commonSetup.threadCount, status = imgui.SliderInt(i18n("threadcount"), commonSetup.threadCount, 1, 9)
     commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
     if simulatorRender and status then
         simulatorRender:draw()
         simulatorRender:cameraToCenter()
     end
 
-    status = imgui.Checkbox("start in step mode", startInStepMode)
+    status = imgui.Checkbox(i18n("startinsmode"), startInStepMode)
     startInStepMode = status
 
     if startInStepMode then
         commonSetup.mode = "step"
     end
+end
+
+local function stop()
+    --collectgarbage()
+    --profi:stop()
+    --profi:setSortMethod("duration")
+    --profi:writeReport("init-profile-1.txt")
+    --profi:setSortMethod("count")
+    --profi:writeReport("init-profile-2.txt")
+    sim.shutdown()
+    --prof.pop()
+    --prof.write('prof.mpack')
+    --print("written")
 end
 
 local function drawui()
@@ -352,7 +370,7 @@ local function drawui()
 
     imgui.Text(string.format("mode %s", mode))
 
-    if imgui.Button("change mode") then
+    if imgui.Button(i18n("changemode")) then
         nextMode()
     end
 
@@ -360,36 +378,20 @@ local function drawui()
         roundSettings()
     end
 
-    if imgui.Button("start") then
+    if imgui.Button(i18n("start")) then
         start()
-        --profi:start()
-        --sim.setMode("step")
     end
+
     imgui.SameLine()
-    if imgui.Button("stp") then
-        --collectgarbage()
-
-        --profi:stop()
-        --profi:setSortMethod("duration")
-        --profi:writeReport("init-profile-1.txt")
-        --profi:setSortMethod("count")
-        --profi:writeReport("init-profile-2.txt")
-        sim.shutdown()
-
-        prof.pop()
-        prof.write('prof.mpack')
-        print("written")
+    if imgui.Button(i18n("stp")) then
+        stop()
     end
 
-    --if imgui.Button("step") then
-        --sim.step()
-    --end
-
-    if imgui.Button("read state") then
+    if imgui.Button(i18n("readstate")) then
         writeState()
     end
     imgui.SameLine()
-    if imgui.Button("write state") then
+    if imgui.Button(i18n("writestate")) then
         writeState()
     end
     imgui.SameLine()
@@ -400,7 +402,6 @@ local function drawui()
     if imgui.Button(">>") then
         writeState()
     end
-
 
     --imgui.Text(replaceCaret(inspect(sim.getStatistic)) as string)
 
@@ -626,11 +627,7 @@ local function bindKeys()
         "keypressed",
         { key = 'space' },
         function(sc: Shortcut): boolean, Shortcut
-            if sim.getMode() == "stop" then
-                sim.create(commonSetup)
-                --else
-                --sim.step()
-            end
+            start()
             return false, sc
         end,
         'start',

@@ -26,50 +26,30 @@ local threadCount = -1
 
 local mode = "stop"
 
-local ChannelsTypes = {
-   "cellrequest",
-   "data",
-   "msg",
-   "object",
-   "ready",
-   "request",
-   "state",
-}
-
-local function initChannels(n)
-   print("--- Simulator initialize channels. ---")
-   local result = {}
-   for _, v in ipairs(ChannelsTypes) do
-      local name = v .. tostring(n)
-      print("get", name)
-      result[v] = love.thread.getChannel(name)
-   end
-   print("--- ---")
-   return result
-end
-
 local channels = {}
+
+
+
+
 
 function Simulator.getDrawLists()
    local list = {}
+   print("channels", inspect(channels))
+
    for k, _ in ipairs(threads) do
+      local drawlist = channels[k].drawlist
+      print("datachannel", inspect(drawlist))
+      if drawlist then
+         local sublist = drawlist:pop()
 
-
-
-
-      local datachannel = channels[k].data
-      print("datachannel", inspect(datachannel))
-      if datachannel then
-
-         local sublist = datachannel:demand(0.1)
          if sublist then
             for _, v1 in ipairs(sublist) do
                table.insert(list, v1)
             end
          end
       end
-
    end
+   print("getDrawLists", inspect(list))
    return list
 end
 

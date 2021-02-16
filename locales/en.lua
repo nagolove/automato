@@ -1,6 +1,24 @@
 return {
     language = "English", 
     en = {
+        nofood = 'no food',
+        initpopulation = 'initial population',
+        invemmspeed = 'inverted emmision speed',
+        decreaseenby = 'decrease energy by',
+        foodenergy = 'food energy',
+        gridsize = 'grid size',
+        threadcount = 'thread count',
+        startinsmode = 'start in step mode',
+        start = 'start',
+        changemode = 'change mode',
+        stp = 'stp',
+        readstate = 'read state',
+        writestate = 'write state',
+
+
+
+
+
         pos = "Position", -- пространство(??)
         position = "Position", 
         sound = "Sound",

@@ -26,50 +26,30 @@ local threadCount: number = -1
 -- режим работы - протяженный, пошаговый или стоп
 local mode: SimulatorMode = "stop" -- "step"
 
-local ChannelsTypes: {string} = {
-    "cellrequest", 
-    "data", 
-    "msg", 
-    "object",
-    "ready",
-    "request",
-    "state",
-}
-
-local function initChannels(n: number): Channels
-    print("--- Simulator initialize channels. ---")
-    local result: Channels = {}
-    for _, v in ipairs(ChannelsTypes as {string}) do
-        local name = v .. tostring(n)
-        print("get", name)
-        result[v] = love.thread.getChannel(name)
-    end
-    print("--- ---")
-    return result
-end
-
 local channels: {Channels} = {}
+
+--[[
+channels[1].cellrequest:push()
+--]]
 
 function Simulator.getDrawLists(): {DrawNode}
     local list = {}
+    print("channels", inspect(channels))
+    --os.exit()
     for k, _ in ipairs(threads) do
-        -- тормозная строчка?
-        --local readyChan = love.thread.getChannel("ready" .. k)
-        --if readyChan:peek() == "ready" then
-            --local chan = love.thread.getChannel("data" .. k)
-            local datachannel = channels[k].data
-            print("datachannel", inspect(datachannel))
-            if datachannel then
-                --local sublist: {DrawNode} = chan:pop() as {DrawNode}
-                local sublist: {DrawNode} = datachannel:demand(0.1) as {DrawNode}
-                if sublist then
-                    for _, v1 in ipairs(sublist) do
-                        table.insert(list, v1)
-                    end
+        local drawlist = channels[k].drawlist
+        print("datachannel", inspect(drawlist))
+        if drawlist then
+            local sublist: {DrawNode} = drawlist:pop() as {DrawNode}
+            --local sublist: {DrawNode} = drawlist:demand(0.02) as {DrawNode}
+            if sublist then
+                for _, v1 in ipairs(sublist) do
+                    table.insert(list, v1)
                 end
             end
-        --end
+        end
     end
+    print("getDrawLists", inspect(list))
     return list
 end
 

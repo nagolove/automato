@@ -107,6 +107,7 @@ function SimulatorRender:cameraToCenter()
 end
 
 function SimulatorRender:draw()
+    do
         gr.setColor{1, 1, 1, 1}
         gr.setCanvas(self.canvas)
         --gr.clear{1, 1, 1, 1}
@@ -116,22 +117,23 @@ function SimulatorRender:draw()
         self:drawCells()
 
         gr.setCanvas()
-        print("SimulatorRender:draw() self.canvas", self.canvas)
+    end
+    --print("SimulatorRender:draw() self.canvas", self.canvas)
 
-        self.cam:attach()
-        gr.setColor{1, 1, 1, 1}
-        --local sx, sy = 0.5, 0.5
-        local sx, sy = 1, 1 
+    self.cam:attach()
+    gr.setColor{1, 1, 1, 1}
+    --local sx, sy = 0.5, 0.5
+    local sx, sy = 1, 1 
 
-        gr.draw(
-            self.canvas as love.graphics.Drawable,
-            0, 
-            0, 
-            0.0,
-            sx,
-            sy
-        )
-        self.cam:detach()
+    gr.draw(
+        self.canvas as love.graphics.Drawable,
+        0, 
+        0, 
+        0.0,
+        sx,
+        sy
+    )
+    self.cam:detach()
 end
 
 function SimulatorRender:update(_: number)
