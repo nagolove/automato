@@ -141,6 +141,11 @@ function SimulatorRender:draw()
         sy
     )
     self.cam:detach()
+
+    local font = love.graphics.newFont("fonts/DroidSansMono.ttf", 32)
+    gr.setFont(font)
+    gr.setColor(1, 1, 1)
+    gr.print('привет галактика!', 100, 100)
 end
 
 function SimulatorRender:update(_: number)

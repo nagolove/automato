@@ -516,19 +516,20 @@ end
 
 function commands.isalive()
    local x, y = channels.msg:pop(), channels.msg:pop()
-   if not x or not y or not threadNum then
+
+   if type(x) ~= 'number' or type(y) ~= 'number' then
       assert(string.format("x, y " .. x .. " " .. y .. " threadNum " .. threadNum))
    end
 
 
-
+   print('isalive', type(x), type(y), type(threadNum))
 
 
    local ok, errmsg = pcall(function()
 
-      assert(type(x) == 'number')
-      assert(type(y) == 'number')
-      assert(type(gridSize) == 'number')
+
+
+
 
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
          local cell = grid[x][y]

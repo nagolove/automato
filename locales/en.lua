@@ -15,9 +15,26 @@ return {
         readstate = 'read state',
         writestate = 'write state',
 
-
-
-
+        stat = {
+            -- съедено клеток
+            allEated = 'all cell eated',
+            -- максимальная энергия клетки
+            maxEnergy = 'maximum cell energy',
+            -- минимальная энергия клетки
+            minEnergy = 'minimal cell energy',
+            -- среднее значение энергии клеток
+            midEnergy = 'median cells energy',
+            -- количество клеток
+            cells = 'cells number',
+            -- сделано циклов
+            iterations = 'cycles done',
+            -- количество клеток еды
+            meals = 'nutrition amount',
+            -- количество рожденных клеток
+            born = 'born cells',
+            -- количество умерших клеток
+            died = 'died cells',
+        },
 
         pos = "Position", -- пространство(??)
         position = "Position", 

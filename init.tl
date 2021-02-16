@@ -647,6 +647,21 @@ local function bindKeys()
         'start',
         'start'
     )
+    
+    KeyConfig.bind(
+        'keypressed',
+        { key = 'l' },
+        function(sc: Shortcut): boolean, Shortcut
+            if i18n.getLocale() == 'en' then
+                i18n.setLocale('ru')
+            elseif i18n.getLocale() == 'ru' then
+                i18n.setLocale('en')
+            end
+            return false, sc
+        end,
+        'change locale',
+        'chlocale'
+    )
 
 end
 
