@@ -18,16 +18,17 @@ local camera = require "camera"
 local gr = love.graphics
 local imgui = require "imgui"
 local inspect = require "inspect"
---local keyconfig = require "keyconfig"
 local mtschemes = require "mtschemes"
 local prof = require "jprof"
 local sim = require "simulator"
 local startInStepMode = false
 local timer = require "Timer"
 local binds = require "binds"
+local i18n = require "i18n"
 --local profi = require "profi"
 
-global PROF_CAPTURE = true
+--global PROF_CAPTURE = true
+global PROF_CAPTURE = false
 
 local type ViewState = enum
     "sim"
@@ -81,6 +82,20 @@ local maxCellsNum = 5000
 local infoTimer: Timer = timer.new()
 local threadsInfo: {ThreadInfo}
 --local simulatorCanvas: love.graphics.Canvas
+
+local function loadLocales()
+    local files = love.filesystem.getDirectoryItems("locales")
+    print("locale files", inspect(files))
+    for _, v in ipairs(files) do 
+        i18n.loadFile("locales/" .. v, function(path: string): any
+            local chunk, errmsg = love.filesystem.load(path)
+            if not chunk then
+                error(errmsg)
+            end
+            return chunk
+        end) 
+    end
+end
 
 --[[
 local function drawStatisticTable()
@@ -625,7 +640,7 @@ local function bindKeys()
 end
 
 local function init()
-    math.randomseed(love.timer.getTime())
+    loadLocales()
     local mx, my = love.mouse.getPosition()
     underCursor = {x = mx, y = my}
 

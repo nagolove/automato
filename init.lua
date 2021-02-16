@@ -18,7 +18,6 @@ local camera = require("camera")
 local gr = love.graphics
 local imgui = require("imgui")
 local inspect = require("inspect")
-
 local mtschemes = require("mtschemes")
 local prof = require("jprof")
 local sim = require("simulator")
@@ -27,7 +26,8 @@ local timer = require("Timer")
 local binds = require("binds")
 
 
-PROF_CAPTURE = true
+
+PROF_CAPTURE = false
 
 local ViewState = {}
 
