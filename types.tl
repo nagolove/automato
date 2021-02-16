@@ -87,6 +87,7 @@ global type Statistic = record
         "meals"
         "born"
         "died"
+        'percentAreaFilled'
     end
 
     -- съедено клеток
@@ -107,6 +108,8 @@ global type Statistic = record
     born: number
     -- количество умерших клеток
     died: number
+    -- процент заполнения площади поля
+    percentAreaFilled: number
 
     --[[
     Как собирать и где хранить информацию: 
@@ -163,6 +166,19 @@ global type ThreadCommands = enum
     -- сохранить состояние на диск
     "writestate"
 end
+
+global formatMods<const>: {Statistic.Types:string} = {
+    ['allEated'] = '%d',
+    ['maxEnergy'] = '%d',
+    ['minEnergy'] = '%d',
+    ['midEnergy'] = '%d',
+    ['cells'] = '%d',
+    ['iterations'] = '%d',
+    ['meals'] = '%d',
+    ['born'] = '%d',
+    ['died'] = '%d',
+    ['percentAreaFilled'] = '%f',
+}
 
 global type ThreadInfo = record
     -- сколько на момент запроса живых клетор

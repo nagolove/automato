@@ -274,8 +274,8 @@ local function printStat()
       for k, v in pairs(st) do
 
 
-         print('k, v', k, v)
-         imgui.Text(string.format("%s: %d", k, v))
+
+         imgui.Text(string.format('%s:' .. formatMods[k], k, v))
       end
    end
 end

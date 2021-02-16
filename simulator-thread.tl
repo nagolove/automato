@@ -123,27 +123,34 @@ function gatherStatistic(cells: {Cell}): Statistic
   local maxEnergy = 0
   local minEnergy = istate.initialEnergy[2]
   local sumEnergy = 0
+  local square = gridSize * gridSize
+  local i = 0
 
   -- зачем?
   for _, v in ipairs(cells) do
-    if v.energy > maxEnergy then
-      maxEnergy = v.energy
-    end
-    if v.energy < minEnergy then
-      minEnergy = v.energy
-    end
-    sumEnergy = sumEnergy + v.energy
+      if v.energy and v.energy > 0 then
+          i = i + 1
+      end
+      if v.energy > maxEnergy then
+          maxEnergy = v.energy
+      end
+      if v.energy < minEnergy then
+          minEnergy = v.energy
+      end
+      sumEnergy = sumEnergy + v.energy
   end
 
   --local num = #cells > 0 and #cells or 1
   if sumEnergy == 0 then
     sumEnergy = 1
   end
+  print('square, i', square, i)
   return { 
     maxEnergy = maxEnergy,
     minEnergy = minEnergy,
     midEnergy = sumEnergy / #cells,
     allEated = cellActions.getAllEated(),
+    percentAreaFilled = i / square,
   }
 end
 
@@ -173,6 +180,7 @@ local accum = 0
 Сделать возможность генерации пищи не на каждом шагу симуляции
 --]]
 function emitFood(_: number)
+
     --print("math.log(iter)", math.log(iter) / 1)
     --for i = 1, math.log(iter) do
     --print("cellId", cellId)
@@ -385,7 +393,19 @@ local function experiment()
 
     grid = getFalseGrid()
     updateGrid()
-    stat = gatherStatistic(cells)
+
+    stat = {
+        allEated = 0,
+        maxEnergy = 0,
+        minEnergy = 0,
+        midEnergy = 0,
+        cells = 0,
+        iterations = 0,
+        meals = 0,
+        born = 0,
+        died = 0,
+        percentAreaFilled = 0,
+    }
 
     coroutine.yield()
     local ok, errmsg = coroutine.resume(cellEmitCoro, iter) as (boolean, string)

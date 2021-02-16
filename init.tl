@@ -274,8 +274,8 @@ local function printStat()
         for k, v in pairs(st as {string: number}) do
             --imgui.Text(string.format("%s: %d", st[v as Statistic.Types], v))
             --imgui.Text(string.format("%s: %d", (st as {string:number)[k], v))
-            print('k, v', k, v)
-            imgui.Text(string.format("%s: %d", k, v))
+            --print('k, v', k, v)
+            imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
         end
     end
 end
