@@ -217,28 +217,33 @@ local accum = 0
 Сделать возможность генерации пищи не на каждом шагу симуляции
 --]]
 function emitFood(_: number)
-    if istate.nofood then
-        return
-    end
-
-    accum = accum + foodGenerationSpeed
-
     --print("math.log(iter)", math.log(iter) / 1)
     --for i = 1, math.log(iter) do
     --print("cellId", cellId)
     --print("math.log(iter)", math.log(cellId) / 1)
     --for i = 1, math.floor(math.log(cellId)) do
-    if accum > 1 then
-        accum = 0
-        for i = 0, math.floor(accum) do
-            --print(i, accum)
-            local emited, _ = emitFoodInRandomPoint()
-            if not emited then
-                -- здесь исследовать причины смерти яцейки
-                --print("not emited gridcell", inspect(gridcell))
-            end
+
+    while true do
+        if istate.nofood then
+            --return
+            coroutine.yield()
         end
 
+        accum = accum + foodGenerationSpeed
+
+        if accum > 1 then
+            accum = 0
+            for i = 0, math.floor(accum) do
+                --print(i, accum)
+                local emited, _ = emitFoodInRandomPoint()
+                if not emited then
+                    -- здесь исследовать причины смерти яцейки
+                    --print("not emited gridcell", inspect(gridcell))
+                end
+            end
+
+        end
+        coroutine.yield()
     end
 end
 
@@ -398,6 +403,8 @@ end
 
 local function experiment()
     local cellEmitCoro: thread = coroutine.create(emitCell)
+    local emitFoodCoro: thread = coroutine.create(emitFood)
+
     iter = 0
     lastEmitIter = 0
 
@@ -406,12 +413,8 @@ local function experiment()
     stat= gatherStatistic(cells)
 
     coroutine.yield()
-
-    print("hello from coro")
-    print("#cells", #cells)
-
     coroutine.resume(cellEmitCoro, iter)
-    print("start with", #cells, "cells")
+    print("#Experiment started with", #cells)
 
     --while #cells > 0 do
     -- если нет живых клеток, то вставать на паузу, но сохранять возможность
@@ -422,17 +425,15 @@ local function experiment()
         if cellEmitCoro and not coroutine.resume(cellEmitCoro, iter) then
             cellEmitCoro = nil
         end
-
-        --print("step", iter, " of thread", threadNum)
-        --print("#cells", #cells)
-
-        -- создать сколько-то еды
-        emitFood(iter)
+        -- создание питания
+        if emitFoodCoro and not coroutine.resume(emitFoodCoro, iter) then
+            emitFoodCoro = nil
+        end
 
         -- проход по списку клеток и вызов их программ. уничтожение некоторых клеток
         cells = updateCells(cells)
 
-        -- проход по списку еды и проверка на съеденность.
+        -- проход по списку питания и проверка на съеденность.
         meals = updateMeal(meals)
 
         -- сброс решетки

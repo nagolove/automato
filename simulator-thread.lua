@@ -40,7 +40,7 @@ local cellsNum
 
 local iter = 0
 
-local statistic = {}
+local stat = {}
 
 local meals = {}
 
@@ -124,7 +124,7 @@ end
 local codeValues = getCodeValues()
 print("codeValues", inspect(codeValues))
 
-local actions
+
 local removed = {}
 local experimentCoro
 
@@ -167,6 +167,8 @@ function gatherStatistic(cells)
    local maxEnergy = 0
    local minEnergy = istate.initialEnergy[2]
    local sumEnergy = 0
+
+
    for _, v in ipairs(cells) do
       if v.energy > maxEnergy then
          maxEnergy = v.energy
@@ -176,6 +178,7 @@ function gatherStatistic(cells)
       end
       sumEnergy = sumEnergy + v.energy
    end
+
 
    if sumEnergy == 0 then
       sumEnergy = 1
@@ -214,28 +217,33 @@ local accum = 0
 
 
 function emitFood(_)
-   if istate.nofood then
-      return
-   end
-
-   accum = accum + foodGenerationSpeed
 
 
 
 
 
 
-   if accum > 1 then
-      accum = 0
-      for i = 0, math.floor(accum) do
+   while true do
+      if istate.nofood then
 
-         local emited, _ = emitFoodInRandomPoint()
-         if not emited then
-
-
-         end
+         coroutine.yield()
       end
 
+      accum = accum + foodGenerationSpeed
+
+      if accum > 1 then
+         accum = 0
+         for i = 0, math.floor(accum) do
+
+            local emited, _ = emitFoodInRandomPoint()
+            if not emited then
+
+
+            end
+         end
+
+      end
+      coroutine.yield()
    end
 end
 
@@ -267,7 +275,7 @@ function updateCells(cells)
       else
          table.insert(removed, cell)
 
-         statistic.died = statistic.died + 1
+         stat.died = stat.died + 1
       end
    end
    return alive
@@ -395,20 +403,20 @@ end
 
 local function experiment()
    local cellEmitCoro = coroutine.create(emitCell)
+   local emitFoodCoro = coroutine.create(emitFood)
+
    iter = 0
    lastEmitIter = 0
 
    grid = getFalseGrid()
    updateGrid()
-   statistic = gatherStatistic(cells)
+   stat = gatherStatistic(cells)
 
    coroutine.yield()
-
-   print("hello from coro")
-   print("#cells", #cells)
-
    coroutine.resume(cellEmitCoro, iter)
-   print("start with", #cells, "cells")
+   print("#Experiment started with", #cells)
+
+
 
 
    while true do
@@ -418,11 +426,9 @@ local function experiment()
          cellEmitCoro = nil
       end
 
-
-
-
-
-      emitFood(iter)
+      if emitFoodCoro and not coroutine.resume(emitFoodCoro, iter) then
+         emitFoodCoro = nil
+      end
 
 
       cells = updateCells(cells)
@@ -437,7 +443,7 @@ local function experiment()
       updateGrid()
 
 
-
+      stat = gatherStatistic(cells)
 
       iter = iter + 1
 
@@ -665,7 +671,7 @@ local function doSetup()
    })
 
 
-   actions = cellActions.actions
+
 
    istate.rg = rng
    istate.cellActions = cellActions.actions

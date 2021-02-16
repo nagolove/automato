@@ -18,7 +18,7 @@ local camera = require "camera"
 local gr = love.graphics
 local imgui = require "imgui"
 local inspect = require "inspect"
-local keyconfig = require "keyconfig"
+--local keyconfig = require "keyconfig"
 local mtschemes = require "mtschemes"
 local prof = require "jprof"
 local sim = require "simulator"
@@ -54,7 +54,7 @@ print("graphics size", gr.getWidth(), gr.getHeight())
 --local lastGraphicPoint
 
 -- режим работы - непрерывный или пошаговый continuos, bystep
-local mode: SimulatorMode = "continuos"
+local mode: SimulatorMode = "stop"
 
 --[[
 --Начальные установки симуляции
@@ -81,10 +81,6 @@ local maxCellsNum = 5000
 local infoTimer: Timer = timer.new()
 local threadsInfo: {ThreadInfo}
 --local simulatorCanvas: love.graphics.Canvas
-
-local function getMode(): SimulatorMode
-    return mode
-end
 
 --[[
 local function drawStatisticTable()
@@ -284,28 +280,13 @@ local function start()
         y = math.floor(commonSetup.gridSize / 2)
     }
     commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
+    commonSetup.mode = 'continuos'
+    mode = 'continuos'
     sim.create(commonSetup)
 end
 
-local function drawui()
-    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
-
-    local num, status: number, boolean
-    num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
-    if status then
-        selectedPreset = num
-        activatePreset(num)
-    end
-
-    if imgui.Button("save preset") then
-        -- TODO открыть режим модального диалога
-    end
-
-    imgui.Text(string.format("mode %s", getMode()))
-
-    if imgui.Button("change mode", getMode()) then
-        nextMode()
-    end
+local function roundSettings()
+    local _, status: number, boolean
 
     commonSetup.nofood = imgui.Checkbox("no food", commonSetup.nofood)
 
@@ -338,8 +319,39 @@ local function drawui()
     if startInStepMode then
         commonSetup.mode = "step"
     end
+end
 
-    if imgui.Button("reset silumation") then
+local function drawui()
+    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
+
+    local num, status: number, boolean
+    num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
+    if status then
+        selectedPreset = num
+        activatePreset(num)
+    end
+
+    --if imgui.Button("save preset") then
+        ---- TODO открыть режим модального диалога
+    --end
+
+    imgui.Text(string.format("mode %s", mode))
+
+    if imgui.Button("change mode") then
+        nextMode()
+    end
+
+    if sim.getMode() == "stop" then
+        roundSettings()
+    end
+
+    if imgui.Button("start") then
+        start()
+        --profi:start()
+        --sim.setMode("step")
+    end
+    imgui.SameLine()
+    if imgui.Button("stp") then
         --collectgarbage()
 
         --profi:stop()
@@ -354,19 +366,26 @@ local function drawui()
         print("written")
     end
 
-    if imgui.Button("start") then
-        start()
-        --profi:start()
-        --sim.setMode("step")
-    end
+    --if imgui.Button("step") then
+        --sim.step()
+    --end
 
-    if imgui.Button("step") then
-        sim.step()
+    if imgui.Button("read state") then
+        writeState()
     end
-
+    imgui.SameLine()
     if imgui.Button("write state") then
         writeState()
     end
+    imgui.SameLine()
+    if imgui.Button("<<") then
+        writeState()
+    end
+    imgui.SameLine()
+    if imgui.Button(">>") then
+        writeState()
+    end
+
 
     --imgui.Text(replaceCaret(inspect(sim.getStatistic)) as string)
 
@@ -490,29 +509,6 @@ local function update(dt: number)
     --checkMouse()
 end
 
-function setViewState(stateName: ViewState)
-    viewState = stateName
-end
-
-local function keypressed(key: string)
-    if key == "1" then
-        setViewState("sim")
-    elseif key == "2" then
-        setViewState("graph")
-    elseif key == "p" then
-        nextMode()
-    elseif key == "s" then
-        sim.doStep()
-    elseif key == "space" then
-        --[[ TODO Запуск и пауза/продолжение ]]
-        --if sim.getMode() == "stop" then
-            --sim.create(commonSetup)
-        --else
-            --sim.step()
-        --end
-    end
-end
-
 local function loadPresets()
     local chunk, errmsg = love.filesystem.load("scenes/automato/presets.lua")
     print("chunk, errmsg", chunk, errmsg)
@@ -589,6 +585,43 @@ local function bindKeys()
         "graph4"
     )
 
+    KeyConfig.bind(
+        "keypressed",
+        { key = 'p' },
+        function(sc: Shortcut): boolean, Shortcut
+            nextMode()
+            return false, sc
+        end,
+        'switch simulator to next execution mode',
+        'nextmode'
+    )
+
+    KeyConfig.bind(
+        "keypressed",
+        { key = 's' },
+        function(sc: Shortcut): boolean, Shortcut
+            sim.doStep()
+            return false, sc
+        end,
+        'do a simulation step',
+        'step'
+    )
+
+    KeyConfig.bind(
+        "keypressed",
+        { key = 'space' },
+        function(sc: Shortcut): boolean, Shortcut
+            if sim.getMode() == "stop" then
+                sim.create(commonSetup)
+                --else
+                --sim.step()
+            end
+            return false, sc
+        end,
+        'start',
+        'start'
+    )
+
 end
 
 local function init()
@@ -642,15 +675,15 @@ end
 
 local function wheelmoved(_: number, y: number)
     if y == -1 then
-        keyconfig.send("zoomin")
+        KeyConfig.send("zoomin")
     else
-        keyconfig.send("zoomout")
+        KeyConfig.send("zoomout")
     end
 end
 
 return {
-    getMode = getMode,
-    nextMode = nextMode,
+    --getMode = getMode,
+    --nextMode = nextMode,
 
     cam = cam, 
 
@@ -662,8 +695,7 @@ return {
     draw = draw,
     drawui = drawui,
     update = update,
-    keypressed = keypressed,
+    --keypressed = keypressed,
     mousemoved = mousemoved,
     wheelmoved = wheelmoved
 }
---]]
