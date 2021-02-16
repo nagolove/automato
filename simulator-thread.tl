@@ -40,7 +40,7 @@ local cellsNum: number
 -- текущая итерация
 local iter: number = 0
 -- таблица общей статистики
-local statistic: Statistic = {}
+local stat: Statistic = {}
 -- список еды
 local meals: {Cell} = {}
 -- флаг остановки потока 
@@ -124,7 +124,7 @@ end
 local codeValues = getCodeValues()
 print("codeValues", inspect(codeValues))
 
-local actions: CellActions
+--local actions: CellActions
 local removed: {Cell} = {}
 local experimentCoro: thread
 
@@ -167,6 +167,8 @@ function gatherStatistic(cells: {Cell}): Statistic
   local maxEnergy = 0
   local minEnergy = istate.initialEnergy[2]
   local sumEnergy = 0
+
+  -- зачем?
   for _, v in ipairs(cells) do
     if v.energy > maxEnergy then
       maxEnergy = v.energy
@@ -176,6 +178,7 @@ function gatherStatistic(cells: {Cell}): Statistic
     end
     sumEnergy = sumEnergy + v.energy
   end
+
   --local num = #cells > 0 and #cells or 1
   if sumEnergy == 0 then
     sumEnergy = 1
@@ -267,7 +270,7 @@ function updateCells(cells: {Cell}): {Cell}
     else
       table.insert(removed, cell)
       -- увеличить количество умерших
-      statistic.died = statistic.died + 1
+      stat.died = stat.died + 1
     end
   end
   return alive
@@ -400,7 +403,7 @@ local function experiment()
 
     grid = getFalseGrid()
     updateGrid()
-    statistic = gatherStatistic(cells)
+    stat= gatherStatistic(cells)
 
     coroutine.yield()
 
@@ -411,6 +414,8 @@ local function experiment()
     print("start with", #cells, "cells")
 
     --while #cells > 0 do
+    -- если нет живых клеток, то вставать на паузу, но сохранять возможность
+    -- вставки клеток через сообщение insertcell
     while true do
 
         -- создание клеток
@@ -437,7 +442,7 @@ local function experiment()
         updateGrid()
 
         -- обновить статистику за такт
-        --statistic = gatherStatistic()
+        stat = gatherStatistic(cells)
 
         iter = iter + 1
 
@@ -665,7 +670,7 @@ local function doSetup()
     })
 
     -- установка ссылки на таблицу действий - язык клетки.
-    actions = cellActions.actions
+    --actions = cellActions.actions
 
     istate.rg = rng
     istate.cellActions = cellActions.actions
