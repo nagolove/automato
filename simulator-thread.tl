@@ -187,6 +187,7 @@ function emitFood(_: number)
 
         accum = accum + foodGenerationSpeed
 
+        --[[
         if accum > 1 then
             accum = 0
             for i = 0, math.floor(accum) do
@@ -197,8 +198,22 @@ function emitFood(_: number)
                     --print("not emited gridcell", inspect(gridcell))
                 end
             end
-
         end
+        --]]
+
+        --for i = 0, math.floor(iter) do
+        for i = 0, math.floor(math.log(iter)) do
+            --print(i, accum)
+
+            emitFoodInRandomPoint()
+
+            --local emited, _ = emitFoodInRandomPoint()
+            --if not emited then
+                ---- здесь исследовать причины смерти яцейки
+                ----print("not emited gridcell", inspect(gridcell))
+            --end
+        end
+
         coroutine.yield()
     end
 end

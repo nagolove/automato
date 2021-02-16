@@ -56,6 +56,7 @@ print("graphics size", gr.getWidth(), gr.getHeight())
 
 
 local mode = "stop"
+local foodProduction = ''
 
 
 
@@ -419,6 +420,8 @@ local function drawui()
    if imgui.Button(">>") then
       writeState()
    end
+
+   foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300, 200);
 
 
 

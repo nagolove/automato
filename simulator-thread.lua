@@ -187,18 +187,33 @@ function emitFood(_)
 
       accum = accum + foodGenerationSpeed
 
-      if accum > 1 then
-         accum = 0
-         for i = 0, math.floor(accum) do
-
-            local emited, _ = emitFoodInRandomPoint()
-            if not emited then
 
 
-            end
-         end
+
+
+
+
+
+
+
+
+
+
+
+
+
+      for i = 0, math.floor(math.log(iter)) do
+
+
+         emitFoodInRandomPoint()
+
+
+
+
+
 
       end
+
       coroutine.yield()
    end
 end

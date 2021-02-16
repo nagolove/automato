@@ -56,6 +56,7 @@ print("graphics size", gr.getWidth(), gr.getHeight())
 
 -- режим работы - непрерывный или пошаговый continuos, bystep
 local mode: SimulatorMode = "stop"
+local foodProduction: string = ''
 
 --[[
 --Начальные установки симуляции
@@ -419,6 +420,8 @@ local function drawui()
     if imgui.Button(">>") then
         writeState()
     end
+
+    foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300, 200);
 
     --imgui.Text(replaceCaret(inspect(sim.getStatistic)) as string)
 
