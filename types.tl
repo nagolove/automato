@@ -35,6 +35,7 @@ global type CommonSetup = record
     cellsNum: number
     -- разброс границы энергии клетки при создании, массив двух элементов
     initialEnergy: {number, number}
+    -- длина кода генерируемого новой клетке
     codeLen: number
     nofood: boolean
     denergy: number
@@ -77,6 +78,10 @@ end
 global type Statistic = record
 
     enum Types
+        'allEated'
+        'maxEnergy'
+        'minEnergy'
+        'midEnergy'
         "cells"
         "iterations"
         "meals"
@@ -84,15 +89,17 @@ global type Statistic = record
         "died"
     end
 
+    -- съедено клеток
     allEated: number
+    -- максимальная энергия клетки
     maxEnergy: number
+    -- минимальная энергия клетки
     minEnergy: number
+    -- среднее значение энергии клеток
     midEnergy: number
-    iterAverage: number
-
     -- количество клеток
     cells: number
-    -- пройдено итераций
+    -- сделано циклов
     iterations: number
     -- количество клеток еды
     meals: number
@@ -170,7 +177,6 @@ end
 
 global type Channels = {string: love.thread.Channel}
 
---global ChannelsTypes<const>: {string} = {
 global ChannelsTypes<const>: {string} = {
     -- передача настроек инициализации
     'setup',
@@ -188,6 +194,9 @@ global ChannelsTypes<const>: {string} = {
     "request",
     -- вернуть сохраненное состояние
     "state",
+
+    -- статистика за определенный период
+    'stat',
 }
 
 function initChannels(n: number): Channels
@@ -214,6 +223,7 @@ global type Simulator = record
     end
 
     create: function(CommonSetup)
+    update: function()
     -- записать состояние симулятора для последующего восстановления
     writeState: function(): string
     -- послать всем потокам выключение
@@ -225,7 +235,7 @@ global type Simulator = record
     getObject : function(number, number): Cell
     step : function()
     doStep : function()
-    getStatistic : function(): Statistic
+    getStatistic : function(): {Statistic}
     getIter : function(): number
     getGridSize : function(): number
     getSchema : function()

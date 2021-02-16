@@ -35,8 +35,6 @@ local grid = {}
 
 local gridSize
 
-local codeLen
-
 local cellsNum
 
 local iter = 0
@@ -92,39 +90,9 @@ local stepsPerSecond = 0
 
 local free = false
 
-local function getCodeValues()
-   local codeValues = {}
-
-   for k, _ in pairs(cellActions.actions) do
-
-
-
-
-
-
-
-
-      table.insert(codeValues, k)
-   end
-   return codeValues
-end
-
-local codeValues = getCodeValues()
-print("codeValues", inspect(codeValues))
-
 
 local removed = {}
 local experimentCoro
-
-
-function genCode()
-   local code = {}
-   local len = #codeValues
-   for i = 1, codeLen do
-      table.insert(code, codeValues[rng:random(1, len)])
-   end
-   return code
-end
 
 
 
@@ -257,6 +225,7 @@ end
 function updateCells(cells)
    local alive = {}
    for _, cell in ipairs(cells) do
+
       local isalive = cell:update()
       if isalive then
          table.insert(alive, cell)
@@ -370,11 +339,16 @@ local function emitCell(iter)
 
 
 
+   print('istate.cellsNum', istate.cellsNum)
    for i = 1, istate.cellsNum do
       local cx = rng:random(1, istate.gridSize)
       local cy = rng:random(1, istate.gridSize)
+      print('cx, cy', cx, cy)
       table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
+      coroutine.yield()
    end
+
+   coroutine.yield()
 end
 
 local function updateMeal(meal)
@@ -399,7 +373,11 @@ local function experiment()
    stat = gatherStatistic(cells)
 
    coroutine.yield()
-   coroutine.resume(cellEmitCoro, iter)
+   local ok, errmsg = coroutine.resume(cellEmitCoro, iter)
+   if not ok then
+      error(errmsg)
+      stop = true
+   end
    print("#Experiment started with", #cells)
 
 
@@ -437,6 +415,7 @@ local function experiment()
 
 
 
+      channels.stat:push(stat)
       coroutine.yield()
    end
 
@@ -473,8 +452,13 @@ local function pushDrawList()
    end
 
 
-   print('pushDrawList', inspect(drawlist))
+
+
+
+
    channels.drawlist:push(drawlist)
+
+
 
 
 
@@ -541,6 +525,11 @@ function commands.isalive()
 
 
    local ok, errmsg = pcall(function()
+
+      assert(type(x) == 'number')
+      assert(type(y) == 'number')
+      assert(type(gridSize) == 'number')
+
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
          local cell = grid[x][y]
          writelog(string.format("cell %s", inspect(cell)))
@@ -565,6 +554,7 @@ function commands.insertcell()
       error(string.format("insertcell %s", err))
    end
    local newcell = newcellfun()
+   newcell = setmetatable(newcell, { __index = Cell })
    newcell.id = istate.cellId
    istate.cellId = istate.cellId + 1
 
@@ -627,7 +617,6 @@ local function doSetup()
    print("istate", inspect(istate))
 
    gridSize = istate.gridSize
-   codeLen = istate.codeLen
    cellsNum = istate.cellsNum
    emitInvSpeed = istate.emitInvSpeed
 
@@ -646,12 +635,13 @@ local function doSetup()
    print("schema", inspect(schema))
    print("drawCoefficients", inspect(drawCoefficients))
 
-   experimentCoro = coroutine.create(function()
-      local ok, errmsg = pcall(experiment)
-      if not ok then
-         logferror("Error in experiment pcall '%s'", errmsg)
-      end
-   end)
+
+
+
+
+
+
+   experimentCoro = coroutine.create(experiment)
 
 
    coroutine.resume(experimentCoro)
@@ -708,8 +698,8 @@ local function main()
          else
             step()
          end
-         print("------- main cycle -----------")
          pushDrawList()
+         print('main loop')
          doStep = false
       else
          love.timer.sleep(0.002)

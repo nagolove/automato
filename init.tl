@@ -262,6 +262,23 @@ end
 --print("checkValidThreadCount(10)", checkValidThreadCount(10))
 --print("checkValidThreadCount(19)", checkValidThreadCount(19))
 
+local function printStat()
+    local starr: {Statistic} = sim.getStatistic()
+
+    print("starr = ", inspect(starr))
+
+    for _, st in ipairs(starr) do
+        --for k, v in pairs(st as {Statistic.Types:number}) do
+        --print('Statistic.Types', inspect(Statistic.Types))
+        for k, v in pairs(st as {string: number}) do
+            --imgui.Text(string.format("%s: %d", st[v as Statistic.Types], v))
+            --imgui.Text(string.format("%s: %d", (st as {string:number)[k], v))
+            print('k, v', k, v)
+            imgui.Text(string.format("%s: %d", k, v))
+        end
+    end
+end
+
 local function printThreadsInfo()
     if threadsInfo then
         for k, v in ipairs(threadsInfo) do
@@ -411,12 +428,8 @@ local function drawui()
 
     imgui.Text(string.format("uptime %d sec", sim.getUptime()))
     -- можно запрашивать не каждый кадр
-    local st: Statistic = sim.getStatistic()
 
-    for k, v in pairs(st as {Statistic.Types:number}) do
-        imgui.Text(string.format("%s: %d", st[k], v))
-    end
-
+    printStat()
     printThreadsInfo()
 
     if underCursor then
@@ -520,6 +533,7 @@ local function update(dt: number)
     --controlCamera(cam)
     simulatorRender:update(dt)
     sim.step()
+    sim.update()
     
     --updateGraphic()
     --checkMouse()

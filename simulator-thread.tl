@@ -34,8 +34,6 @@ local cells: Cells = {}
 local grid: Grid = {}
 -- размер сетки
 local gridSize: number
--- длина кода генерируемого новой клетке
-local codeLen: number
 -- сколько клеток создавать корутиной в начальном впрыске
 local cellsNum: number
 -- текущая итерация
@@ -92,39 +90,9 @@ local stepsPerSecond = 0
 -- нет смысла в этом флаге если корутина завершилась ошибочно
 local free = false
 
-local function getCodeValues(): {string}
-  local codeValues = {}
-  -- FIXME Сделал странное преобразование типов
-  for k, _ in pairs(cellActions.actions as {string:string}) do
-    
-    -- XXX
-    --if k == "left" then k = "left2"
-    --elseif k == "right" then k = "right2"
-    --elseif k == "up" then k = "up2"
-    --elseif k == "down" then k = "down2"
-    --end
-
-    table.insert(codeValues, k)
-  end
-  return codeValues
-end
-
-local codeValues = getCodeValues()
-print("codeValues", inspect(codeValues))
-
 --local actions: CellActions
 local removed: {Cell} = {}
 local experimentCoro: thread
-
--- генератор кода
-function genCode(): {string}
-  local code = {}
-  local len = #codeValues
-  for i = 1, codeLen do
-    table.insert(code, codeValues[rng:random(1, len)])
-  end
-  return code
-end
 
 -- заполнить решетку пустыми значениями. В качестве значений используются
 -- пустые таблицы {}
@@ -255,16 +223,17 @@ end
 --]]
 
 function updateCells(cells: {Cell}): {Cell}
-  local alive = {}
-  for _, cell in ipairs(cells) do
-    local isalive = cell:update()
-    if isalive then
-      table.insert(alive, cell)
-    else
-      table.insert(removed, cell)
+    local alive = {}
+    for _, cell in ipairs(cells) do
+        --print("cell", inspect(cell)) 
+        local isalive = cell:update()
+        if isalive then
+            table.insert(alive, cell)
+        else
+            table.insert(removed, cell)
+        end
     end
-  end
-  return alive
+    return alive
 end
 
 --local function initCellOneCommandCode(command: string, steps: number): Cell
@@ -370,11 +339,16 @@ local function emitCell(iter: number)
     end
     --]]
 
+    print('istate.cellsNum', istate.cellsNum)
     for i = 1, istate.cellsNum do
         local cx = rng:random(1, istate.gridSize)
         local cy = rng:random(1, istate.gridSize)
+        print('cx, cy', cx, cy)
         table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
+        coroutine.yield()
     end
+
+    coroutine.yield()
 end
 
 local function updateMeal(meal: {Cell}): {Cell}
@@ -399,7 +373,11 @@ local function experiment()
     stat = gatherStatistic(cells)
 
     coroutine.yield()
-    coroutine.resume(cellEmitCoro, iter)
+    local ok, errmsg = coroutine.resume(cellEmitCoro, iter) as (boolean, string)
+    if not ok then
+        error(errmsg)
+        stop = true
+    end
     print("#Experiment started with", #cells)
 
     --while #cells > 0 do
@@ -437,6 +415,7 @@ local function experiment()
 
         -- можно возвращать сдесь какое-то состояние клеток из нити
         --coroutine.yield(stepStatistic)
+        channels.stat:push(stat)
         coroutine.yield()
     end
 
@@ -473,8 +452,13 @@ local function pushDrawList()
     end
     -- нужное-ли условие?
     --if dataChan:getCount() < maxDataChannelCount then
-    print('pushDrawList', inspect(drawlist))
-    channels.drawlist:push(drawlist)
+
+    --print('pushDrawList', inspect(drawlist))
+
+    --if channels.drawlist:getCount() < maxDataChannelCount then
+        channels.drawlist:push(drawlist)
+    --end
+
     --if channels.data:getCount() < maxDataChannelCount then
         --channels.data:push(drawlist)
     --end
@@ -541,6 +525,11 @@ function commands.isalive()
     --writelog(string.format("isalive %d x, y %d %d", threadNum, x, y))
 
     local ok, errmsg: boolean, string = pcall(function()
+
+        assert(type(x) == 'number')
+        assert(type(y) == 'number')
+        assert(type(gridSize) == 'number')
+
         if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
             local cell = grid[x][y]
             writelog(string.format("cell %s", inspect(cell)))
@@ -565,6 +554,7 @@ function commands.insertcell()
     error(string.format("insertcell %s", err))
   end
   local newcell: Cell = newcellfun() as Cell
+  newcell = setmetatable(newcell, { __index = Cell })
   newcell.id = istate.cellId
   istate.cellId = istate.cellId + 1
   -- нормально, что grid не устанавливается и синхронизация пройдет только на
@@ -627,7 +617,6 @@ local function doSetup()
     print("istate", inspect(istate))
 
     gridSize = istate.gridSize
-    codeLen = istate.codeLen
     cellsNum = istate.cellsNum
     emitInvSpeed = istate.emitInvSpeed
 
@@ -646,12 +635,13 @@ local function doSetup()
     print("schema", inspect(schema))
     print("drawCoefficients", inspect(drawCoefficients))
 
-    experimentCoro = coroutine.create(function()
-        local ok, errmsg: boolean, string = pcall(experiment)
-        if not ok then
-            logferror("Error in experiment pcall '%s'", errmsg)
-        end
-    end)
+    --experimentCoro = coroutine.create(function()
+        --local ok, errmsg: boolean, string = pcall(experiment)
+        --if not ok then
+            --logferror("Error in experiment pcall '%s'", errmsg)
+        --end
+    --end)
+    experimentCoro = coroutine.create(experiment)
 
     -- первый запуск корутины, прогревочный 
     coroutine.resume(experimentCoro)
@@ -709,6 +699,7 @@ local function main()
                 step()
             end
             pushDrawList()
+            print('main loop')
             doStep = false
         else
             love.timer.sleep(0.002)

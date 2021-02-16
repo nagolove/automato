@@ -17,7 +17,7 @@ require "types"
 local gridSize: number
 local mtschema: {MtSchema}
 local starttime: number = 0
-local statistic: Statistic = {}
+local statistic: {Statistic} = {}
 local threads: {love.thread.Thread} = {}
 
 -- количество потоков
@@ -34,22 +34,24 @@ channels[1].cellrequest:push()
 
 function Simulator.getDrawLists(): {DrawNode}
     local list = {}
-    print("channels", inspect(channels))
+    --print("channels", inspect(channels))
     --os.exit()
     for k, _ in ipairs(threads) do
         local drawlist = channels[k].drawlist
-        print("datachannel", inspect(drawlist))
+        --print("datachannel", inspect(drawlist))
         if drawlist then
-            local sublist: {DrawNode} = drawlist:pop() as {DrawNode}
+            --local sublist: {DrawNode} = drawlist:pop() as {DrawNode}
             --local sublist: {DrawNode} = drawlist:demand(0.02) as {DrawNode}
+            local sublist: {DrawNode} = drawlist:peek() as {DrawNode}
             if sublist then
                 for _, v1 in ipairs(sublist) do
                     table.insert(list, v1)
                 end
+                drawlist:pop()
             end
         end
     end
-    print("getDrawLists", inspect(list))
+    --print("getDrawLists", inspect(list))
     return list
 end
 
@@ -131,6 +133,7 @@ function Simulator.create(commonSetup: CommonSetup)
     print("threadCount", threadCount)
 
     gridSize = commonSetup.gridSize
+    commonSetup.cellId = 0
 
     mtschema = require "mtschemes"[threadCount] as {MtSchema}
     print("mtschema", inspect(mtschema))
@@ -144,8 +147,11 @@ function Simulator.create(commonSetup: CommonSetup)
         table.insert(channels, initChannels(i))
 
         local setupName = "setup" .. i
-        love.thread.getChannel(setupName):push(commonSetup)
-        love.thread.getChannel(setupName):push(serpent.dump(mtschema[i]))
+        channels[i].setup:push(commonSetup)
+        channels[i].setup:push(serpent.dump(mtschema[i]))
+        --love.thread.getChannel(setupName):push(serpent.dump(commonSetup))
+        --love.thread.getChannel(setupName):push(commonSetup)
+        --love.thread.getChannel(setupName):push(serpent.dump(mtschema[i]))
 
         local th: love.thread.Thread = love.thread.newThread("scenes/automato/simulator-thread.lua")
         table.insert(threads, th)
@@ -295,12 +301,23 @@ function Simulator.doStep()
     pushMsg2Threads("step")
 end
 
-function Simulator.getStatistic(): Statistic
+function Simulator.getStatistic(): {Statistic}
     return statistic
 end
 
 function Simulator.getSchema(): {MtSchema}
     return mtschema
+end
+
+function Simulator.update()
+    local newstat: {Statistic} = {}
+    for i, _ in ipairs(threads) do
+        local t: Statistic = channels[i].stat:pop() as Statistic
+        if t then
+            table.insert(newstat, t)
+        end
+    end
+    statistic = newstat
 end
 
 function Simulator.getGridSize(): number

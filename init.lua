@@ -262,6 +262,23 @@ end
 
 
 
+local function printStat()
+   local starr = sim.getStatistic()
+
+   print("starr = ", inspect(starr))
+
+   for _, st in ipairs(starr) do
+
+
+      for k, v in pairs(st) do
+
+
+         print('k, v', k, v)
+         imgui.Text(string.format("%s: %d", k, v))
+      end
+   end
+end
+
 local function printThreadsInfo()
    if threadsInfo then
       for k, v in ipairs(threadsInfo) do
@@ -411,12 +428,8 @@ local function drawui()
 
    imgui.Text(string.format("uptime %d sec", sim.getUptime()))
 
-   local st = sim.getStatistic()
 
-   for k, v in pairs(st) do
-      imgui.Text(string.format("%s: %d", st[k], v))
-   end
-
+   printStat()
    printThreadsInfo()
 
    if underCursor then
@@ -520,6 +533,7 @@ local function update(dt)
 
    simulatorRender:update(dt)
    sim.step()
+   sim.update()
 
 
 

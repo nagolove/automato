@@ -106,6 +106,8 @@ function SimulatorRender:cameraToCenter()
    self.cam:move(dx, dy)
 end
 
+local screenNumber = 0
+
 function SimulatorRender:draw()
    do
       gr.setColor({ 1, 1, 1, 1 })
@@ -119,6 +121,11 @@ function SimulatorRender:draw()
       gr.setCanvas()
    end
 
+   self.canvas:newImageData():encode(
+   'png',
+   string.format('simulator-render-canvas-%d.png', screenNumber))
+
+   screenNumber = screenNumber + 1
 
    self.cam:attach()
    gr.setColor({ 1, 1, 1, 1 })

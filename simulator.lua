@@ -34,22 +34,24 @@ local channels = {}
 
 function Simulator.getDrawLists()
    local list = {}
-   print("channels", inspect(channels))
+
 
    for k, _ in ipairs(threads) do
       local drawlist = channels[k].drawlist
-      print("datachannel", inspect(drawlist))
-      if drawlist then
-         local sublist = drawlist:pop()
 
+      if drawlist then
+
+
+         local sublist = drawlist:peek()
          if sublist then
             for _, v1 in ipairs(sublist) do
                table.insert(list, v1)
             end
+            drawlist:pop()
          end
       end
    end
-   print("getDrawLists", inspect(list))
+
    return list
 end
 
@@ -131,6 +133,7 @@ function Simulator.create(commonSetup)
    print("threadCount", threadCount)
 
    gridSize = commonSetup.gridSize
+   commonSetup.cellId = 0
 
    mtschema = require("mtschemes")[threadCount]
    print("mtschema", inspect(mtschema))
@@ -144,8 +147,11 @@ function Simulator.create(commonSetup)
       table.insert(channels, initChannels(i))
 
       local setupName = "setup" .. i
-      love.thread.getChannel(setupName):push(commonSetup)
-      love.thread.getChannel(setupName):push(serpent.dump(mtschema[i]))
+      channels[i].setup:push(commonSetup)
+      channels[i].setup:push(serpent.dump(mtschema[i]))
+
+
+
 
       local th = love.thread.newThread("scenes/automato/simulator-thread.lua")
       table.insert(threads, th)
@@ -301,6 +307,17 @@ end
 
 function Simulator.getSchema()
    return mtschema
+end
+
+function Simulator.update()
+   local newstat = {}
+   for i, _ in ipairs(threads) do
+      local t = channels[i].stat:pop()
+      if t then
+         table.insert(newstat, t)
+      end
+   end
+   statistic = newstat
 end
 
 function Simulator.getGridSize()

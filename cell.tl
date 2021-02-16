@@ -5,13 +5,36 @@ local inspect = require "inspect"
 local istate: CommonSetup
 local stat: Statistic
 local actions: CellActions
+local rng: love.math.RandomGenerator
+
+-- здесь работает ассемблер
+local function getCodeValues(): {string}
+  local codeValues = {}
+  for k, _ in pairs(actions as {string:string}) do
+    table.insert(codeValues, k)
+  end
+  return codeValues
+end
+
+local codeValues: {string}
+print("codeValues", inspect(codeValues))
+
+-- генератор кода
+function genCode(): {string}
+    local code = {}
+    local len = #codeValues
+    for i = 1, istate.codeLen do
+        table.insert(code, codeValues[rng:random(1, len)])
+    end
+    return code
+end
 
 -- t.pos, t.code
 -- конструктор клетки
 function Cell.new(t: CellSetup): Cell
-    t = t or {}
-    local self: Cell = {}
+    local self: Cell = setmetatable({} as Cell, { __index = Cell })
     self.pos = {}
+    t = t or {}
     if t.pos and t.pos.x then
         self.pos.x = t.pos.x
     else
@@ -25,8 +48,8 @@ function Cell.new(t: CellSetup): Cell
     if t.code then
         self.code = shallowCopy(t.code)
     else
-        --self.code = genCode()
-        error("No cell code")
+        self.code = genCode()
+        --error("No cell code")
     end
     if t.generation then
         self.generation = self.generation + 1
@@ -44,6 +67,7 @@ function Cell.new(t: CellSetup): Cell
 end
 
 function Cell:print()
+    print('Cell:print')
 end
 
 function Cell:update(): boolean
@@ -73,5 +97,7 @@ end
 function cellInitInternal(state: CommonSetup, s: Statistic)
     istate = shallowCopy(state)
     actions = state.cellActions
+    rng = state.rg
     stat = s
+    codeValues = getCodeValues()
 end

@@ -50,6 +50,7 @@ local inspect = require("inspect")
 
 
 
+
  CellSetup = {}
 
 
@@ -75,6 +76,12 @@ local inspect = require("inspect")
 
 
  Statistic = {}
+
+
+
+
+
+
 
 
 
@@ -170,7 +177,6 @@ local inspect = require("inspect")
 
  Channels = {}
 
-
 ChannelsTypes = {
 
    'setup',
@@ -188,6 +194,9 @@ ChannelsTypes = {
    "request",
 
    "state",
+
+
+   'stat',
 }
 
 function initChannels(n)
