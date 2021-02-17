@@ -327,7 +327,6 @@ end
 
 local function start()
 
-   simulatorRender = SimulatorRender.new(commonSetup, cam)
    commonSetup.spreadPoint = {
       x = math.floor(commonSetup.gridSize / 2),
       y = math.floor(commonSetup.gridSize / 2),
@@ -336,6 +335,8 @@ local function start()
    commonSetup.mode = 'continuos'
    mode = 'continuos'
    sim.create(commonSetup)
+   simulatorRender = SimulatorRender.new(commonSetup, cam)
+   simulatorRender:cameraToCenter()
 
 end
 
@@ -356,15 +357,15 @@ local function roundSettings()
 
    commonSetup.gridSize, status = imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, 10, 100)
    if simulatorRender and status then
-      simulatorRender:draw()
       simulatorRender:cameraToCenter()
+      simulatorRender:draw()
    end
 
    commonSetup.threadCount, status = imgui.SliderInt(i18n("threadcount"), commonSetup.threadCount, 1, 9)
    commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
    if simulatorRender and status then
-      simulatorRender:draw()
       simulatorRender:cameraToCenter()
+      simulatorRender:draw()
    end
 
    status = imgui.Checkbox(i18n("startinsmode"), startInStepMode)
@@ -457,9 +458,9 @@ local function drawui()
 
 
       drawCellInfo(cell)
-      simulatorRender.cam:attach()
+
       simulatorRender:drawCellPath(cell)
-      simulatorRender.cam:detach()
+
    end
 
    imgui.End()
@@ -553,7 +554,6 @@ end
 
 local function update(dt)
    infoTimer:update(dt)
-
 
    simulatorRender:update(dt)
    sim.step()

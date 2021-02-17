@@ -297,7 +297,6 @@ end
 
 function Simulator.shutdown()
    print("Simulator.shutdown()")
-
    pushMsg2Threads('stop')
 
    local t = {}

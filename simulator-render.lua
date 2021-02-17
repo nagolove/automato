@@ -36,6 +36,7 @@ local sim = require("simulator")
 
 
 
+
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
@@ -73,7 +74,6 @@ function SimulatorRender.new(commonSetup, cam)
    }
    self = setmetatable(self, SimulatorRender_mt)
    self:computeGrid()
-   self:cameraToCenter()
    print("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
 
    self.canvas = gr.newCanvas(
@@ -87,6 +87,7 @@ function SimulatorRender.new(commonSetup, cam)
 
 
    self:prerender()
+   self:cameraToCenter()
    self:draw()
 
    self.canvas:newImageData():encode('png', "simulator-render-canvas.png")
@@ -99,40 +100,52 @@ end
 function SimulatorRender:cameraToCenter()
    local w, h = gr.getDimensions()
 
-   local dx, dy = -(w - self.fieldWidthPixels) / 4, -(h - self.fieldHeightPixels) / 4
+
+   print('w, h', w, h)
+
+   print('self.fieldWidthPixels', self.fieldWidthPixels, self.fieldHeightPixels)
+   local dx = (w - (self.canvas):getWidth()) / 2
+   local dy = (h - (self.canvas):getHeight()) / 2
+
+
    print("camera position", self.cam:position())
    print("dx, dy", dx, dy)
+   self.cam.scale = 1.
+   self.cam:lookAt(dx, dy)
+   print("camera position2", self.cam:position())
 
-   self.cam:move(dx, dy)
+
+
+
+
+
 end
 
 local screenNumber = 0
 
+function SimulatorRender:bakeCanvas()
+   gr.setColor({ 1, 1, 1, 1 })
+   gr.setCanvas(self.canvas)
+
+   gr.clear({ 0, 0, 0, 1 })
+   self:drawGrid()
+   self:drawCells()
+   gr.setCanvas()
+end
+
 function SimulatorRender:draw()
-   do
-      gr.setColor({ 1, 1, 1, 1 })
-      gr.setCanvas(self.canvas)
-
-      gr.clear({ 0, 0, 0, 1 })
-
-      self:drawGrid()
-      self:drawCells()
-
-      gr.setCanvas()
-   end
+   self:bakeCanvas()
 
 
 
 
 
 
-   screenNumber = screenNumber + 1
-
-   self.cam:attach()
    gr.setColor({ 1, 1, 1, 1 })
 
    local sx, sy = 1, 1
 
+   self.cam:attach()
    gr.draw(
    self.canvas,
    0,
@@ -142,6 +155,7 @@ function SimulatorRender:draw()
    sy)
 
    self.cam:detach()
+
 
    local font = love.graphics.newFont("fonts/DroidSansMono.ttf", 32)
    gr.setFont(font)

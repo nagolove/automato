@@ -54,7 +54,7 @@ print("graphics size", gr.getWidth(), gr.getHeight())
 -- ?? инфа с последним изменением статистики 
 --local lastGraphicPoint
 
--- режим работы - непрерывный или пошаговый continuos, bystep
+-- режим работы - непрерывный или пошаговый continuos, step
 local mode: SimulatorMode = "stop"
 local foodProduction: string = ''
 
@@ -327,7 +327,6 @@ end
 
 local function start()
     --if sim.getMode() == "stop" then
-    simulatorRender = SimulatorRender.new(commonSetup, cam)
     commonSetup.spreadPoint = { 
         x = math.floor(commonSetup.gridSize / 2),
         y = math.floor(commonSetup.gridSize / 2)
@@ -336,6 +335,8 @@ local function start()
     commonSetup.mode = 'continuos'
     mode = 'continuos'
     sim.create(commonSetup)
+    simulatorRender = SimulatorRender.new(commonSetup, cam)
+    simulatorRender:cameraToCenter()
     --end
 end
 
@@ -356,15 +357,15 @@ local function roundSettings()
 
     commonSetup.gridSize, status = imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, 10, 100)
     if simulatorRender and status then
-        simulatorRender:draw()
         simulatorRender:cameraToCenter()
+        simulatorRender:draw()
     end
 
     commonSetup.threadCount, status = imgui.SliderInt(i18n("threadcount"), commonSetup.threadCount, 1, 9)
     commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
     if simulatorRender and status then
-        simulatorRender:draw()
         simulatorRender:cameraToCenter()
+        simulatorRender:draw()
     end
 
     status = imgui.Checkbox(i18n("startinsmode"), startInStepMode)
@@ -457,9 +458,9 @@ local function drawui()
         --print("cell", inspect(cell))
 
         drawCellInfo(cell)
-        simulatorRender.cam:attach()
+        --simulatorRender.cam:attach()
         simulatorRender:drawCellPath(cell)
-        simulatorRender.cam:detach()
+        --simulatorRender.cam:detach()
     end
 
     imgui.End()
@@ -554,7 +555,6 @@ end
 local function update(dt: number)
     infoTimer:update(dt)
 
-    --controlCamera(cam)
     simulatorRender:update(dt)
     sim.step()
     sim.update()

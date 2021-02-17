@@ -26,6 +26,7 @@ global record SimulatorRender
 
     getPixSize: function(): number
     computeGrid: function
+    bakeCanvas: function
 
     commonSetup: CommonSetup
     cam: Camera
@@ -73,7 +74,6 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
     }
     self = setmetatable(self, SimulatorRender_mt)
     self:computeGrid()
-    self:cameraToCenter()
     print("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
 
     self.canvas = gr.newCanvas(
@@ -87,6 +87,7 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
     )
 
     self:prerender()
+    self:cameraToCenter()
     self:draw()
 
     self.canvas:newImageData():encode('png', "simulator-render-canvas.png")
@@ -98,41 +99,53 @@ end
 
 function SimulatorRender:cameraToCenter()
     local w, h = gr.getDimensions()
+    --print(self.canvas)
+    --local w, h = (self.canvas as gr.Texture):getDimensions()
+    print('w, h', w, h)
     -- TODO разобрать формулу, не работает как надо, на половину ширины
-    local dx, dy = - (w - self.fieldWidthPixels) / 4, - (h - self.fieldHeightPixels) / 4
+    print('self.fieldWidthPixels', self.fieldWidthPixels, self.fieldHeightPixels)
+    local dx = (w - (self.canvas as gr.Texture):getWidth()) / 2
+    local dy = (h - (self.canvas as gr.Texture):getHeight()) / 2
+    --local dx = (w - self.fieldWidthPixels) / 2
+    --local dy = (h - self.fieldHeightPixels) / 2
     print("camera position", self.cam:position())
     print("dx, dy", dx, dy)
-    --self.cam:lookAt(0, 0)
-    self.cam:move(dx, dy)
+    self.cam.scale = 1.
+    self.cam:lookAt(dx, dy)
+    print("camera position2", self.cam:position())
+
+    --self.cam:lookAt(w / 2, h / 2)
+    --self.cam:lookAt(200, 0)
+
+    --self.cam:lookAt(-dx, -dy)
+    --self.cam:move(dx, dy)
 end
 
 local screenNumber = 0
 
+function SimulatorRender:bakeCanvas()
+    gr.setColor{1, 1, 1, 1}
+    gr.setCanvas(self.canvas)
+    --gr.clear{1, 1, 1, 1}
+    gr.clear{0, 0, 0, 1}
+    self:drawGrid()
+    self:drawCells()
+    gr.setCanvas()
+end
+
 function SimulatorRender:draw()
-    do
-        gr.setColor{1, 1, 1, 1}
-        gr.setCanvas(self.canvas)
-        --gr.clear{1, 1, 1, 1}
-        gr.clear{0, 0, 0, 1}
-
-        self:drawGrid()
-        self:drawCells()
-
-        gr.setCanvas()
-    end
-
+    self:bakeCanvas()
     --print("SimulatorRender:draw() self.canvas", self.canvas)
     --self.canvas:newImageData():encode(
         --'png', 
         --string.format('simulator-render-canvas-%d.png', screenNumber)
     --)
-    screenNumber = screenNumber + 1
 
-    self.cam:attach()
     gr.setColor{1, 1, 1, 1}
     --local sx, sy = 0.5, 0.5
     local sx, sy = 1, 1 
 
+    self.cam:attach()
     gr.draw(
         self.canvas as love.graphics.Drawable,
         0, 
@@ -143,6 +156,7 @@ function SimulatorRender:draw()
     )
     self.cam:detach()
 
+    -- XXX загружается каждый кадр
     local font = love.graphics.newFont("fonts/DroidSansMono.ttf", 32)
     gr.setFont(font)
     gr.setColor(1, 1, 1)
