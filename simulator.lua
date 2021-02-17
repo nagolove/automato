@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
 local serpent = require("serpent")
 local struct = require("struct")
 
@@ -55,37 +55,6 @@ function Simulator.getDrawLists()
    return list
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 local function pushSync()
    local syncChan = love.thread.getChannel("sync")
    local i = 1
@@ -101,22 +70,17 @@ end
 local function pushMsg2Threads(t)
    for i = 1, threadCount do
       print("send to 'msg" .. i .. "'")
-      love.thread.getChannel("msg" .. i):push(t)
+      channels[i].msg:push(t)
    end
 end
 
-local function sendStopClearChannels()
-
-   print("sending 'stop'")
-   pushMsg2Threads("stop")
-   love.timer.sleep(0.2)
+local function clearChannels()
+   print('clearChannels')
    for i = 1, threadCount do
-      love.thread.getChannel("msg" .. i):clear()
-      love.thread.getChannel("data" .. i):clear()
-      love.thread.getChannel("setup" .. i):clear()
-      love.thread.getChannel("request" .. i):clear()
+      for _, ch in pairs(channels[i]) do
+         ch:clear()
+      end
    end
-
 end
 
 
@@ -129,13 +93,19 @@ function Simulator.create(commonSetup)
 
    print("commonSetup", inspect(commonSetup))
 
-   sendStopClearChannels()
+   Simulator.shutdown()
 
    threadCount = commonSetup.threadCount
    print("threadCount", threadCount)
 
    gridSize = commonSetup.gridSize
    commonSetup.cellId = 0
+
+   local mainRg = love.math.newRandomGenerator()
+
+   mainRg:setSeed(love.timer.getTime())
+
+   commonSetup.rgState = mainRg:getState()
 
    mtschema = require("mtschemes")[threadCount]
    print("mtschema", inspect(mtschema))
@@ -148,7 +118,6 @@ function Simulator.create(commonSetup)
       print("Channels for thread", i)
       table.insert(channels, initChannels(i))
 
-      local setupName = "setup" .. i
       channels[i].setup:push(commonSetup)
       channels[i].setup:push(serpent.dump(mtschema[i]))
 
@@ -261,12 +230,11 @@ function Simulator.getObject(x, y)
    mchan:push(x)
    mchan:push(y)
 
-   local rchan = love.thread.getChannel("object" .. threadNum)
 
 
-   local sobject = rchan:pop()
+   local sobject = channels[threadNum].object:pop()
 
-   print("sobject", sobject)
+
 
    if not sobject then
       return nil
@@ -275,7 +243,7 @@ function Simulator.getObject(x, y)
 
    local ok, object = serpent.load(sobject)
 
-   print("ok", ok)
+
 
    if not ok then
 
@@ -283,7 +251,7 @@ function Simulator.getObject(x, y)
       return nil
    end
 
-   print("rchan:getCount()", rchan:getCount())
+   print("rchan:getCount()", channels[threadNum].object:getCount())
    print("object", inspect(object))
    return object
 end
@@ -329,11 +297,45 @@ end
 
 function Simulator.shutdown()
    print("Simulator.shutdown()")
-   sendStopClearChannels()
+
+   pushMsg2Threads('stop')
+
+   local t = {}
+   for i = 1, threadCount do
+      table.insert(t, i)
+   end
+
+   while #t ~= 0 do
+      local i = #t
+      while i > 0 do
+         local stopped = channels[i].isstopped:pop()
+         if stopped and stopped == true then
+            print('thread', i, 'stopped')
+            table.remove(t, i)
+            break
+         end
+         i = i - 1
+      end
+   end
+
+   clearChannels()
+   print('t', inspect(t))
+   print('shutdown done')
 end
 
 function Simulator.getUptime()
    return love.timer.getTime() - starttime
+end
+
+function Simulator.readState(data)
+
+
+
+
+
+
+
+
 end
 
 function Simulator.writeState()
@@ -344,20 +346,35 @@ function Simulator.writeState()
 
 
    for i = 1, threadCount do
-      local msgChan = love.thread.getChannel("msg" .. i)
-      msgChan:push("writeState")
+
+
+      channels[i].msg:push('writestate')
    end
 
    local t = {}
 
-   for i = 1, threadCount do
-      local stateChan = love.thread.getChannel("state" .. i)
+   local notwritten = 0
 
-      local res = stateChan:demand()
-      local len = struct.pack("<d", #res)
-      table.insert(t, len)
-      table.insert(t, res)
+
+
+
+
+   for i = 1, threadCount do
+      local t1 = love.timer.getTime()
+
+      local st = channels[i].state:demand()
+      local t2 = love.timer.getTime()
+      print('demand time', t2 - t1)
+      if st and #st ~= 0 then
+
+         local len = struct.pack("<dd", i, #st)
+         table.insert(t, len)
+         table.insert(t, st)
+      else
+         notwritten = notwritten + 1
+      end
    end
+   print('writestate by', threadCount, ' not written ', notwritten)
 
    local fullData = table.concat(t)
    return love.data.compress("string", "zlib", fullData, 9)

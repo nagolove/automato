@@ -30,24 +30,37 @@ end
 global type CellActions = {string: function(Cell): boolean}
 
 global type CommonSetup = record
+    -- количество потоков
     threadCount: number
+    -- размер сетки
     gridSize: number
+    -- максимальное количество клеток
     cellsNum: number
     -- разброс границы энергии клетки при создании, массив двух элементов
     initialEnergy: {number, number}
     -- длина кода генерируемого новой клетке
     codeLen: number
+    -- обновлять-ли клетки еды
     nofood: boolean
+    -- на сколько уменьшается энергия клетки
     denergy: number
+    -- на сколько увеличивается энергия если поесть
     foodenergy: number
+    -- режим работы
     mode: SimulatorMode
+    -- 1/(скорость создания новых клеток)
     emitInvSpeed: number
     -- положение центра окружности функции разбрасывания клеток
     spreadPoint: Pos
     -- радиус в клетках окружности функции разбрасывания клеток
     spreadRad: number
+    -- состояние ГПСЧ из вызывающей нити, разделяется между всеми потоками
+    rgState: string
+    -- используется только в рабочей нити
     rg: love.math.RandomGenerator
+    -- номер последней клетки(всешл созданных)
     cellId:number
+    -- используется в классе Cell
     cellActions: CellActions
 end
 
@@ -205,6 +218,7 @@ global ChannelsTypes<const>: {string} = {
     "state",
     -- статистика 
     'stat',
+    'isstopped',
 }
 
 function initChannels(n: number): Channels
@@ -230,15 +244,26 @@ global type Simulator = record
         threadCount: number
     end
 
+    -- создать и запустить
     create: function(CommonSetup)
+    -- вызывать каждый кадр, для обновления статистики
     update: function()
+
     -- записать состояние симулятора для последующего восстановления
     writeState: function(): string
+    -- восстановить состояние из сжатой строки
+    readState: function(string): boolean
+
     -- послать всем потокам выключение
     shutdown: function()
     setMode : function(m: SimulatorMode)
     getMode : function(): SimulatorMode
+
+    -- получить массив данных для рисования
     getDrawLists : function(): {DrawNode}
+    -- пример запроса для рисования(предки-потомки и тд)
+    --getDrawLists : function(query: function(Cell): boolean): {DrawNode}
+
     findThreadByPos: function(x: number, y: number): number
     getObject : function(number, number): Cell
     step : function()

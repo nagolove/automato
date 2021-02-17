@@ -495,9 +495,6 @@ local function pushDrawList()
 
 end
 
-function commands.info()
-end
-
 
 
 
@@ -600,17 +597,29 @@ function commands.insertcell()
 end
 
 function commands.writestate()
+   print('commands.writestate')
+
    local opts = { fatal = true }
-   local cellsStr = serpent.dump(cells, opts)
-   local mealsStr = serpent.dump(meals, opts)
+   local writeList = {}
+
+
+   table.insert(writeList, cells)
+   table.insert(writeList, meals)
+   table.insert(writeList, schema)
+   table.insert(writeList, istate)
+
    local result = {}
+   for _, v in ipairs(writeList) do
+      local dump = serpent.dump(v, opts)
 
-   local lenMarker = struct.pack("<ddd", threadNum, #cellsStr, #mealsStr)
-   table.insert(result, lenMarker)
-   table.insert(result, cellsStr)
-   table.insert(result, mealsStr)
+      local lenMarker = struct.pack("<d", #dump)
+      table.insert(result, lenMarker)
+      table.insert(result, dump)
+   end
 
-   channels.state:push(table.concat(result))
+   local data = table.concat(result)
+   love.filesystem.write('data.txt', data)
+   channels.state:push(data)
 end
 
 local function popCommand()
@@ -631,18 +640,23 @@ local function popCommand()
 end
 
 local function doSetup()
-   local setupName = "setup" .. threadNum
+
+
 
    print('\\\\\\\\\\\\\\\\')
    for k, v in pairs(channels) do
       print(k, v)
    end
    print('\\\\\\\\\\\\\\\\')
+
    istate = channels.setup:pop()
    if not istate then
       error("No setup for thread " .. threadNum)
    end
-   istate.rg = rng
+
+
+   istate.rg = love.math.newRandomGenerator()
+   istate.rg:setState(istate.rgState)
 
    if istate.mode == "step" then
       commands.step()
@@ -657,7 +671,8 @@ local function doSetup()
    cellsNum = istate.cellsNum
    emitInvSpeed = istate.emitInvSpeed
 
-   local sschema = love.thread.getChannel(setupName):pop()
+
+   local sschema = channels.setup:pop()
 
    local schemafun, err = load(sschema)
    if err then
@@ -748,5 +763,7 @@ end
 
 doSetup()
 main()
+
+channels.isstopped:push(true)
 
 print("thread", threadNum, "done")

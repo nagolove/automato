@@ -29,8 +29,6 @@ function genCode()
    return code
 end
 
-
-
 function Cell.new(t)
    local self = setmetatable({}, { __index = Cell })
    self.pos = {}
@@ -59,7 +57,11 @@ function Cell.new(t)
    self.ip = 1
    self.id = istate.cellId
    istate.cellId = istate.cellId + 1
+
+   print('Cell:new')
+   print('istate.initialEnergy', istate.initialEnergy[1], istate.initialEnergy[2])
    self.energy = istate.rg:random(istate.initialEnergy[1], istate.initialEnergy[2])
+   print('istate.rg:random() =', self.energy)
 
    self:print()
 

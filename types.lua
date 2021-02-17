@@ -51,6 +51,19 @@ local inspect = require("inspect")
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
  CellSetup = {}
 
 
@@ -205,6 +218,7 @@ ChannelsTypes = {
    "state",
 
    'stat',
+   'isstopped',
 }
 
 function initChannels(n)

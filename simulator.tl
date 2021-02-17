@@ -55,37 +55,6 @@ function Simulator.getDrawLists(): {DrawNode}
     return list
 end
 
---[[
-function Simulator.getThreadsInfo(): {ThreadInfo}
-    local list: {ThreadInfo} = {}
-    for k, _ in ipairs(threads) do
-        local chan = love.thread.getChannel("msg" .. k)
-        if chan then
-            chan:push("info")
-
-            local rchan = love.thread.getChannel("request" .. k)
-            --local infostr = rchan:demand(0.02) as string
-            local infostr = rchan:pop() as string
-
-            if infostr then
-                local ok, info = serpent.load(infostr)
-                if not ok then
-                    error(string.format("Could not load string in getThreadsInfo()"))
-                end
-                table.insert(list, info as ThreadInfo)
-            end
-            --local sublist: {DrawNode} = chan:demand(0.1) as {DrawNode}
-            --if sublist then
-                --for _, v1 in ipairs(sublist) do
-                    --table.insert(list, v1)
-                --end
-            --end
-        end
-    end
-    return list
-end
---]]
-
 local function pushSync()
     local syncChan = love.thread.getChannel("sync")
     local i = 1
@@ -101,22 +70,17 @@ end
 local function pushMsg2Threads(t: any)
     for i = 1, threadCount do
         print("send to 'msg" .. i .. "'")
-        love.thread.getChannel("msg" .. i):push(t)
+        channels[i].msg:push(t)
     end
 end
 
-local function sendStopClearChannels()
-    --if #threads ~= 0 then
-        print("sending 'stop'")
-        pushMsg2Threads("stop")
-        love.timer.sleep(0.2)
-        for i = 1, threadCount do
-            love.thread.getChannel("msg" .. i):clear()
-            love.thread.getChannel("data" .. i):clear()
-            love.thread.getChannel("setup" .. i):clear()
-            love.thread.getChannel("request" .. i):clear()
+local function clearChannels()
+    print('clearChannels')
+    for i = 1, threadCount do
+        for _, ch in pairs(channels[i]) do
+            ch:clear()
         end
-    --end
+    end
 end
 
 --function love.threaderror(thread: love.thread.Thread, errstr: string)
@@ -129,13 +93,19 @@ function Simulator.create(commonSetup: CommonSetup)
 
     print("commonSetup", inspect(commonSetup))
 
-    sendStopClearChannels()
+    Simulator.shutdown()
 
     threadCount = commonSetup.threadCount
     print("threadCount", threadCount)
 
     gridSize = commonSetup.gridSize
     commonSetup.cellId = 0
+
+    local mainRg = love.math.newRandomGenerator()
+    -- XXX или лучше os.time()?
+    mainRg:setSeed(love.timer.getTime())
+
+    commonSetup.rgState = mainRg:getState()
 
     mtschema = require "mtschemes"[threadCount] as {MtSchema}
     print("mtschema", inspect(mtschema))
@@ -148,7 +118,6 @@ function Simulator.create(commonSetup: CommonSetup)
         print("Channels for thread", i)
         table.insert(channels, initChannels(i))
 
-        local setupName = "setup" .. i
         channels[i].setup:push(commonSetup)
         channels[i].setup:push(serpent.dump(mtschema[i]))
         --love.thread.getChannel(setupName):push(serpent.dump(commonSetup))
@@ -261,12 +230,11 @@ function Simulator.getObject(x: number, y: number): Cell
     mchan:push(x)
     mchan:push(y)
 
-    local rchan = love.thread.getChannel("object" .. threadNum)
     -- FIXME demand не дает ответа за таймаут и вешает программу
     --local sobject = rchan:demand(0.01) as string
-    local sobject = rchan:pop() as string
+    local sobject = channels[threadNum].object:pop() as string
 
-    print("sobject", sobject)
+    --print("sobject", sobject)
 
     if not sobject then
         return nil
@@ -275,7 +243,7 @@ function Simulator.getObject(x: number, y: number): Cell
     --local objectfun, err: function, boolean = serpent.load(sobject)
     local ok, object: boolean, Cell = serpent.load(sobject) as (boolean, Cell)
 
-    print("ok", ok)
+    --print("ok", ok)
 
     if not ok then
         --logferror("Could'not deserialize cell object %s", err)
@@ -283,7 +251,7 @@ function Simulator.getObject(x: number, y: number): Cell
         return nil
     end
 
-    print("rchan:getCount()", rchan:getCount())
+    print("rchan:getCount()", channels[threadNum].object:getCount())
     print("object", inspect(object))
     return object
 end
@@ -329,35 +297,84 @@ end
 
 function Simulator.shutdown()
     print("Simulator.shutdown()")
-    sendStopClearChannels()
+    --sendStopClearChannels()
+    pushMsg2Threads('stop')
+
+    local t = {}
+    for i = 1, threadCount do
+        table.insert(t, i)
+    end
+
+    while #t ~= 0 do
+        local i = #t
+        while i > 0 do
+            local stopped: boolean = channels[i].isstopped:pop() as boolean
+            if stopped and stopped == true then
+                print('thread', i, 'stopped')
+                table.remove(t, i)
+                break
+            end
+            i = i - 1
+        end
+    end
+
+    clearChannels()
+    print('t', inspect(t))
+    print('shutdown done')
 end
 
 function Simulator.getUptime(): number
     return love.timer.getTime() - starttime
 end
 
+function Simulator.readState(data: string): boolean
+    -- отправить сообщение о завершении всем нитям
+    -- подождать
+
+    -- два варианта восстановления состояния :
+    -- * разосласть сообщения потокам 
+    --          преимущество в быстродействии при перемотке
+    -- * запустить потоки заново, передав прочтенные данные как параметр
+    --          полное восстановление конфигурации
+end
+
 function Simulator.writeState(): string
-    -- сперва выставить паузу для всех нитей
+    -- выставить паузу для всех нитей
     -- послать сообщение каждой нити о сохранении
     -- прочитать все полученные результаты
     -- объеденить результаты
     -- отключить паузу для потоков
 
     for i = 1, threadCount do
-        local msgChan = love.thread.getChannel("msg" .. i)
-        msgChan:push("writeState")
+        --local msgChan = love.thread.getChannel("msg" .. i)
+        --msgChan:push("writeState")
+        channels[i].msg:push('writestate')
     end
 
     local t = {}
+    -- добавить схему mtschema
+    local notwritten = 0
+
+    -- TODO
+    -- примитивный цикл обработки. Попробовать while allDemanded do
+    -- с методом :pee() для проверки готовы-ли данные
 
     for i = 1, threadCount do
-        local stateChan = love.thread.getChannel("state" .. i)
-        -- XXX Может все завесить навечно
-        local res: string = stateChan:demand() as string
-        local len = struct.pack("<d", #res)
-        table.insert(t, len)
-        table.insert(t, res)
+        local t1 = love.timer.getTime()
+        ---- XXX Может все завесить навечно
+        local st = channels[i].state:demand() as string
+        local t2 = love.timer.getTime()
+        print('demand time', t2 - t1)
+        if st and #st ~= 0 then
+            -- запись 4х байт номера потока и длины строки
+            local len = struct.pack("<dd", i, #st)
+            table.insert(t, len)
+            table.insert(t, st)
+        else
+            notwritten = notwritten + 1
+        end
     end
+    print('writestate by', threadCount, ' not written ', notwritten)
 
     local fullData = table.concat(t)
     return love.data.compress("string", "zlib", fullData, 9) as string

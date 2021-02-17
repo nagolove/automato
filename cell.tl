@@ -29,8 +29,6 @@ function genCode(): {string}
     return code
 end
 
--- t.pos, t.code
--- конструктор клетки
 function Cell.new(t: CellSetup): Cell
     local self: Cell = setmetatable({} as Cell, { __index = Cell })
     self.pos = {}
@@ -59,7 +57,11 @@ function Cell.new(t: CellSetup): Cell
     self.ip = 1
     self.id = istate.cellId
     istate.cellId = istate.cellId + 1
+
+    print('Cell:new')
+    print('istate.initialEnergy', istate.initialEnergy[1], istate.initialEnergy[2])
     self.energy = istate.rg:random(istate.initialEnergy[1], istate.initialEnergy[2])
+    print('istate.rg:random() =', self.energy)
 
     self:print()
 

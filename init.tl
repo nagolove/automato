@@ -315,6 +315,11 @@ local function activatePreset(num: number)
     commonSetup = shallowCopy(presets[num])
 end
 
+local function readState()
+    -- тут какой-то список сохраненных на диске состояний
+    --sim.readState()
+end
+
 local function writeState()
     local res = sim.writeState()
     love.filesystem.write("sim.data", res)
@@ -417,7 +422,7 @@ local function drawui()
     end
 
     if imgui.Button(i18n("readstate")) then
-        writeState()
+        readState()
     end
     imgui.SameLine()
     if imgui.Button(i18n("writestate")) then
@@ -425,11 +430,11 @@ local function drawui()
     end
     imgui.SameLine()
     if imgui.Button("<<") then
-        writeState()
+        --writeState()
     end
     imgui.SameLine()
     if imgui.Button(">>") then
-        writeState()
+        --writeState()
     end
 
     foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300, 200);
