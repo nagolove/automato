@@ -88,6 +88,7 @@ global type Statistic = record
         "born"
         "died"
         'percentAreaFilled'
+        'stepsPerSecond'
     end
 
     -- съедено клеток
@@ -110,6 +111,9 @@ global type Statistic = record
     died: number
     -- процент заполнения площади поля
     percentAreaFilled: number
+    -- средннее с начала работы количество проведенных итераций симулятора за 
+    -- секунду.
+    stepsPerSecond: number
 
     --[[
     Как собирать и где хранить информацию: 
@@ -162,7 +166,7 @@ global type ThreadCommands = enum
     -- вставить переданную клетку в список клеток
     "insertcell"
     -- получить информацию по нити
-    "info"
+    --"info"
     -- сохранить состояние на диск
     "writestate"
 end
@@ -179,17 +183,6 @@ global formatMods<const>: {Statistic.Types:string} = {
     ['died'] = '%d',
     ['percentAreaFilled'] = '%f',
 }
-
-global type ThreadInfo = record
-    -- сколько на момент запроса живых клетор
-    cells: number
-    -- сколько на момент запроса клеток еды
-    meals: number
-    -- средннее с начала работы количество проведенных итераций симулятора за 
-    -- секунду.
-    stepsPerSecond: number
-    --threadNum: number
-end
 
 global type Channels = {string: love.thread.Channel}
 
@@ -210,8 +203,7 @@ global ChannelsTypes<const>: {string} = {
     "request",
     -- вернуть сохраненное состояние
     "state",
-
-    -- статистика за определенный период
+    -- статистика 
     'stat',
 }
 
@@ -255,7 +247,7 @@ global type Simulator = record
     getIter : function(): number
     getGridSize : function(): number
     getSchema : function()
-    getThreadsInfo: function(): {ThreadInfo}
+    --getThreadsInfo: function(): {ThreadInfo}
     -- время симуляции в секундах
     getUptime: function(): number
 end

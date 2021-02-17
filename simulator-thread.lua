@@ -443,14 +443,10 @@ local function experiment()
 
 
       stat = gatherStatistic(cells)
+      channels.stat:push(stat)
 
       iter = iter + 1
 
-
-
-
-
-      channels.stat:push(stat)
       coroutine.yield()
    end
 
@@ -500,13 +496,18 @@ local function pushDrawList()
 end
 
 function commands.info()
-   local info = {
-      cells = #cells,
-      meals = #meals,
-      stepsPerSecond = stepsPerSecond,
-   }
-   channels.request:push(serpent.dump(info))
 end
+
+
+
+
+
+
+
+
+
+
+
 
 function commands.stop()
    print("stop command, break main cycle")

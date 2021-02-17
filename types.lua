@@ -124,6 +124,10 @@ local inspect = require("inspect")
 
 
 
+
+
+
+
  DrawNode = {}
 
 
@@ -180,17 +184,6 @@ formatMods = {
    ['percentAreaFilled'] = '%f',
 }
 
- ThreadInfo = {}
-
-
-
-
-
-
-
-
-
-
  Channels = {}
 
 ChannelsTypes = {
@@ -210,7 +203,6 @@ ChannelsTypes = {
    "request",
 
    "state",
-
 
    'stat',
 }

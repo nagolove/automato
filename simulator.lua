@@ -55,34 +55,36 @@ function Simulator.getDrawLists()
    return list
 end
 
-function Simulator.getThreadsInfo()
-   local list = {}
-   for k, _ in ipairs(threads) do
-      local chan = love.thread.getChannel("msg" .. k)
-      if chan then
-         chan:push("info")
-
-         local rchan = love.thread.getChannel("request" .. k)
-
-         local infostr = rchan:pop()
-
-         if infostr then
-            local ok, info = serpent.load(infostr)
-            if not ok then
-               error(string.format("Could not load string in getThreadsInfo()"))
-            end
-            table.insert(list, info)
-         end
 
 
 
 
 
 
-      end
-   end
-   return list
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 local function pushSync()
    local syncChan = love.thread.getChannel("sync")
@@ -310,6 +312,7 @@ function Simulator.getSchema()
 end
 
 function Simulator.update()
+
    local newstat = {}
    for i, _ in ipairs(threads) do
       local t = channels[i].stat:pop()

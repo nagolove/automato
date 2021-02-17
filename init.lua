@@ -81,7 +81,7 @@ local commonSetup = {
 
 local maxCellsNum = 5000
 local infoTimer = timer.new()
-local threadsInfo
+
 
 
 local function loadLocales()
@@ -263,35 +263,46 @@ end
 
 
 
+local prevStat
+
 local function printStat()
    local starr = sim.getStatistic()
 
    print("starr = ", inspect(starr))
+   print("#starr", #starr)
+   print("prevStat", inspect(prevStat))
+
+
+   if #starr ~= 0 then
+      prevStat = deepCopy(prevStat)
+   elseif #starr == 0 and prevStat then
+      starr = prevStat
+      print("used prevStat", inspect(prevStat))
+   end
 
    for _, st in ipairs(starr) do
 
 
       for k, v in pairs(st) do
-
-
-
          imgui.Text(string.format('%s:' .. formatMods[k], k, v))
       end
    end
 end
 
-local function printThreadsInfo()
-   if threadsInfo then
-      for k, v in ipairs(threadsInfo) do
-         imgui.Text(string.format("thread %d cells %d meals %d", k, v.cells, v.meals))
-         if v.stepsPerSecond then
-            imgui.Text(string.format("iteration per second - %d", v.stepsPerSecond))
-         end
-      end
-   else
-      imgui.Text(string.format("thread %d cells %d meals %d", -1, -1, -1))
-   end
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -433,7 +444,7 @@ local function drawui()
 
 
    printStat()
-   printThreadsInfo()
+
 
    if underCursor then
 
@@ -441,7 +452,9 @@ local function drawui()
 
 
       drawCellInfo(cell)
+      simulatorRender.cam:attach()
       simulatorRender:drawCellPath(cell)
+      simulatorRender.cam:detach()
    end
 
    imgui.End()
@@ -452,12 +465,15 @@ local function draw()
       local zazor = 10
       simulatorRender:draw()
 
-      gr.push()
-      simulatorRender.cam:attach()
-      local canvasx, canvasy = simulatorRender.fieldWidthPixels + zazor, 0
-      gr.draw(simulatorRender.canvas, canvasx, canvasy)
-      simulatorRender.cam:detach()
-      gr.pop()
+
+
+
+
+
+
+
+
+
    elseif viewState == "graph" then
 
    end
@@ -678,17 +694,19 @@ local function init()
 
    bindKeys()
 
-   threadsInfo = { { cells = 0, meals = 0 } }
 
-   infoTimer:every(0.1, function(_)
-      local info = sim.getThreadsInfo()
 
-      if info then
-         threadsInfo = info
-      else
-         print("no info")
-      end
-   end)
+
+
+
+
+
+
+
+
+
+
+
 
 
    loadPresets()
@@ -711,10 +729,13 @@ local function mousemoved(x, y, _, _)
 
 
 
+
+
    underCursor = {
       x = math.floor(x / simulatorRender:getPixSize()),
       y = math.floor(y / simulatorRender:getPixSize()),
    }
+
 end
 
 local function wheelmoved(_, y)

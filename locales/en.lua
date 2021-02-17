@@ -34,6 +34,8 @@ return {
             born = 'born cells',
             -- количество умерших клеток
             died = 'died cells',
+            -- процент заполнения площади поля
+            percentAreaFilled = 'area filled %',
         },
 
         pos = "Position", -- пространство(??)

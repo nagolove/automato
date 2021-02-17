@@ -120,11 +120,12 @@ function SimulatorRender:draw()
 
         gr.setCanvas()
     end
+
     --print("SimulatorRender:draw() self.canvas", self.canvas)
-    self.canvas:newImageData():encode(
-        'png', 
-        string.format('simulator-render-canvas-%d.png', screenNumber)
-    )
+    --self.canvas:newImageData():encode(
+        --'png', 
+        --string.format('simulator-render-canvas-%d.png', screenNumber)
+    --)
     screenNumber = screenNumber + 1
 
     self.cam:attach()

@@ -81,7 +81,7 @@ local commonSetup: CommonSetup = {
 
 local maxCellsNum = 5000
 local infoTimer: Timer = timer.new()
-local threadsInfo: {ThreadInfo}
+--local threadsInfo: {ThreadInfo}
 --local simulatorCanvas: love.graphics.Canvas
 
 local function loadLocales()
@@ -263,23 +263,33 @@ end
 --print("checkValidThreadCount(10)", checkValidThreadCount(10))
 --print("checkValidThreadCount(19)", checkValidThreadCount(19))
 
+local prevStat: {Statistic}
+
 local function printStat()
     local starr: {Statistic} = sim.getStatistic()
 
     print("starr = ", inspect(starr))
+    print("#starr", #starr)
+    print("prevStat", inspect(prevStat))
+
+    -- XXX работает ли такая подмена массива?
+    if #starr ~= 0 then
+        prevStat = deepCopy(prevStat)
+    elseif #starr == 0 and prevStat then
+        starr = prevStat
+        print("used prevStat", inspect(prevStat))
+    end
 
     for _, st in ipairs(starr) do
         --for k, v in pairs(st as {Statistic.Types:number}) do
         --print('Statistic.Types', inspect(Statistic.Types))
         for k, v in pairs(st as {string: number}) do
-            --imgui.Text(string.format("%s: %d", st[v as Statistic.Types], v))
-            --imgui.Text(string.format("%s: %d", (st as {string:number)[k], v))
-            --print('k, v', k, v)
             imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
         end
     end
 end
 
+--[[
 local function printThreadsInfo()
     if threadsInfo then
         for k, v in ipairs(threadsInfo) do
@@ -292,6 +302,7 @@ local function printThreadsInfo()
         imgui.Text(string.format("thread %d cells %d meals %d", -1, -1, -1))
     end
 end
+--]]
 
 -- открыт ли модальный диалог(пока только сохранение пресета)
 --local ismodal = false
@@ -433,7 +444,7 @@ local function drawui()
     -- можно запрашивать не каждый кадр
 
     printStat()
-    printThreadsInfo()
+    --printThreadsInfo()
 
     if underCursor then
         -- XXX FIXME Not work
@@ -441,7 +452,9 @@ local function drawui()
         --print("cell", inspect(cell))
 
         drawCellInfo(cell)
+        simulatorRender.cam:attach()
         simulatorRender:drawCellPath(cell)
+        simulatorRender.cam:detach()
     end
 
     imgui.End()
@@ -452,12 +465,15 @@ local function draw()
         local zazor: number = 10
         simulatorRender:draw()
 
+        --[[
         gr.push()
         simulatorRender.cam:attach()
         local canvasx, canvasy = simulatorRender.fieldWidthPixels + zazor, 0
         gr.draw(simulatorRender.canvas as love.graphics.Drawable, canvasx, canvasy)
         simulatorRender.cam:detach()
         gr.pop()
+        --]]
+
     elseif viewState == "graph" then
 --        drawGraphs()
     end
@@ -678,8 +694,9 @@ local function init()
 
     bindKeys()
 
-    threadsInfo = {{cells = 0, meals = 0}}
+    --threadsInfo = {{cells = 0, meals = 0}}
 
+    --[[
     infoTimer:every(0.1, function(_: number)
         local info = sim.getThreadsInfo()
         --print("infO", inspect(info))
@@ -689,6 +706,7 @@ local function init()
             print("no info")
         end
     end)
+    --]]
 
     --print("simulatorRender", inspect(simulatorRender))
     loadPresets()
@@ -711,10 +729,13 @@ local function mousemoved(x: number, y: number, _: number, _: number)
     --simulatorRender:p()
     --print(simulatorRender.cam)
     -- не приводятся координаты при движении камеры и масштабировании
+
+    --
     underCursor = {
         x = math.floor(x / simulatorRender:getPixSize()),
         y = math.floor(y / simulatorRender:getPixSize())
     }
+    --]]
 end
 
 local function wheelmoved(_: number, y: number)

@@ -55,6 +55,7 @@ function Simulator.getDrawLists(): {DrawNode}
     return list
 end
 
+--[[
 function Simulator.getThreadsInfo(): {ThreadInfo}
     local list: {ThreadInfo} = {}
     for k, _ in ipairs(threads) do
@@ -83,6 +84,7 @@ function Simulator.getThreadsInfo(): {ThreadInfo}
     end
     return list
 end
+--]]
 
 local function pushSync()
     local syncChan = love.thread.getChannel("sync")
@@ -310,6 +312,7 @@ function Simulator.getSchema(): {MtSchema}
 end
 
 function Simulator.update()
+    -- получить структуру статистики из всех запущенных нитей
     local newstat: {Statistic} = {}
     for i, _ in ipairs(threads) do
         local t: Statistic = channels[i].stat:pop() as Statistic

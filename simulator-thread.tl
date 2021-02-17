@@ -443,14 +443,10 @@ local function experiment()
 
         -- обновить статистику за такт
         stat = gatherStatistic(cells)
+        channels.stat:push(stat)
 
         iter = iter + 1
 
-        --print("cells", #cells)
-
-        -- можно возвращать сдесь какое-то состояние клеток из нити
-        --coroutine.yield(stepStatistic)
-        channels.stat:push(stat)
         coroutine.yield()
     end
 
@@ -499,6 +495,7 @@ local function pushDrawList()
     --end
 end
 
+--[[
 function commands.info()
     local info: ThreadInfo = {
         cells = #cells,
@@ -507,6 +504,7 @@ function commands.info()
     }
     channels.request:push(serpent.dump(info))
 end
+--]]
 
 function commands.stop()
     print("stop command, break main cycle")
