@@ -162,9 +162,10 @@ global type DrawNode = record
     color: {number}
 end
 
+-- режим работы - протяженный, пошаговый или стоп
 global type SimulatorMode = enum
-    "step"
     "continuos"
+    "step"
     "stop"
 end
 

@@ -24,8 +24,7 @@ local threads: {love.thread.Thread} = {}
 local statGatherDelay = 0.1
 -- количество потоков
 local threadCount: number = -1
--- режим работы - протяженный, пошаговый или стоп
-local mode: SimulatorMode = "stop" -- "step"
+local mode: SimulatorMode = "stop"
 local channels: {Channels} = {}
 --[[
 channels[1].cellrequest:push()
@@ -299,6 +298,7 @@ function Simulator.shutdown()
     print('t', inspect(t))
     print('shutdown done')
     isdone = true
+    mode = 'stop'
 end
 
 function Simulator.getUptime(): number

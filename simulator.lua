@@ -24,7 +24,6 @@ local threads = {}
 local statGatherDelay = 0.1
 
 local threadCount = -1
-
 local mode = "stop"
 local channels = {}
 
@@ -299,6 +298,7 @@ function Simulator.shutdown()
    print('t', inspect(t))
    print('shutdown done')
    isdone = true
+   mode = 'stop'
 end
 
 function Simulator.getUptime()

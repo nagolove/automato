@@ -14,6 +14,7 @@ require("imgui")
 require("simulator-render")
 require("types")
 
+local linesbuf = require('kons').new()
 local camera = require("camera")
 local gr = love.graphics
 local imgui = require("imgui")
@@ -25,6 +26,7 @@ local startInStepMode = false
 local binds = require("binds")
 local i18n = require("i18n")
 local profi = require("profi")
+local linesbufDelay = 1
 
 
 PROF_CAPTURE = false
@@ -304,13 +306,15 @@ local function stop()
    profi:writeReport("init-profile-count.txt")
 
    sim.shutdown()
-
+   mode = 'stop'
 
 
 
 end
 
 local function drawui()
+   linesbuf:draw()
+
    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
    local num, status
@@ -324,24 +328,23 @@ local function drawui()
 
 
 
-   imgui.Text(string.format("mode %s", mode))
-
-   if imgui.Button(i18n("changemode")) then
-      nextMode()
-   end
-
-   if sim.getMode() == "stop" then
+   if mode == "stop" then
       roundSettings()
    end
 
    if imgui.Button(i18n("start")) then
       start()
    end
-
    imgui.SameLine()
    if imgui.Button(i18n("stp")) then
       stop()
    end
+   imgui.SameLine()
+   if imgui.Button(i18n("changemode")) then
+      nextMode()
+   end
+
+   imgui.Text(string.format("mode %s", mode))
 
    if imgui.Button(i18n("readstate")) then
       readState()
@@ -416,6 +419,7 @@ end
 
 
 local function update(dt)
+   linesbuf:update()
    simulatorRender:update(dt)
    sim.update(dt)
 end
@@ -512,6 +516,7 @@ local function bindKeys()
    { key = 's' },
    function(sc)
       sim.step()
+      linesbuf:push(linesbufDelay, 'forward step')
       return false, sc
    end,
    'do a simulation step',
