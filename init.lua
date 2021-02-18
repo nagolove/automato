@@ -296,12 +296,15 @@ end
 
 local function stop()
 
+
    profi:stop()
    profi:setSortMethod("duration")
    profi:writeReport("init-profile-duration.txt")
    profi:setSortMethod("count")
    profi:writeReport("init-profile-count.txt")
+
    sim.shutdown()
+
 
 
 

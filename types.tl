@@ -55,9 +55,9 @@ global type CommonSetup = record
     -- радиус в клетках окружности функции разбрасывания клеток
     spreadRad: number
     -- состояние ГПСЧ из вызывающей нити, разделяется между всеми потоками
-    rgState: string
+    rngState: string
     -- используется только в рабочей нити
-    rg: love.math.RandomGenerator
+    rng: love.math.RandomGenerator
     -- номер последней клетки(всешл созданных)
     cellId:number
     -- используется в классе Cell

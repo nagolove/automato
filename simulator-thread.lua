@@ -660,8 +660,9 @@ local function doSetup()
    end
 
 
-   istate.rg = love.math.newRandomGenerator()
-   istate.rg:setState(istate.rgState)
+   rng = love.math.newRandomGenerator()
+   rng:setState(istate.rngState)
+   istate.rng = rng
 
    if istate.mode == "step" then
       commands.step()
@@ -717,7 +718,6 @@ local function doSetup()
 
 
 
-   istate.rg = rng
    istate.cellActions = cellActions.actions
    cellInitInternal(istate, stat)
 end

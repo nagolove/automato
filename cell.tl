@@ -36,12 +36,12 @@ function Cell.new(t: CellSetup): Cell
     if t.pos and t.pos.x then
         self.pos.x = t.pos.x
     else
-        self.pos.x = istate.rg:random(1, istate.gridSize)
+        self.pos.x = istate.rng:random(1, istate.gridSize)
     end
     if t.pos and t.pos.y then
         self.pos.y = t.pos.y
     else
-        self.pos.y = istate.rg:random(1, istate.gridSize)
+        self.pos.y = istate.rng:random(1, istate.gridSize)
     end
     if t.code then
         self.code = shallowCopy(t.code)
@@ -60,7 +60,7 @@ function Cell.new(t: CellSetup): Cell
 
     print('Cell:new')
     print('istate.initialEnergy', istate.initialEnergy[1], istate.initialEnergy[2])
-    self.energy = istate.rg:random(istate.initialEnergy[1], istate.initialEnergy[2])
+    self.energy = istate.rng:random(istate.initialEnergy[1], istate.initialEnergy[2])
     print('istate.rg:random() =', self.energy)
 
     self:print()
@@ -99,7 +99,7 @@ end
 function cellInitInternal(state: CommonSetup, s: Statistic)
     istate = shallowCopy(state)
     actions = state.cellActions
-    rng = state.rg
+    rng = state.rng
     stat = s
     codeValues = getCodeValues()
 end

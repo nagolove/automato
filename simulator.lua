@@ -103,11 +103,11 @@ function Simulator.create(commonSetup)
    gridSize = commonSetup.gridSize
    commonSetup.cellId = 0
 
-   local mainRg = love.math.newRandomGenerator()
+   local mainRng = love.math.newRandomGenerator()
 
-   mainRg:setSeed(love.timer.getTime())
+   mainRng:setSeed(love.timer.getTime())
 
-   commonSetup.rgState = mainRg:getState()
+   commonSetup.rngState = mainRng:getState()
 
    mtschema = require("mtschemes")[threadCount]
    print("mtschema", inspect(mtschema))

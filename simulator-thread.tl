@@ -660,8 +660,9 @@ local function doSetup()
     end
     -- XXX получать состояние ГПСЧ из istate
     --istate.rg = rng
-    istate.rg = love.math.newRandomGenerator()
-    istate.rg:setState(istate.rgState)
+    rng = love.math.newRandomGenerator()
+    rng:setState(istate.rngState)
+    istate.rng = rng
 
     if istate.mode == "step" then
         commands.step()
@@ -717,7 +718,6 @@ local function doSetup()
     -- установка ссылки на таблицу действий - язык клетки.
     --actions = cellActions.actions
 
-    istate.rg = rng
     istate.cellActions = cellActions.actions
     cellInitInternal(istate, stat)
 end
