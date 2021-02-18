@@ -142,6 +142,8 @@ function SimulatorRender:draw()
 
    local sx, sy = 1, 1
 
+   print('self.camera.position', self.cam:position())
+
    self.cam:attach()
    gr.draw(
    self.canvas,

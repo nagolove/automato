@@ -1,6 +1,7 @@
 local inspect = require "inspect"
 local serpent = require "serpent"
 local struct = require "struct"
+local timer = require "Timer"
 
 --local profi = require "profi"
 --profi:start()
@@ -14,23 +15,22 @@ require "love"
 require "mtschemes"
 require "types"
 
+local infoTimer: Timer = timer.new()
 local gridSize: number
 local mtschema: {MtSchema}
 local starttime: number = 0
 local statistic: {Statistic} = {}
 local threads: {love.thread.Thread} = {}
-
+local statGatherDelay = 0.1
 -- количество потоков
 local threadCount: number = -1
-
 -- режим работы - протяженный, пошаговый или стоп
 local mode: SimulatorMode = "stop" -- "step"
-
 local channels: {Channels} = {}
-
 --[[
 channels[1].cellrequest:push()
 --]]
+local isdone: boolean = true
 
 function Simulator.getDrawLists(): {DrawNode}
     local list = {}
@@ -93,7 +93,9 @@ function Simulator.create(commonSetup: CommonSetup)
 
     print("commonSetup", inspect(commonSetup))
 
-    Simulator.shutdown()
+    if isdone == false then
+        Simulator.shutdown()
+    end
 
     threadCount = commonSetup.threadCount
     print("threadCount", threadCount)
@@ -147,45 +149,25 @@ function Simulator.create(commonSetup: CommonSetup)
     print("processorCount", processorCount)
 
     starttime = love.timer.getTime()
-end
-
-
---local function getThreadsLog()
-    --local logChan = love.thread.getChannel("log")
-    --local msg: {any} = logChan:pop() as {any}
-    --while msg do
-        --print(msg[1], msg[2])
-        --msg = logChan:pop() as {any}
-    --end
---end
-
-function Simulator.step()
-    if mode == "stop" then
-        return
-    end
-
-    --local iterSum: number = 0
-    --local iterChan: love.thread.Channel = love.thread.getChannel("iter")
-    --local value = iterChan:pop() as number
-    --while value do
-        --iterSum = iterSum + value
-        --value = iterChan:pop() as number
-    --end
-    --statistic.iterAverage = iterSum / threadCount
-    --pushSync()
+    isdone = false
+    infoTimer:every(statGatherDelay, function(_: number)
+        -- TODO собирать значения реже, брать таймаут по таймеру
+        -- получить структуру статистики из всех запущенных нитей
+        local newstat: {Statistic} = {}
+        for i, _ in ipairs(threads) do
+            local t: Statistic = channels[i].stat:pop() as Statistic
+            if t then
+                table.insert(newstat, t)
+            end
+        end
+        statistic = newstat
+    end)
 end
 
 -- FIXME Как починить счетчик итераций при работе в несколько нитей?
-function Simulator.getIter(): number
-    --[[
-       [local newIter = love.thread.getChannel("iter")
-       [if newIter then
-       [    iter = newIter:pop() or iter
-       [end
-       [return iter
-       ]]
-       return 0
-end
+--function Simulator.getIter(): number
+       --return 0
+--end
 
 -- возвращает номер нити многопоточной схемы по целочисленным координатам 
 -- клетки. Отсчет с левого верхнего угла
@@ -279,16 +261,8 @@ function Simulator.getSchema(): {MtSchema}
     return mtschema
 end
 
-function Simulator.update()
-    -- получить структуру статистики из всех запущенных нитей
-    local newstat: {Statistic} = {}
-    for i, _ in ipairs(threads) do
-        local t: Statistic = channels[i].stat:pop() as Statistic
-        if t then
-            table.insert(newstat, t)
-        end
-    end
-    statistic = newstat
+function Simulator.update(dt: number)
+    infoTimer:update(dt)
 end
 
 function Simulator.getGridSize(): number
@@ -298,6 +272,10 @@ end
 function Simulator.shutdown()
     print("Simulator.shutdown()")
     pushMsg2Threads('stop')
+
+    if isdone then
+        return
+    end
 
     local t = {}
     for i = 1, threadCount do
@@ -320,6 +298,7 @@ function Simulator.shutdown()
     clearChannels()
     print('t', inspect(t))
     print('shutdown done')
+    isdone = true
 end
 
 function Simulator.getUptime(): number

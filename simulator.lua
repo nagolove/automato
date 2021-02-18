@@ -1,6 +1,7 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
 local serpent = require("serpent")
 local struct = require("struct")
+local timer = require("Timer")
 
 
 
@@ -14,23 +15,22 @@ require("love")
 require("mtschemes")
 require("types")
 
+local infoTimer = timer.new()
 local gridSize
 local mtschema
 local starttime = 0
 local statistic = {}
 local threads = {}
-
+local statGatherDelay = 0.1
 
 local threadCount = -1
 
-
 local mode = "stop"
-
 local channels = {}
 
 
 
-
+local isdone = true
 
 function Simulator.getDrawLists()
    local list = {}
@@ -93,7 +93,9 @@ function Simulator.create(commonSetup)
 
    print("commonSetup", inspect(commonSetup))
 
-   Simulator.shutdown()
+   if isdone == false then
+      Simulator.shutdown()
+   end
 
    threadCount = commonSetup.threadCount
    print("threadCount", threadCount)
@@ -147,45 +149,25 @@ function Simulator.create(commonSetup)
    print("processorCount", processorCount)
 
    starttime = love.timer.getTime()
+   isdone = false
+   infoTimer:every(statGatherDelay, function(_)
+
+
+      local newstat = {}
+      for i, _ in ipairs(threads) do
+         local t = channels[i].stat:pop()
+         if t then
+            table.insert(newstat, t)
+         end
+      end
+      statistic = newstat
+   end)
 end
 
 
 
 
 
-
-
-
-
-
-
-function Simulator.step()
-   if mode == "stop" then
-      return
-   end
-
-
-
-
-
-
-
-
-
-
-end
-
-
-function Simulator.getIter()
-
-
-
-
-
-
-
-   return 0
-end
 
 
 
@@ -279,16 +261,8 @@ function Simulator.getSchema()
    return mtschema
 end
 
-function Simulator.update()
-
-   local newstat = {}
-   for i, _ in ipairs(threads) do
-      local t = channels[i].stat:pop()
-      if t then
-         table.insert(newstat, t)
-      end
-   end
-   statistic = newstat
+function Simulator.update(dt)
+   infoTimer:update(dt)
 end
 
 function Simulator.getGridSize()
@@ -298,6 +272,10 @@ end
 function Simulator.shutdown()
    print("Simulator.shutdown()")
    pushMsg2Threads('stop')
+
+   if isdone then
+      return
+   end
 
    local t = {}
    for i = 1, threadCount do
@@ -320,6 +298,7 @@ function Simulator.shutdown()
    clearChannels()
    print('t', inspect(t))
    print('shutdown done')
+   isdone = true
 end
 
 function Simulator.getUptime()
@@ -376,6 +355,22 @@ function Simulator.writeState()
    print('writestate by', threadCount, ' not written ', notwritten)
 
    local fullData = table.concat(t)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
    return love.data.compress("string", "zlib", fullData, 9)
 end
 

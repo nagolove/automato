@@ -142,6 +142,8 @@ function SimulatorRender:draw()
     --local sx, sy = 0.5, 0.5
     local sx, sy = 1, 1 
 
+    print('self.camera.position', self.cam:position())
+    -- 710, 290
     self.cam:attach()
     gr.draw(
         self.canvas as love.graphics.Drawable,

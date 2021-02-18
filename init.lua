@@ -19,10 +19,9 @@ local gr = love.graphics
 local imgui = require("imgui")
 local inspect = require("inspect")
 local mtschemes = require("mtschemes")
-local prof = require("jprof")
+
 local sim = require("simulator")
 local startInStepMode = false
-local timer = require("Timer")
 local binds = require("binds")
 local i18n = require("i18n")
 
@@ -80,7 +79,6 @@ local commonSetup = {
 }
 
 local maxCellsNum = 5000
-local infoTimer = timer.new()
 
 
 
@@ -553,11 +551,10 @@ end
 
 
 local function update(dt)
-   infoTimer:update(dt)
+
 
    simulatorRender:update(dt)
-   sim.step()
-   sim.update()
+   sim.update(dt)
 
 
 

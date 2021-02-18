@@ -247,7 +247,7 @@ global type Simulator = record
     -- создать и запустить
     create: function(CommonSetup)
     -- вызывать каждый кадр, для обновления статистики
-    update: function()
+    update: function(dt: number)
 
     -- записать состояние симулятора для последующего восстановления
     writeState: function(): string
@@ -264,12 +264,13 @@ global type Simulator = record
     -- пример запроса для рисования(предки-потомки и тд)
     --getDrawLists : function(query: function(Cell): boolean): {DrawNode}
 
+    -- вернуть номер нити обрабатывающей клетку с индексом x, y
     findThreadByPos: function(x: number, y: number): number
     getObject : function(number, number): Cell
     step : function()
     doStep : function()
     getStatistic : function(): {Statistic}
-    getIter : function(): number
+    --getIter : function(): number
     getGridSize : function(): number
     getSchema : function()
     --getThreadsInfo: function(): {ThreadInfo}
