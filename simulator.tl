@@ -249,7 +249,7 @@ function Simulator.getMode(): SimulatorMode
     return mode
 end
 
-function Simulator.doStep()
+function Simulator.step()
     pushMsg2Threads("step")
 end
 

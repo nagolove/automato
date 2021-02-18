@@ -20,9 +20,9 @@ local inspect = require "inspect"
 local serpent = require "serpent"
 local struct = require "struct"
 local maxDataChannelCount = 10
-local randseed: number = love.timer.getTime()
-
-local rng = love.math.newRandomGenerator(randseed)
+--local randseed: number = love.timer.getTime()
+local secondDelay = 1
+local rng: love.math.RandomGenerator
 
 local istate: CommonSetup
 
@@ -88,6 +88,7 @@ local stepsPerSecond = 0
 
 -- флажок устанавливается когда корутина эксперимента закончилась
 -- нет смысла в этом флаге если корутина завершилась ошибочно
+-- TODO удалить за ненадобностью?
 local free = false
 
 --local actions: CellActions
@@ -533,6 +534,10 @@ end
 function commands.step()
   checkStep = true
   doStep = true
+
+  -- сброс таймера посчета итераций в секунду
+  stepsPerSecond = stepsCount
+  stepsCount = 0
 end
 
 function commands.continuos()
@@ -718,8 +723,9 @@ local function doSetup()
 end
 
 local function step()
+    -- счетчик итераций за секунду. Обнуляется при шаговом режиме.
     local newtimestamp = love.timer.getTime()
-    if newtimestamp - timestamp >= 1 then
+    if newtimestamp - timestamp >= secondDelay then
         stepsPerSecond = stepsCount
         stepsCount = 0
         timestamp = newtimestamp
@@ -728,6 +734,8 @@ local function step()
     local ok, errmsg = coroutine.resume(experimentCoro)
     stepsCount = stepsCount + 1
 
+    -- XXX корутина в принципе не должна завершаться, дальше только падать и 
+    -- писать отчет об ошибке
     if not ok and not experimentErrorPrinted then
         experimentErrorPrinted = true
         free = true

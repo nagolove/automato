@@ -24,7 +24,7 @@ local sim = require("simulator")
 local startInStepMode = false
 local binds = require("binds")
 local i18n = require("i18n")
-
+local profi = require("profi")
 
 
 PROF_CAPTURE = false
@@ -39,20 +39,7 @@ local viewState = "sim"
 local underCursor = {}
 local simulatorRender
 local cam
-
-
-
-print("graphics size", gr.getWidth(), gr.getHeight())
-
-
-
-
-
-
-
-
-
-
+local useProfi = false
 
 local mode = "stop"
 local foodProduction = ''
@@ -98,63 +85,6 @@ local function loadLocales()
    i18n.setLocale('en')
    print("i18n", inspect(i18n))
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 local function getCell(pos)
@@ -279,28 +209,11 @@ local function printStat()
    end
 
    for _, st in ipairs(starr) do
-
-
       for k, v in pairs(st) do
          imgui.Text(string.format('%s:' .. formatMods[k], k, v))
       end
    end
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -314,6 +227,8 @@ local function activatePreset(num)
 end
 
 local function readState()
+
+
 
 
 end
@@ -336,6 +251,7 @@ local function start()
    simulatorRender = SimulatorRender.new(commonSetup, cam)
    simulatorRender:cameraToCenter()
 
+   profi:start()
 end
 
 local function roundSettings()
@@ -376,11 +292,11 @@ end
 
 local function stop()
 
-
-
-
-
-
+   profi:stop()
+   profi:setSortMethod("duration")
+   profi:writeReport("init-profile-duration.txt")
+   profi:setSortMethod("count")
+   profi:writeReport("init-profile-count.txt")
    sim.shutdown()
 
 
@@ -437,29 +353,9 @@ local function drawui()
    end
 
    foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300, 200);
-
-
-
-
-
-
-
    imgui.Text(string.format("uptime %d sec", sim.getUptime()))
 
-
    printStat()
-
-
-   if underCursor then
-
-      local cell = getCell(underCursor)
-
-
-      drawCellInfo(cell)
-
-      simulatorRender:drawCellPath(cell)
-
-   end
 
    imgui.End()
 end
@@ -477,6 +373,17 @@ local function draw()
 
 
 
+
+      if underCursor then
+
+         local cell = getCell(underCursor)
+
+
+         drawCellInfo(cell)
+
+         simulatorRender:drawCellPath(cell)
+
+      end
 
    elseif viewState == "graph" then
 
@@ -501,63 +408,9 @@ end
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 local function update(dt)
-
-
    simulatorRender:update(dt)
    sim.update(dt)
-
-
-
 end
 
 local function loadPresets()
@@ -651,7 +504,7 @@ local function bindKeys()
    "keypressed",
    { key = 's' },
    function(sc)
-      sim.doStep()
+      sim.step()
       return false, sc
    end,
    'do a simulation step',
@@ -684,9 +537,20 @@ local function bindKeys()
    'chlocale')
 
 
+   KeyConfig.bind(
+   'keypressed',
+   { mod = { 'lctrl' }, key = 'p' },
+   function(sc)
+      useProfi = not useProfi
+      return false, sc
+   end,
+   'enable or disable profiler. Dev only',
+   'profiler')
+
 end
 
 local function init()
+   print("automato init()")
    loadLocales()
    local mx, my = love.mouse.getPosition()
    underCursor = { x = mx, y = my }
@@ -695,22 +559,6 @@ local function init()
    simulatorRender = SimulatorRender.new(commonSetup, cam)
 
    bindKeys()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    loadPresets()
    print("automato init done.")
 end
@@ -727,17 +575,10 @@ local function mousemoved(x, y, _, _)
       brx, bry = cam:worldCoords(brx, bry)
    end
 
-
-
-
-
-
-
    underCursor = {
       x = math.floor(x / simulatorRender:getPixSize()),
       y = math.floor(y / simulatorRender:getPixSize()),
    }
-
 end
 
 local function wheelmoved(_, y)
@@ -749,20 +590,12 @@ local function wheelmoved(_, y)
 end
 
 return {
-
-
-
    cam = cam,
-
-
-
-
    init = init,
    quit = quit,
    draw = draw,
    drawui = drawui,
    update = update,
-
    mousemoved = mousemoved,
    wheelmoved = wheelmoved,
 }

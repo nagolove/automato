@@ -141,6 +141,20 @@ global type Statistic = record
     --]]
 end
 
+global formatMods<const>: {Statistic.Types:string} = {
+    ['allEated'] = '%d',
+    ['maxEnergy'] = '%d',
+    ['minEnergy'] = '%d',
+    ['midEnergy'] = '%d',
+    ['cells'] = '%d',
+    ['iterations'] = '%d',
+    ['meals'] = '%d',
+    ['born'] = '%d',
+    ['died'] = '%d',
+    ['percentAreaFilled'] = '%f',
+    ['stepsPerSecond'] = '%d',
+}
+
 global type DrawNode = record
     x: number
     y: number
@@ -183,19 +197,6 @@ global type ThreadCommands = enum
     -- сохранить состояние на диск
     "writestate"
 end
-
-global formatMods<const>: {Statistic.Types:string} = {
-    ['allEated'] = '%d',
-    ['maxEnergy'] = '%d',
-    ['minEnergy'] = '%d',
-    ['midEnergy'] = '%d',
-    ['cells'] = '%d',
-    ['iterations'] = '%d',
-    ['meals'] = '%d',
-    ['born'] = '%d',
-    ['died'] = '%d',
-    ['percentAreaFilled'] = '%f',
-}
 
 global type Channels = {string: love.thread.Channel}
 
@@ -268,7 +269,7 @@ global type Simulator = record
     findThreadByPos: function(x: number, y: number): number
     getObject : function(number, number): Cell
     step : function()
-    doStep : function()
+    --doStep : function()
     getStatistic : function(): {Statistic}
     --getIter : function(): number
     getGridSize : function(): number

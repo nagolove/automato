@@ -141,6 +141,20 @@ local inspect = require("inspect")
 
 
 
+formatMods = {
+   ['allEated'] = '%d',
+   ['maxEnergy'] = '%d',
+   ['minEnergy'] = '%d',
+   ['midEnergy'] = '%d',
+   ['cells'] = '%d',
+   ['iterations'] = '%d',
+   ['meals'] = '%d',
+   ['born'] = '%d',
+   ['died'] = '%d',
+   ['percentAreaFilled'] = '%f',
+   ['stepsPerSecond'] = '%d',
+}
+
  DrawNode = {}
 
 
@@ -183,19 +197,6 @@ local inspect = require("inspect")
 
 
 
-
-formatMods = {
-   ['allEated'] = '%d',
-   ['maxEnergy'] = '%d',
-   ['minEnergy'] = '%d',
-   ['midEnergy'] = '%d',
-   ['cells'] = '%d',
-   ['iterations'] = '%d',
-   ['meals'] = '%d',
-   ['born'] = '%d',
-   ['died'] = '%d',
-   ['percentAreaFilled'] = '%f',
-}
 
  Channels = {}
 

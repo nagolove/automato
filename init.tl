@@ -24,7 +24,7 @@ local sim = require "simulator"
 local startInStepMode = false
 local binds = require "binds"
 local i18n = require "i18n"
---local profi = require "profi"
+local profi = require "profi"
 
 --global PROF_CAPTURE = true
 global PROF_CAPTURE = false
@@ -39,21 +39,8 @@ local viewState: ViewState = "sim"
 local underCursor: Pos = {}
 local simulatorRender: SimulatorRender
 local cam: Camera
-
--- канва для рисования графиков
--- проверить на максильный размер при запуске на телефоне
-print("graphics size", gr.getWidth(), gr.getHeight())
---local graphCanvas = gr.newCanvas(gr.getWidth(), gr.getHeight())
-
--- цвета графиков
---local MAX_ENERGY_COLOR = {1, 0.5, 0.7, 1}
---local MID_ENERGY_COLOR = {0.8, 0.3, 0.7, 1}
---local MIN_ENERGY_COLOR = {0.6, 0.1, 1, 1}
-
--- ?? инфа с последним изменением статистики 
---local lastGraphicPoint
-
--- режим работы - непрерывный или пошаговый continuos, step
+local useProfi = false
+-- режим работы - непрерывный или пошаговый
 local mode: SimulatorMode = "stop"
 local foodProduction: string = ''
 
@@ -98,63 +85,6 @@ local function loadLocales()
     i18n.setLocale('en')
     print("i18n", inspect(i18n))
 end
-
---[[
-local function drawStatisticTable()
-    local y0 = 0
-    gr.setColor(1, 0, 0)
-    y0 = y0 + gr.getFont():getHeight()
-    local statistic = sim.getStatistic()
-    if statistic then
-        if statistic.maxEnergy then
-            gr.setColor(1, 0, 0)
-            gr.print(string.format("max energy in cell %d", statistic.maxEnergy), 0, y0)
-            y0 = y0 + gr.getFont():getHeight()
-        end
-        if statistic.minEnergy then
-            gr.setColor(1, 0, 0)
-            gr.print(string.format("min energy in cell %d", statistic.minEnergy), 0, y0)
-            y0 = y0 + gr.getFont():getHeight()
-        end
-        if statistic.midEnergy then
-            gr.setColor(1, 0, 0)
-            gr.print(string.format("mid energy in cell %d", statistic.midEnergy), 0, y0)
-            y0 = y0 + gr.getFont():getHeight()
-        end
-    end
-end
---]]
-
---function drawAxises()
-    --gr.setColor(0, 1, 0)
-    --local w, h = gr.getDimensions()
-    --gr.setLineWidth(3)
-    --gr.line(0, h, 0, 0)
-    --gr.line(0, h, w, h)
-    --gr.setLineWidth(1)
---end
-
---local function drawLegends()
-    --local y0 = 0
-
-    --gr.setColor(MAX_ENERGY_COLOR)
-    --gr.print("max energy", 0, y0)
-    --y0 = y0 + gr.getFont():getHeight()
-
-    --gr.setColor(MID_ENERGY_COLOR)
-    --gr.print("mid energy", 0, y0)
-    --y0 = y0 + gr.getFont():getHeight()
-
-    --gr.setColor(MIN_ENERGY_COLOR)
-    --gr.print("min energy", 0, y0)
-    --y0 = y0 + gr.getFont():getHeight()
---end
-
---local function drawGraphs()
-    --drawAxises()
-    --drawLegends()
-    --gr.draw(graphCanvas as gr.Drawable)
---end
 
 -- возвращает структуру клетки под курсором pos
 local function getCell(pos: Pos): Cell
@@ -225,9 +155,11 @@ local function nextMode()
 end
 
 --[[
-Подобрать оптимальный алгоритм
-Работает в большую сторону, а не меньшую
---]]
+Возвращает количество возможно количество потоков по произвольному значению
+параметра.--]]
+-- TODO
+--Подобрать оптимальный алгоритм
+--Работает в большую сторону, а не меньшую
 local function checkValidThreadCount(threadCount: number): number
     --if not mtschemes[commonSetup.threadCount] then
     --local threadCount = commonSetup.threadCount
@@ -279,28 +211,11 @@ local function printStat()
     end
 
     for _, st in ipairs(starr) do
-        --for k, v in pairs(st as {Statistic.Types:number}) do
-        --print('Statistic.Types', inspect(Statistic.Types))
         for k, v in pairs(st as {string: number}) do
             imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
         end
     end
 end
-
---[[
-local function printThreadsInfo()
-    if threadsInfo then
-        for k, v in ipairs(threadsInfo) do
-            imgui.Text(string.format("thread %d cells %d meals %d", k, v.cells, v.meals))
-            if v.stepsPerSecond then
-                imgui.Text(string.format("iteration per second - %d", v.stepsPerSecond))
-            end
-        end
-    else
-        imgui.Text(string.format("thread %d cells %d meals %d", -1, -1, -1))
-    end
-end
---]]
 
 -- открыт ли модальный диалог(пока только сохранение пресета)
 --local ismodal = false
@@ -315,6 +230,8 @@ end
 
 local function readState()
     -- тут какой-то список сохраненных на диске состояний
+    -- как отображать список? ограниченное количество сохранений?
+    -- инкрементальное именование числами?
     --sim.readState()
 end
 
@@ -336,6 +253,7 @@ local function start()
     simulatorRender = SimulatorRender.new(commonSetup, cam)
     simulatorRender:cameraToCenter()
     --end
+    profi:start()
 end
 
 local function roundSettings()
@@ -376,11 +294,11 @@ end
 
 local function stop()
     --collectgarbage()
-    --profi:stop()
-    --profi:setSortMethod("duration")
-    --profi:writeReport("init-profile-1.txt")
-    --profi:setSortMethod("count")
-    --profi:writeReport("init-profile-2.txt")
+    profi:stop()
+    profi:setSortMethod("duration")
+    profi:writeReport("init-profile-duration.txt")
+    profi:setSortMethod("count")
+    profi:writeReport("init-profile-count.txt")
     sim.shutdown()
     --prof.pop()
     --prof.write('prof.mpack')
@@ -437,29 +355,9 @@ local function drawui()
     end
 
     foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300, 200);
-
-    --imgui.Text(replaceCaret(inspect(sim.getStatistic)) as string)
-
-    --if sim.getStatistic() and sim.getStatistic().allEated then
-        --imgui.LabelText(sim.getStatistic().allEated, "all eated")
-    --end
-
     imgui.Text(string.format("uptime %d sec", sim.getUptime()))
-    -- можно запрашивать не каждый кадр
 
     printStat()
-    --printThreadsInfo()
-
-    if underCursor then
-        -- XXX FIXME Not work
-        local cell = getCell(underCursor)
-        --print("cell", inspect(cell))
-
-        drawCellInfo(cell)
-        --simulatorRender.cam:attach()
-        simulatorRender:drawCellPath(cell)
-        --simulatorRender.cam:detach()
-    end
 
     imgui.End()
 end
@@ -477,6 +375,17 @@ local function draw()
         simulatorRender.cam:detach()
         gr.pop()
         --]]
+
+        if underCursor then
+            -- XXX FIXME Not work
+            local cell = getCell(underCursor)
+            --print("cell", inspect(cell))
+
+            drawCellInfo(cell)
+            --simulatorRender.cam:attach()
+            simulatorRender:drawCellPath(cell)
+            --simulatorRender.cam:detach()
+        end
 
     elseif viewState == "graph" then
 --        drawGraphs()
@@ -501,63 +410,9 @@ end
     --end
 --end
 
---[[
-local function updateGraphic()
-    local statistic = sim.getStatistic()
-    if not lastGraphicPoint then
-        if statistic then
-            lastGraphicPoint = {
-                max = statistic.maxEnergy,
-                mid = statistic.midEnergy,
-                min = statistic.minEnergy,
-            }
-        end
-    end
-    local getIter = sim.getIter
-
-    gr.setCanvas(graphCanvas)
-    local w, h = graphCanvas:getDimensions()
-
-    if lastGraphicPoint then
-        if lastGraphicPoint.max then
-            gr.setColor(MAX_ENERGY_COLOR)
-            gr.line(getIter() - 1, h - lastGraphicPoint.max, 
-            getIter(), h - statistic.maxEnergy)
-        end
-
-        if lastGraphicPoint.mid then
-            gr.setColor(MID_ENERGY_COLOR)
-            gr.line(getIter() - 1, h - lastGraphicPoint.mid, 
-            getIter(), h - statistic.midEnergy)
-        end
-
-        if lastGraphicPoint.min then
-            gr.setColor(MIN_ENERGY_COLOR)
-            gr.line(getIter() - 1, h - lastGraphicPoint.min, 
-            getIter(), h - statistic.minEnergy)
-        end
-    end
-
-    gr.setCanvas()
-
-    if statistic and statistic.maxEnergy and statistic.midEnergy and statistic.minEnergy then
-        lastGraphicPoint = {
-            max = statistic.maxEnergy,
-            mid = statistic.midEnergy,
-            min = statistic.minEnergy,
-        }
-    end
-end
---]]
-
 local function update(dt: number)
-    --infoTimer:update(dt)
-
     simulatorRender:update(dt)
     sim.update(dt)
-    
-    --updateGraphic()
-    --checkMouse()
 end
 
 local function loadPresets()
@@ -651,7 +506,7 @@ local function bindKeys()
         "keypressed",
         { key = 's' },
         function(sc: Shortcut): boolean, Shortcut
-            sim.doStep()
+            sim.step()
             return false, sc
         end,
         'do a simulation step',
@@ -684,9 +539,20 @@ local function bindKeys()
         'chlocale'
     )
 
+    KeyConfig.bind(
+        'keypressed',
+        { mod = { 'lctrl' }, key = 'p' },
+        function(sc: Shortcut): boolean, Shortcut
+            useProfi = not useProfi 
+            return false, sc
+        end,
+        'enable or disable profiler. Dev only',
+        'profiler'
+    )
 end
 
 local function init()
+    print("automato init()")
     loadLocales()
     local mx, my = love.mouse.getPosition()
     underCursor = {x = mx, y = my}
@@ -695,22 +561,6 @@ local function init()
     simulatorRender = SimulatorRender.new(commonSetup, cam)
 
     bindKeys()
-
-    --threadsInfo = {{cells = 0, meals = 0}}
-
-    --[[
-    infoTimer:every(0.1, function(_: number)
-        local info = sim.getThreadsInfo()
-        --print("infO", inspect(info))
-        if info then
-            threadsInfo = info
-        else
-            print("no info")
-        end
-    end)
-    --]]
-
-    --print("simulatorRender", inspect(simulatorRender))
     loadPresets()
     print("automato init done.")
 end
@@ -727,17 +577,10 @@ local function mousemoved(x: number, y: number, _: number, _: number)
         brx, bry = cam:worldCoords(brx, bry)
     end
 
-    --print("simulatorRender2", inspect(simulatorRender))
-    --simulatorRender:p()
-    --print(simulatorRender.cam)
-    -- не приводятся координаты при движении камеры и масштабировании
-
-    --
     underCursor = {
         x = math.floor(x / simulatorRender:getPixSize()),
         y = math.floor(y / simulatorRender:getPixSize())
     }
-    --]]
 end
 
 local function wheelmoved(_: number, y: number)
@@ -749,20 +592,12 @@ local function wheelmoved(_: number, y: number)
 end
 
 return {
-    --getMode = getMode,
-    --nextMode = nextMode,
-
     cam = cam, 
-
-    --PIX2M = PIX2M,
-    --M2PIX = M2PIX,
-
     init = init,
     quit = quit,
     draw = draw,
     drawui = drawui,
     update = update,
-    --keypressed = keypressed,
     mousemoved = mousemoved,
     wheelmoved = wheelmoved
 }

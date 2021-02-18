@@ -20,9 +20,9 @@ local inspect = require("inspect")
 local serpent = require("serpent")
 local struct = require("struct")
 local maxDataChannelCount = 10
-local randseed = love.timer.getTime()
 
-local rng = love.math.newRandomGenerator(randseed)
+local secondDelay = 1
+local rng
 
 local istate
 
@@ -85,6 +85,7 @@ local cellActions = require("cell-actions")
 local timestamp
 local stepsCount = 0
 local stepsPerSecond = 0
+
 
 
 
@@ -533,6 +534,10 @@ end
 function commands.step()
    checkStep = true
    doStep = true
+
+
+   stepsPerSecond = stepsCount
+   stepsCount = 0
 end
 
 function commands.continuos()
@@ -718,8 +723,9 @@ local function doSetup()
 end
 
 local function step()
+
    local newtimestamp = love.timer.getTime()
-   if newtimestamp - timestamp >= 1 then
+   if newtimestamp - timestamp >= secondDelay then
       stepsPerSecond = stepsCount
       stepsCount = 0
       timestamp = newtimestamp
@@ -727,6 +733,8 @@ local function step()
 
    local ok, errmsg = coroutine.resume(experimentCoro)
    stepsCount = stepsCount + 1
+
+
 
    if not ok and not experimentErrorPrinted then
       experimentErrorPrinted = true
