@@ -14,6 +14,14 @@ require "imgui"
 require "simulator-render"
 require "types"
 
+-- режит отображения
+local type ViewState = enum
+    "sim"
+    "graph"
+end
+
+global PROF_CAPTURE = false
+
 local linesbuf = require 'kons'.new()
 local camera = require "camera"
 local gr = love.graphics
@@ -27,28 +35,17 @@ local binds = require "binds"
 local i18n = require "i18n"
 local profi = require "profi"
 local linesbufDelay = 1
-
---global PROF_CAPTURE = true
-global PROF_CAPTURE = false
-
-local type ViewState = enum
-    "sim"
-    "graph"
-end
-
--- режит отображения "sim" или "graph"
 local viewState: ViewState = "sim"
 local underCursor: Pos = {}
 local simulatorRender: SimulatorRender
 local cam: Camera
 local useProfi = false
--- режим работы - непрерывный или пошаговый
 local mode: SimulatorMode = "stop"
 local foodProduction: string = ''
+local maxCellsNum = 5000
+local snaphotsDirectory = 'snaphots'
 
---[[
---Начальные установки симуляции
---]]
+--[[ Начальные установки симуляции ]]
 local commonSetup: CommonSetup = {
     -- размер сетки одного потока
     gridSize = 50,
@@ -66,10 +63,6 @@ local commonSetup: CommonSetup = {
     foodenergy = 10,
     emitInvSpeed = 1
 }
-
-local maxCellsNum = 5000
---local threadsInfo: {ThreadInfo}
---local simulatorCanvas: love.graphics.Canvas
 
 local function loadLocales()
     local localePath = "scenes/automato/locales"
@@ -238,8 +231,11 @@ local function readState()
 end
 
 local function writeState()
+    local files = love.filesystem.getDirectoryItems(snaphotsDirectory)
+    print('files', inspect(files))
     local res = sim.writeState()
-    love.filesystem.write("sim.data", res)
+    local fname = snaphotsDirectory .. string.format("/sim-%d.data", #files)
+    love.filesystem.write(fname, res)
 end
 
 local function start()
@@ -563,6 +559,7 @@ end
 
 local function init()
     print("automato init()")
+    love.filesystem.createDirectory('snaphots')
     loadLocales()
     local mx, my = love.mouse.getPosition()
     underCursor = {x = mx, y = my}

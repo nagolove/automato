@@ -14,6 +14,14 @@ require("imgui")
 require("simulator-render")
 require("types")
 
+
+local ViewState = {}
+
+
+
+
+PROF_CAPTURE = false
+
 local linesbuf = require('kons').new()
 local camera = require("camera")
 local gr = love.graphics
@@ -27,26 +35,15 @@ local binds = require("binds")
 local i18n = require("i18n")
 local profi = require("profi")
 local linesbufDelay = 1
-
-
-PROF_CAPTURE = false
-
-local ViewState = {}
-
-
-
-
-
 local viewState = "sim"
 local underCursor = {}
 local simulatorRender
 local cam
 local useProfi = false
-
 local mode = "stop"
 local foodProduction = ''
-
-
+local maxCellsNum = 5000
+local snaphotsDirectory = 'snaphots'
 
 
 local commonSetup = {
@@ -66,10 +63,6 @@ local commonSetup = {
    foodenergy = 10,
    emitInvSpeed = 1,
 }
-
-local maxCellsNum = 5000
-
-
 
 local function loadLocales()
    local localePath = "scenes/automato/locales"
@@ -238,8 +231,11 @@ local function readState()
 end
 
 local function writeState()
+   local files = love.filesystem.getDirectoryItems(snaphotsDirectory)
+   print('files', inspect(files))
    local res = sim.writeState()
-   love.filesystem.write("sim.data", res)
+   local fname = snaphotsDirectory .. string.format("/sim-%d.data", #files)
+   love.filesystem.write(fname, res)
 end
 
 local function start()
@@ -563,6 +559,7 @@ end
 
 local function init()
    print("automato init()")
+   love.filesystem.createDirectory('snaphots')
    loadLocales()
    local mx, my = love.mouse.getPosition()
    underCursor = { x = mx, y = my }
