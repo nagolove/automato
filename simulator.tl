@@ -33,20 +33,25 @@ local isdone: boolean = true
 
 function Simulator.getDrawLists(): {DrawNode}
     local list = {}
-    --print("channels", inspect(channels))
-    --os.exit()
     for k, _ in ipairs(threads) do
         local drawlist = channels[k].drawlist
         --print("datachannel", inspect(drawlist))
         if drawlist then
             --local sublist: {DrawNode} = drawlist:pop() as {DrawNode}
-            --local sublist: {DrawNode} = drawlist:demand(0.02) as {DrawNode}
-            local sublist: {DrawNode} = drawlist:peek() as {DrawNode}
+            local sublist: {DrawNode}
+
+            if drawlist:getCount() > 1 then
+                sublist = drawlist:pop() as {DrawNode}
+            else
+                sublist = drawlist:peek() as {DrawNode}
+            end
+
+            print('drawlist:getCount()', drawlist:getCount())
+
             if sublist then
-                for _, v1 in ipairs(sublist) do
-                    table.insert(list, v1)
+                for _, node in ipairs(sublist) do
+                    table.insert(list, node)
                 end
-                drawlist:pop()
             end
         end
     end
@@ -54,6 +59,7 @@ function Simulator.getDrawLists(): {DrawNode}
     return list
 end
 
+--[[
 local function pushSync()
     local syncChan = love.thread.getChannel("sync")
     local i = 1
@@ -65,6 +71,7 @@ local function pushSync()
         --syncChan:push("sync")
     --end
 end
+--]]
 
 local function pushMsg2Threads(t: any)
     for i = 1, threadCount do
@@ -135,7 +142,7 @@ function Simulator.create(commonSetup: CommonSetup)
         end
     end
 
-    pushSync()
+    --pushSync()
 
     print("threads", inspect(threads))
     print("thread errors")
@@ -151,10 +158,17 @@ function Simulator.create(commonSetup: CommonSetup)
     isdone = false
     infoTimer:every(statGatherDelay, function(_: number)
         -- TODO собирать значения реже, брать таймаут по таймеру
+
         -- получить структуру статистики из всех запущенных нитей
         local newstat: {Statistic} = {}
         for i, _ in ipairs(threads) do
-            local t: Statistic = channels[i].stat:pop() as Statistic
+            local t: Statistic
+            if channels[i].stat:getCount() > 1 then
+                t = channels[i].stat:pop() as Statistic
+            else
+                t = channels[i].stat:peek() as Statistic
+            end
+            print('channels[i].stat:getCount()', channels[i].stat:getCount())
             if t then
                 table.insert(newstat, t)
             end
@@ -238,7 +252,6 @@ function Simulator.getObject(x: number, y: number): Cell
 end
 
 function Simulator.setMode(m: SimulatorMode)
-    --assert(m == "step" or m == "continuos")
     mode = m
     print("push", mode)
     pushMsg2Threads(mode)

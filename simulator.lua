@@ -33,20 +33,25 @@ local isdone = true
 
 function Simulator.getDrawLists()
    local list = {}
-
-
    for k, _ in ipairs(threads) do
       local drawlist = channels[k].drawlist
 
       if drawlist then
 
+         local sublist
 
-         local sublist = drawlist:peek()
+         if drawlist:getCount() > 1 then
+            sublist = drawlist:pop()
+         else
+            sublist = drawlist:peek()
+         end
+
+         print('drawlist:getCount()', drawlist:getCount())
+
          if sublist then
-            for _, v1 in ipairs(sublist) do
-               table.insert(list, v1)
+            for _, node in ipairs(sublist) do
+               table.insert(list, node)
             end
-            drawlist:pop()
          end
       end
    end
@@ -54,17 +59,19 @@ function Simulator.getDrawLists()
    return list
 end
 
-local function pushSync()
-   local syncChan = love.thread.getChannel("sync")
-   local i = 1
-   while i < threadCount do
-      i = i + 1
-      syncChan:push("sync")
-   end
 
 
 
-end
+
+
+
+
+
+
+
+
+
+
 
 local function pushMsg2Threads(t)
    for i = 1, threadCount do
@@ -135,7 +142,7 @@ function Simulator.create(commonSetup)
       end
    end
 
-   pushSync()
+
 
    print("threads", inspect(threads))
    print("thread errors")
@@ -152,9 +159,16 @@ function Simulator.create(commonSetup)
    infoTimer:every(statGatherDelay, function(_)
 
 
+
       local newstat = {}
       for i, _ in ipairs(threads) do
-         local t = channels[i].stat:pop()
+         local t
+         if channels[i].stat:getCount() > 1 then
+            t = channels[i].stat:pop()
+         else
+            t = channels[i].stat:peek()
+         end
+         print('channels[i].stat:getCount()', channels[i].stat:getCount())
          if t then
             table.insert(newstat, t)
          end
@@ -238,7 +252,6 @@ function Simulator.getObject(x, y)
 end
 
 function Simulator.setMode(m)
-
    mode = m
    print("push", mode)
    pushMsg2Threads(mode)

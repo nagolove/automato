@@ -444,6 +444,8 @@ local function experiment()
 
 
       stat = gatherStatistic(cells)
+
+
       channels.stat:push(stat)
 
       iter = iter + 1
@@ -485,6 +487,8 @@ local function pushDrawList()
 
 
 
+
+   print('getCount()', channels.drawlist:getCount())
 
 
 
@@ -693,12 +697,6 @@ local function doSetup()
    print("schema", inspect(schema))
    print("drawCoefficients", inspect(drawCoefficients))
 
-
-
-
-
-
-
    experimentCoro = coroutine.create(experiment)
 
 
@@ -754,7 +752,7 @@ local function main()
             if doStep then
                step()
             end
-            love.timer.sleep(0.002)
+            love.timer.sleep(0.001)
          else
             step()
          end
@@ -762,7 +760,7 @@ local function main()
          print('main loop')
          doStep = false
       else
-         love.timer.sleep(0.002)
+         love.timer.sleep(0.001)
       end
    end
 

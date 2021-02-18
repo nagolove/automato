@@ -415,6 +415,7 @@ end
 
 
 local function update(dt)
+   linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
    linesbuf:update()
    simulatorRender:update(dt)
    sim.update(dt)

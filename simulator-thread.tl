@@ -121,38 +121,38 @@ end
 -- не работает нормально. Нужно отсылал с некоторой периодичностью в виде 
 -- сообщений в основную нить
 function gatherStatistic(cells: {Cell}): Statistic
-  local maxEnergy = 0
-  local minEnergy = istate.initialEnergy[2]
-  local sumEnergy = 0
-  local square = gridSize * gridSize
-  local i = 0
+    local maxEnergy = 0
+    local minEnergy = istate.initialEnergy[2]
+    local sumEnergy = 0
+    local square = gridSize * gridSize
+    local i = 0
 
-  -- зачем?
-  for _, v in ipairs(cells) do
-      if v.energy and v.energy > 0 then
-          i = i + 1
-      end
-      if v.energy > maxEnergy then
-          maxEnergy = v.energy
-      end
-      if v.energy < minEnergy then
-          minEnergy = v.energy
-      end
-      sumEnergy = sumEnergy + v.energy
-  end
+    -- зачем?
+    for _, v in ipairs(cells) do
+        if v.energy and v.energy > 0 then
+            i = i + 1
+        end
+        if v.energy > maxEnergy then
+            maxEnergy = v.energy
+        end
+        if v.energy < minEnergy then
+            minEnergy = v.energy
+        end
+        sumEnergy = sumEnergy + v.energy
+    end
 
-  --local num = #cells > 0 and #cells or 1
-  if sumEnergy == 0 then
-    sumEnergy = 1
-  end
-  print('square, i', square, i)
-  return { 
-    maxEnergy = maxEnergy,
-    minEnergy = minEnergy,
-    midEnergy = sumEnergy / #cells,
-    allEated = cellActions.getAllEated(),
-    percentAreaFilled = i / square,
-  }
+    --local num = #cells > 0 and #cells or 1
+    if sumEnergy == 0 then
+        sumEnergy = 1
+    end
+    print('square, i', square, i)
+    return { 
+        maxEnergy = maxEnergy,
+        minEnergy = minEnergy,
+        midEnergy = sumEnergy / #cells,
+        allEated = cellActions.getAllEated(),
+        percentAreaFilled = i / square,
+    }
 end
 
 
@@ -444,6 +444,8 @@ local function experiment()
 
         -- обновить статистику за такт
         stat = gatherStatistic(cells)
+
+        -- слишком часто идет отправка.
         channels.stat:push(stat)
 
         iter = iter + 1
@@ -486,9 +488,11 @@ local function pushDrawList()
     --if dataChan:getCount() < maxDataChannelCount then
 
     --print('pushDrawList', inspect(drawlist))
-
+    print('getCount()', channels.drawlist:getCount())
     --if channels.drawlist:getCount() < maxDataChannelCount then
-        channels.drawlist:push(drawlist)
+
+    --channels.drawlist:clear()
+    channels.drawlist:push(drawlist)
     --end
 
     --if channels.data:getCount() < maxDataChannelCount then
@@ -693,12 +697,6 @@ local function doSetup()
     print("schema", inspect(schema))
     print("drawCoefficients", inspect(drawCoefficients))
 
-    --experimentCoro = coroutine.create(function()
-        --local ok, errmsg: boolean, string = pcall(experiment)
-        --if not ok then
-            --logferror("Error in experiment pcall '%s'", errmsg)
-        --end
-    --end)
     experimentCoro = coroutine.create(experiment)
 
     -- первый запуск корутины, прогревочный 
@@ -723,7 +721,7 @@ local function doSetup()
 end
 
 local function step()
-    -- счетчик итераций за секунду. Обнуляется при шаговом режиме.
+    -- счетчик итераций за секунду.
     local newtimestamp = love.timer.getTime()
     if newtimestamp - timestamp >= secondDelay then
         stepsPerSecond = stepsCount
@@ -754,7 +752,7 @@ local function main()
                 if doStep then
                     step()
                 end
-                love.timer.sleep(0.002)
+                love.timer.sleep(0.001)
             else
                 step()
             end
@@ -762,7 +760,7 @@ local function main()
             print('main loop')
             doStep = false
         else
-            love.timer.sleep(0.002)
+            love.timer.sleep(0.001)
         end
     end
     --channels.ready:clear()
