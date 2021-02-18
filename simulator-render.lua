@@ -37,6 +37,7 @@ local sim = require("simulator")
 
 
 
+
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
@@ -121,8 +122,6 @@ function SimulatorRender:cameraToCenter()
 
 end
 
-local screenNumber = 0
-
 function SimulatorRender:bakeCanvas()
    gr.setColor({ 1, 1, 1, 1 })
    gr.setCanvas(self.canvas)
@@ -133,12 +132,10 @@ function SimulatorRender:bakeCanvas()
    gr.setCanvas()
 end
 
+local testing = require('testing')
+
 function SimulatorRender:draw()
    self:bakeCanvas()
-
-
-
-
 
 
    gr.setColor({ 1, 1, 1, 1 })
@@ -155,6 +152,8 @@ function SimulatorRender:draw()
    sy)
 
    self.cam:detach()
+
+
 
 
    local font = love.graphics.newFont("fonts/DroidSansMono.ttf", 32)

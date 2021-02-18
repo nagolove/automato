@@ -16,6 +16,7 @@ local sim = require "simulator"
 global record SimulatorRender
     new: function(commonSetup: CommonSetup, Camera): SimulatorRender
 
+    drawCellPath: function(SimulatorRender, cell: Cell)
     prerender: function(SimulatorRender)
     draw: function(SimulatorRender)
     drawGrid: function(SimulatorRender)
@@ -24,9 +25,9 @@ global record SimulatorRender
 
     update: function(SimulatorRender, number)
 
-    getPixSize: function(): number
-    computeGrid: function
-    bakeCanvas: function
+    getPixSize: function(SimulatorRender): number
+    computeGrid: function(SimulatorRender)
+    bakeCanvas: function(SimulatorRender)
 
     commonSetup: CommonSetup
     cam: Camera
@@ -121,8 +122,6 @@ function SimulatorRender:cameraToCenter()
     --self.cam:move(dx, dy)
 end
 
-local screenNumber = 0
-
 function SimulatorRender:bakeCanvas()
     gr.setColor{1, 1, 1, 1}
     gr.setCanvas(self.canvas)
@@ -133,13 +132,11 @@ function SimulatorRender:bakeCanvas()
     gr.setCanvas()
 end
 
+local testing = require 'testing'
+
 function SimulatorRender:draw()
     self:bakeCanvas()
     --print("SimulatorRender:draw() self.canvas", self.canvas)
-    --self.canvas:newImageData():encode(
-        --'png', 
-        --string.format('simulator-render-canvas-%d.png', screenNumber)
-    --)
 
     gr.setColor{1, 1, 1, 1}
     --local sx, sy = 0.5, 0.5
@@ -155,6 +152,8 @@ function SimulatorRender:draw()
         sy
     )
     self.cam:detach()
+
+    --testing.writeCanvas2Disk(self.canvas, 'SimulatorRender.canvas-%d.png', 100)
 
     -- XXX загружается каждый кадр
     local font = love.graphics.newFont("fonts/DroidSansMono.ttf", 32)

@@ -376,6 +376,22 @@ function Simulator.writeState(): string
     print('writestate by', threadCount, ' not written ', notwritten)
 
     local fullData = table.concat(t)
+
+    -- TODO возвращать управление сразу, сжатие проводить в отдельном потоке.
+    -- возвращать флаг завершения и сжатую строчку через уникальный именованный
+    -- канал
+    --[[
+    local thread = love.thread.newThread([[
+        local channelName = ...
+        local channel = love.thread.getChannel(channelName)
+        local data = channel:demand()
+        local comressed = love.data.compress('string', 'zlib', data, 9)
+        channel:push('done')
+        channel:push(data)
+    ]]
+    -- Вызывающая сторона получает ссылку на межпрцессный канал и выставляет 
+    -- кнопку записи состояния в неактивное положение пока не прочитает 'done'
+    --]]
     return love.data.compress("string", "zlib", fullData, 9) as string
 end
 
