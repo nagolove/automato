@@ -253,7 +253,9 @@ local function start()
     simulatorRender = SimulatorRender.new(commonSetup, cam)
     simulatorRender:cameraToCenter()
     --end
-    profi:start()
+    if useProfi then
+        profi:start()
+    end
 end
 
 local function roundSettings()
@@ -294,12 +296,15 @@ end
 
 local function stop()
     --collectgarbage()
+
     profi:stop()
     profi:setSortMethod("duration")
     profi:writeReport("init-profile-duration.txt")
     profi:setSortMethod("count")
     profi:writeReport("init-profile-count.txt")
+
     sim.shutdown()
+
     --prof.pop()
     --prof.write('prof.mpack')
     --print("written")

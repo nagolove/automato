@@ -158,6 +158,8 @@ end
 
 
 
+
+
 local function checkValidThreadCount(threadCount)
 
 
@@ -251,7 +253,9 @@ local function start()
    simulatorRender = SimulatorRender.new(commonSetup, cam)
    simulatorRender:cameraToCenter()
 
-   profi:start()
+   if useProfi then
+      profi:start()
+   end
 end
 
 local function roundSettings()
