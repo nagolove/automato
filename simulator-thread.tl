@@ -91,7 +91,6 @@ local stepsPerSecond = 0
 -- TODO удалить за ненадобностью?
 local free = false
 
---local actions: CellActions
 local removed: {Cell} = {}
 local experimentCoro: thread
 
@@ -156,11 +155,14 @@ function gatherStatistic(cells: {Cell}): Statistic
     end
 
     return { 
+        allEated = cellActions.getAllEated(),
         maxEnergy = maxEnergy,
         minEnergy = minEnergy,
         midEnergy = midEnergy,
-        allEated = cellActions.getAllEated(),
+        cells = #cells, 
+        meals = #meals,
         percentAreaFilled = i / square,
+        iterations = iter,
     }
 end
 
@@ -191,13 +193,12 @@ local accum = 0
 math.log()
 --]]
 function emitFood(_: number)
+    if istate.nofood then
+        return
+        --coroutine.yield()
+    end
 
     while true do
-        if istate.nofood then
-            --return
-            coroutine.yield()
-        end
-
         accum = accum + foodGenerationSpeed
 
         for i = 0, math.floor(math.log(iter)) do
@@ -244,6 +245,7 @@ function updateCells(cells: {Cell}): {Cell}
             table.insert(alive, cell)
         else
             table.insert(removed, cell)
+            --stat.died = stat.died + 1
         end
     end
     return alive
@@ -344,7 +346,7 @@ local function emitCell(iter: number)
         local cx = rng:random(1, istate.gridSize)
         local cy = rng:random(1, istate.gridSize)
         print('cx, cy', cx, cy)
-        --table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
+        table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
         coroutine.yield()
     end
 
@@ -690,8 +692,6 @@ local function doSetup()
     })
 
     -- установка ссылки на таблицу действий - язык клетки.
-    --actions = cellActions.actions
-
     istate.cellActions = cellActions.actions
     cellInitInternal(istate, stat)
 end

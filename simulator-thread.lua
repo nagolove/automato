@@ -156,11 +156,14 @@ function gatherStatistic(cells)
    end
 
    return {
+      allEated = cellActions.getAllEated(),
       maxEnergy = maxEnergy,
       minEnergy = minEnergy,
       midEnergy = midEnergy,
-      allEated = cellActions.getAllEated(),
+      cells = #cells,
+      meals = #meals,
       percentAreaFilled = i / square,
+      iterations = iter,
    }
 end
 
@@ -189,36 +192,15 @@ local accum = 0
 
 
 
+
 function emitFood(_)
+   if istate.nofood then
+      return
 
-
-
-
-
-
+   end
 
    while true do
-      if istate.nofood then
-
-         coroutine.yield()
-      end
-
       accum = accum + foodGenerationSpeed
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
       for i = 0, math.floor(math.log(iter)) do
 
@@ -264,6 +246,7 @@ function updateCells(cells)
          table.insert(alive, cell)
       else
          table.insert(removed, cell)
+
       end
    end
    return alive
@@ -364,7 +347,7 @@ local function emitCell(iter)
       local cx = rng:random(1, istate.gridSize)
       local cy = rng:random(1, istate.gridSize)
       print('cx, cy', cx, cy)
-
+      table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
       coroutine.yield()
    end
 

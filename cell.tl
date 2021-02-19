@@ -91,7 +91,7 @@ function Cell:update(): boolean
         print("cell died with energy", self.energy, "moves", inspect(self.moves))
         isremoved = true
         -- увеличить количество умерших
-        stat.died = stat.died + 1
+        --stat.died = stat.died + 1
     end
     return isremoved
 end
