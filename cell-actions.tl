@@ -132,7 +132,7 @@ local function moveCellToThread(cell: Cell, threadNum: number)
 end
 
 function actions.left(cell: Cell): boolean
-    local res = false
+    local res = true
     local pos = cell.pos
     pushPosition(cell)
     --print("cell", inspect(cell))
@@ -150,13 +150,13 @@ function actions.left(cell: Cell): boolean
         -- XXX клетка должна быть сразу уничтожена
         -- после возврата из функции
         --getGrid()[oldx][oldy].energy = 0
-        res = true
+        res = false
     end
     return res
 end
 
 function actions.right(cell: Cell): boolean
-    local res = false
+    local res = true
     local pos = cell.pos
     pushPosition(cell)
     if pos.x < gridSize and not isAlive(pos.x + 1, pos.y) then
@@ -166,13 +166,13 @@ function actions.right(cell: Cell): boolean
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         cell.pos.x = 1
         moveCellToThread(cell, schema.r)
-        res = true
+        res = false
     end
     return res
 end
 
 function actions.up(cell: Cell): boolean
-    local res = false
+    local res = true
     local pos = cell.pos
     pushPosition(cell)
     if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
@@ -182,13 +182,13 @@ function actions.up(cell: Cell): boolean
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         cell.pos.y = gridSize
         moveCellToThread(cell, schema.u)
-        res = true
+        res = false
     end
     return res
 end
 
 function actions.down(cell: Cell): boolean
-    local res = false
+    local res = true
     local pos = cell.pos
     pushPosition(cell)
     if pos.y < gridSize and not isAlive(pos.x, pos.y + 1) then
@@ -197,7 +197,7 @@ function actions.down(cell: Cell): boolean
         --getGrid()[cell.pos.x][cell.pos.y].energy = 0
         cell.pos.y = 1
         moveCellToThread(cell, schema.d)
-        res = true
+        res = false
     end
     return res
 end
@@ -276,6 +276,7 @@ end
 -- Проверяет на съедобность все клетки вокруг себя. Найдя съедобную - поедает
 -- ее оставаясь на месте
 function actions.eat8(cell: Cell): boolean
+    local res = true
     local nx, ny = cell.pos.x, cell.pos.y
     for _, displacement in ipairs(around) do
         nx = nx + displacement[1]
@@ -292,14 +293,16 @@ function actions.eat8(cell: Cell): boolean
                 dish.energy = 0
                 cell.energy = cell.energy + ENERGY
                 incEat(cell)
-                return
+                return res
             end
         end
     end
+    return res
 end
 
 -- аналогично eat8, но перемещается на место съеденной клетки.
 function actions.eat8move(cell: Cell): boolean
+    local res = true
     local pos = cell.pos
     local newt: Pos = shallowCopy(pos as {any: any}) as Pos
     for _, displacement in ipairs(around) do
@@ -320,10 +323,11 @@ function actions.eat8move(cell: Cell): boolean
                 cell.pos.x = newt.x
                 cell.pos.y = newt.y
                 incEat(cell)
-                return
+                return res
             end
         end
     end
+    return res
 end
 
 global type NeighboursCallback = function(number, number, any): boolean
@@ -415,6 +419,7 @@ end
 -- деление клетки
 --function actions.cross(cell: Cell): boolean
 function actions.cross(): boolean
+    local res = true
     --XXX Не работает
     --[[
     if cell.energy > 0 then
@@ -441,6 +446,7 @@ function actions.cross(): boolean
     end
     return false
     --]]
+    return res
 end
 
 local function init(t: CellActionsInit)

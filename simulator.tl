@@ -46,6 +46,12 @@ function Simulator.getDrawLists(): {DrawNode}
                 sublist = drawlist:peek() as {DrawNode}
             end
 
+            if drawlist:getCount() > 20 then
+                while drawlist:getCount() > 1 do
+                    drawlist:pop()
+                end
+            end
+
             print('drawlist:getCount()', drawlist:getCount())
 
             if sublist then

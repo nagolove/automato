@@ -132,7 +132,7 @@ local function moveCellToThread(cell, threadNum)
 end
 
 function actions.left(cell)
-   local res = false
+   local res = true
    local pos = cell.pos
    pushPosition(cell)
 
@@ -150,13 +150,13 @@ function actions.left(cell)
 
 
 
-      res = true
+      res = false
    end
    return res
 end
 
 function actions.right(cell)
-   local res = false
+   local res = true
    local pos = cell.pos
    pushPosition(cell)
    if pos.x < gridSize and not isAlive(pos.x + 1, pos.y) then
@@ -166,13 +166,13 @@ function actions.right(cell)
 
       cell.pos.x = 1
       moveCellToThread(cell, schema.r)
-      res = true
+      res = false
    end
    return res
 end
 
 function actions.up(cell)
-   local res = false
+   local res = true
    local pos = cell.pos
    pushPosition(cell)
    if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
@@ -182,13 +182,13 @@ function actions.up(cell)
 
       cell.pos.y = gridSize
       moveCellToThread(cell, schema.u)
-      res = true
+      res = false
    end
    return res
 end
 
 function actions.down(cell)
-   local res = false
+   local res = true
    local pos = cell.pos
    pushPosition(cell)
    if pos.y < gridSize and not isAlive(pos.x, pos.y + 1) then
@@ -197,7 +197,7 @@ function actions.down(cell)
 
       cell.pos.y = 1
       moveCellToThread(cell, schema.d)
-      res = true
+      res = false
    end
    return res
 end
@@ -276,6 +276,7 @@ end
 
 
 function actions.eat8(cell)
+   local res = true
    local nx, ny = cell.pos.x, cell.pos.y
    for _, displacement in ipairs(around) do
       nx = nx + displacement[1]
@@ -292,14 +293,16 @@ function actions.eat8(cell)
             dish.energy = 0
             cell.energy = cell.energy + ENERGY
             incEat(cell)
-            return
+            return res
          end
       end
    end
+   return res
 end
 
 
 function actions.eat8move(cell)
+   local res = true
    local pos = cell.pos
    local newt = shallowCopy(pos)
    for _, displacement in ipairs(around) do
@@ -320,10 +323,11 @@ function actions.eat8move(cell)
             cell.pos.x = newt.x
             cell.pos.y = newt.y
             incEat(cell)
-            return
+            return res
          end
       end
    end
+   return res
 end
 
  NeighboursCallback = {}
@@ -415,6 +419,7 @@ end
 
 
 function actions.cross()
+   local res = true
 
 
 
@@ -441,6 +446,7 @@ function actions.cross()
 
 
 
+   return res
 end
 
 local function init(t)

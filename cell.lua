@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local pairs = _tl_compat and _tl_compat.pairs or pairs; local table = _tl_compat and _tl_compat.table or table; require("types")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local os = _tl_compat and _tl_compat.os or os; local pairs = _tl_compat and _tl_compat.pairs or pairs; local table = _tl_compat and _tl_compat.table or table; require("types")
 require("common")
 
 local inspect = require("inspect")
@@ -72,9 +72,9 @@ function Cell:print()
    print('Cell:print')
 end
 
-function Cell:update()
 
-   local isremoved
+function Cell:update()
+   local isalive = true
 
 
    if self.ip >= #self.code then
@@ -84,16 +84,19 @@ function Cell:update()
    if self.energy > 0 then
       local code = self.code[self.ip]
 
-      isremoved = not actions[code](self)
+
+      isalive = actions[code](self)
       self.ip = self.ip + 1
       self.energy = self.energy - istate.denergy
    else
       print("cell died with energy", self.energy, "moves", inspect(self.moves))
-      isremoved = true
+      os.exit()
+      isalive = false
 
-
+      stat.died = stat.died + 1
    end
-   return isremoved
+
+   return isalive
 end
 
 function cellInitInternal(state, s)

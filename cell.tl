@@ -72,9 +72,9 @@ function Cell:print()
     print('Cell:print')
 end
 
+-- здесь работа vm
 function Cell:update(): boolean
-    -- здесь работа vm
-    local isremoved: boolean
+    local isalive: boolean = true
 
     -- прокрутка кода клетки по кругу
     if self.ip >= #self.code then
@@ -84,16 +84,19 @@ function Cell:update(): boolean
     if self.energy > 0 then
         local code = self.code[self.ip]
         --print("code", code)
-        isremoved = not actions[code](self)
+        --isalive = not actions[code](self)
+        isalive = actions[code](self)
         self.ip = self.ip + 1
         self.energy = self.energy - istate.denergy
     else
         print("cell died with energy", self.energy, "moves", inspect(self.moves))
-        isremoved = true
+        os.exit()
+        isalive = false
         -- увеличить количество умерших
-        --stat.died = stat.died + 1
+        stat.died = stat.died + 1
     end
-    return isremoved
+
+    return isalive
 end
 
 function cellInitInternal(state: CommonSetup, s: Statistic)

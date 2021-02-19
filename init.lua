@@ -256,10 +256,15 @@ local function start()
    end
 end
 
+local maxEnergy = 100000
+
 local function roundSettings()
-   local _, status
+   local status
 
    commonSetup.nofood = imgui.Checkbox(i18n("nofood"), commonSetup.nofood)
+
+   commonSetup.initialEnergy[1], status = imgui.SliderInt('minimum energy', commonSetup.initialEnergy[1], 0, maxEnergy)
+   commonSetup.initialEnergy[2], status = imgui.SliderInt('maximum energy', commonSetup.initialEnergy[2], 0, maxEnergy)
 
    commonSetup.cellsNum, status = imgui.SliderFloat(i18n("initpopulation"), commonSetup.cellsNum, 0, maxCellsNum)
    commonSetup.cellsNum = math.ceil(commonSetup.cellsNum)

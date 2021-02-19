@@ -121,7 +121,8 @@ end
 
 function gatherStatistic(cells)
    local maxEnergy = 0
-   local minEnergy = istate.initialEnergy[2]
+
+   local minEnergy = 100000000
    local sumEnergy = 0
    local square = gridSize * gridSize
    local i = 0
@@ -243,8 +244,6 @@ function updateCells(cells)
          table.insert(alive, cell)
       else
          table.insert(removed, cell)
-         stat.died = stat.died + 1
-         print('died', inspect(stat))
       end
    end
    return alive
