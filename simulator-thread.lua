@@ -146,10 +146,19 @@ function gatherStatistic(cells)
       sumEnergy = 1
    end
    print('square, i', square, i)
+
+   local midEnergy
+   if #cells == 0 then
+      midEnergy = 0
+      minEnergy = 0
+   else
+      midEnergy = sumEnergy / #cells
+   end
+
    return {
       maxEnergy = maxEnergy,
       minEnergy = minEnergy,
-      midEnergy = sumEnergy / #cells,
+      midEnergy = midEnergy,
       allEated = cellActions.getAllEated(),
       percentAreaFilled = i / square,
    }
@@ -328,19 +337,6 @@ end
 
 
 local function emitCell(iter)
-   if threadNum == 1 then
-
-
-
-
-
-   end
-   if threadNum == 2 then
-
-
-
-   end
-
 
 
 
@@ -368,7 +364,7 @@ local function emitCell(iter)
       local cx = rng:random(1, istate.gridSize)
       local cy = rng:random(1, istate.gridSize)
       print('cx, cy', cx, cy)
-      table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
+
       coroutine.yield()
    end
 

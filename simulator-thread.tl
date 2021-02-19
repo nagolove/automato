@@ -146,10 +146,19 @@ function gatherStatistic(cells: {Cell}): Statistic
         sumEnergy = 1
     end
     print('square, i', square, i)
+
+    local midEnergy: number
+    if #cells == 0 then
+        midEnergy = 0
+        minEnergy = 0
+    else
+        midEnergy = sumEnergy / #cells
+    end
+
     return { 
         maxEnergy = maxEnergy,
         minEnergy = minEnergy,
-        midEnergy = sumEnergy / #cells,
+        midEnergy = midEnergy,
         allEated = cellActions.getAllEated(),
         percentAreaFilled = i / square,
     }
@@ -179,14 +188,9 @@ local accum = 0
 
 --[[
 Сделать возможность генерации пищи не на каждом шагу симуляции
+math.log()
 --]]
 function emitFood(_: number)
-
-    --print("math.log(iter)", math.log(iter) / 1)
-    --for i = 1, math.log(iter) do
-    --print("cellId", cellId)
-    --print("math.log(iter)", math.log(cellId) / 1)
-    --for i = 1, math.floor(math.log(cellId)) do
 
     while true do
         if istate.nofood then
@@ -196,21 +200,6 @@ function emitFood(_: number)
 
         accum = accum + foodGenerationSpeed
 
-        --[[
-        if accum > 1 then
-            accum = 0
-            for i = 0, math.floor(accum) do
-                --print(i, accum)
-                local emited, _ = emitFoodInRandomPoint()
-                if not emited then
-                    -- здесь исследовать причины смерти яцейки
-                    --print("not emited gridcell", inspect(gridcell))
-                end
-            end
-        end
-        --]]
-
-        --for i = 0, math.floor(iter) do
         for i = 0, math.floor(math.log(iter)) do
             --print(i, accum)
 
@@ -328,19 +317,6 @@ end
 Пока только линейный рост колонии
 --]]
 local function emitCell(iter: number)
-    if threadNum == 1 then
-        --local steps = 5
-        --local cell = initCellOneCommandCode("left", steps)
-        --cell.color = {0, 0, rng:random()}
-        --cell.pos.x = 30
-        --cell.pos.y = 1
-    end
-    if threadNum == 2 then
-        --local steps = 5
-        --local cell = initCellOneCommandCode("right", steps)
-        --cell.color = {rng:random(), 0, 0}
-    end
-
     --[[
     print("cellsNum", cellsNum)
     -- не создается нужное количество клеток
@@ -368,7 +344,7 @@ local function emitCell(iter: number)
         local cx = rng:random(1, istate.gridSize)
         local cy = rng:random(1, istate.gridSize)
         print('cx, cy', cx, cy)
-        table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
+        --table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
         coroutine.yield()
     end
 
