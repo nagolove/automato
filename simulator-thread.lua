@@ -91,7 +91,6 @@ local stepsPerSecond = 0
 
 local free = false
 
-
 local removed = {}
 local experimentCoro
 
@@ -155,16 +154,14 @@ function gatherStatistic(cells)
       midEnergy = sumEnergy / #cells
    end
 
-   return {
-      allEated = cellActions.getAllEated(),
-      maxEnergy = maxEnergy,
-      minEnergy = minEnergy,
-      midEnergy = midEnergy,
-      cells = #cells,
-      meals = #meals,
-      percentAreaFilled = i / square,
-      iterations = iter,
-   }
+   stat.allEated = cellActions.getAllEated()
+   stat.maxEnergy = maxEnergy
+   stat.minEnergy = minEnergy
+   stat.midEnergy = midEnergy
+   stat.cells = #cells
+   stat.meals = #meals
+   stat.percentAreaFilled = i / square
+   stat.iterations = iter
 end
 
 
@@ -246,7 +243,8 @@ function updateCells(cells)
          table.insert(alive, cell)
       else
          table.insert(removed, cell)
-
+         stat.died = stat.died + 1
+         print('died', inspect(stat))
       end
    end
    return alive
@@ -422,7 +420,8 @@ local function experiment()
       updateGrid()
 
 
-      stat = gatherStatistic(cells)
+
+      gatherStatistic(cells)
 
 
       channels.stat:push(stat)
@@ -693,8 +692,6 @@ local function doSetup()
    })
 
 
-
-
    istate.cellActions = cellActions.actions
    cellInitInternal(istate, stat)
 end
@@ -713,10 +710,11 @@ local function step()
 
 
 
-   if not ok and not experimentErrorPrinted then
+
+   if not ok then
       experimentErrorPrinted = true
       free = true
-      print(string.format("coroutine error %s", errmsg))
+      error(string.format("coroutine error %s", errmsg))
    end
 end
 

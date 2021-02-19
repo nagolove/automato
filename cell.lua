@@ -91,7 +91,7 @@ function Cell:update()
       print("cell died with energy", self.energy, "moves", inspect(self.moves))
       isremoved = true
 
-      stat.died = stat.died + 1
+
    end
    return isremoved
 end

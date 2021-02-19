@@ -119,7 +119,7 @@ end
 
 -- не работает нормально. Нужно отсылал с некоторой периодичностью в виде 
 -- сообщений в основную нить
-function gatherStatistic(cells: {Cell}): Statistic
+function gatherStatistic(cells: {Cell})
     local maxEnergy = 0
     local minEnergy = istate.initialEnergy[2]
     local sumEnergy = 0
@@ -154,16 +154,14 @@ function gatherStatistic(cells: {Cell}): Statistic
         midEnergy = sumEnergy / #cells
     end
 
-    return { 
-        allEated = cellActions.getAllEated(),
-        maxEnergy = maxEnergy,
-        minEnergy = minEnergy,
-        midEnergy = midEnergy,
-        cells = #cells, 
-        meals = #meals,
-        percentAreaFilled = i / square,
-        iterations = iter,
-    }
+    stat.allEated = cellActions.getAllEated()
+    stat.maxEnergy = maxEnergy
+    stat.minEnergy = minEnergy
+    stat.midEnergy = midEnergy
+    stat.cells = #cells
+    stat.meals = #meals
+    stat.percentAreaFilled = i / square
+    stat.iterations = iter
 end
 
 
@@ -245,7 +243,8 @@ function updateCells(cells: {Cell}): {Cell}
             table.insert(alive, cell)
         else
             table.insert(removed, cell)
-            --stat.died = stat.died + 1
+            stat.died = stat.died + 1
+            print('died', inspect(stat))
         end
     end
     return alive
@@ -421,7 +420,8 @@ local function experiment()
         updateGrid()
 
         -- обновить статистику за такт
-        stat = gatherStatistic(cells)
+        --stat = gatherStatistic(cells)
+        gatherStatistic(cells)
 
         -- слишком часто идет отправка.
         channels.stat:push(stat)
@@ -710,10 +710,11 @@ local function step()
 
     -- XXX корутина в принципе не должна завершаться, дальше только падать и 
     -- писать отчет об ошибке
-    if not ok and not experimentErrorPrinted then
+    --if not ok and not experimentErrorPrinted then
+    if not ok then
         experimentErrorPrinted = true
         free = true
-        print(string.format("coroutine error %s", errmsg))
+        error(string.format("coroutine error %s", errmsg))
     end
 end
 
