@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local os = _tl_compat and _tl_compat.os or os; local pairs = _tl_compat and _tl_compat.pairs or pairs; local table = _tl_compat and _tl_compat.table or table; require("types")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local pairs = _tl_compat and _tl_compat.pairs or pairs; local table = _tl_compat and _tl_compat.table or table; require("types")
 require("common")
 
 local inspect = require("inspect")
@@ -90,7 +90,7 @@ function Cell:update()
       self.energy = self.energy - istate.denergy
    else
       print("cell died with energy", self.energy, "moves", inspect(self.moves))
-      os.exit()
+
       isalive = false
 
       stat.died = stat.died + 1

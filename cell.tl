@@ -90,7 +90,7 @@ function Cell:update(): boolean
         self.energy = self.energy - istate.denergy
     else
         print("cell died with energy", self.energy, "moves", inspect(self.moves))
-        os.exit()
+        --os.exit()
         isalive = false
         -- увеличить количество умерших
         stat.died = stat.died + 1

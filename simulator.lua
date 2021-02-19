@@ -47,7 +47,6 @@ function Simulator.getDrawLists()
          end
 
          if drawlist:getCount() > 20 then
-
             while drawlist:getCount() > 1 do
                drawlist:pop()
             end
