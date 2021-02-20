@@ -29,6 +29,7 @@ global record SimulatorRender
     computeGrid: function(SimulatorRender)
     bakeCanvas: function(SimulatorRender)
 
+    enabled: boolean
     commonSetup: CommonSetup
     cam: Camera
     fieldWidthPixels: number
@@ -72,6 +73,7 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
         canvas = nil,
         cellCanvas = gr.newCanvas(pixSize, pixSize),
         mealCanvas = gr.newCanvas(pixSize, pixSize),
+        enabled = true,
     }
     self = setmetatable(self, SimulatorRender_mt)
     self:computeGrid()
@@ -135,6 +137,10 @@ end
 local testing = require 'testing'
 
 function SimulatorRender:draw()
+    if not self.enabled then
+        return
+    end
+
     self:bakeCanvas()
     --print("SimulatorRender:draw() self.canvas", self.canvas)
 
@@ -157,11 +163,13 @@ function SimulatorRender:draw()
 
     --testing.writeCanvas2Disk(self.canvas, 'SimulatorRender.canvas-%d.png', 100)
 
+    --[[
     -- XXX загружается каждый кадр
     local font = love.graphics.newFont("fonts/DroidSansMono.ttf", 32)
     gr.setFont(font)
     gr.setColor(1, 1, 1)
     gr.print('привет галактика!', 100, 100)
+    --]]
 end
 
 function SimulatorRender:update(_: number)

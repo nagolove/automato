@@ -18,7 +18,8 @@ global type Cell = record
     moves: {number} -- массив предыдущих положений клетки
     eated: number   -- сколько клетка съела других клеток
     food: boolean   -- является ли клетка едой
-    wantdivide: boolean
+    -- обратный счетчик деления. Если > 0, то клетка готова делится
+    wantdivide: number
     id: number
     generation: number
 
@@ -86,6 +87,7 @@ global type CellActionsInit = record
     -- сколько прибавляется энергии за съеденную еду
     foodenergy: number
     writelog: function(...:string)
+    rng: love.math.RandomGenerator
 end
 
 global type Statistic = record

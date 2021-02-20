@@ -259,7 +259,13 @@ end
 
 --]]
 
-local around: {{number}} = {
+local around4: {{number}} = {
+              {0, -1},
+    {-1,  0},          {1, 0},
+              {0,  1},
+}
+
+local around8: {{number}} = {
     {-1, -1}, {0, -1}, {1, -1},
     {-1,  0},          {1, 0},
     {-1,  1}, {0,  1}, {1, 1},
@@ -278,7 +284,7 @@ end
 function actions.eat8(cell: Cell): boolean
     local res = true
     local nx, ny = cell.pos.x, cell.pos.y
-    for _, displacement in ipairs(around) do
+    for _, displacement in ipairs(around8) do
         nx = nx + displacement[1]
         ny = ny + displacement[2]
 
@@ -305,7 +311,7 @@ function actions.eat8move(cell: Cell): boolean
     local res = true
     local pos = cell.pos
     local newt: Pos = shallowCopy(pos as {any: any}) as Pos
-    for _, displacement in ipairs(around) do
+    for _, displacement in ipairs(around8) do
         newt.x = newt.x + displacement[1]
         newt.y = newt.y + displacement[2]
 
@@ -330,7 +336,7 @@ function actions.eat8move(cell: Cell): boolean
     return res
 end
 
-global type NeighboursCallback = function(number, number, any): boolean
+global type NeighboursCallback = function(number, number, Cell): boolean
 
 -- FIXME поиск должен рандоминизировать начальное положение что-бы 
 -- исключить влияние порядка обхода клеток.
@@ -340,12 +346,23 @@ global type NeighboursCallback = function(number, number, any): boolean
 -- решетки по текущим координатам.
 -- Если коллбэк функция возвращает false, то дальнейшие вызовы прерываются, 
 -- управление возвращается.
---[[
-local function listNeighbours(x: number, y: number, cb: NeighboursCallback)
-    for _, displacement in ipairs(around) do
+--
+local function listNeighbours8(x: number, y: number, cb: NeighboursCallback)
+    for _, displacement in ipairs(around8) do
         local nx, ny = x + displacement[1], y + displacement[2]
-        if nx >= 1 and nx < gridSize and ny >= 1 and ny < gridSize then
-            if not cb(nx, ny, getGrid()[nx][ny]) then
+        if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
+            if cb(nx, ny, getGrid()[nx][ny]) == false then
+                break
+            end
+        end
+    end
+end
+
+local function listNeighbours4(x: number, y: number, cb: NeighboursCallback)
+    for _, displacement in ipairs(around4) do
+        local nx, ny = x + displacement[1], y + displacement[2]
+        if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
+            if cb(nx, ny, getGrid()[nx][ny]) == false then
                 break
             end
         end
@@ -399,52 +416,88 @@ end
 --]]
 --test_mixCode()
 
--- возвращает true если найдена пустая клетка, {x, y} координаты иначе false
--- XXX возвращает true и пустую позицию
---[[
-local function findFreePos(x: number, y: number): boolean, Pos
+local function findFreePos4(x: number, y: number): boolean, Pos
     local pos: Pos = {}
-    listNeighbours(x, y, function(xp: number, yp: number, value: Cell): boolean
+    listNeighbours4(x, y,
+    function(xp: number, yp: number, value: Cell): boolean
         if (not value.energy) and (not value.food) then
             pos.x = xp
             pos.y = yp
-            return true
+            return false
         end
-        return false
+        return true
     end)
-    return true, pos
+    return pos.x ~= nil and pos.y ~= nil, pos
 end
 --]]
 
+-- возвращает true и координаты если найдена пустая клетка вокруг данной 
+-- иначе false
+-- XXX возвращает true и пустую позицию
+local function findFreePos8(x: number, y: number): boolean, Pos
+    local pos: Pos = {}
+    listNeighbours8(x, y,
+    function(xp: number, yp: number, value: Cell): boolean
+        if (not value.energy) and (not value.food) then
+            pos.x = xp
+            pos.y = yp
+            return false
+        end
+        return true
+    end)
+    return pos.x ~= nil and pos.y ~= nil, pos
+end
+--]]
+
+function actions.wantdivide(cell: Cell): boolean
+    local res = true
+    if cell.energy > 0 then
+
+        if cell.wantdivide and cell.wantdivide > 0 then
+            return res
+        end
+
+        if setup.rng:random(1, 1000) == 1 then
+            cell.wantdivide = setup.rng:random(1, 10)
+            cell.color = {1, 0, 0}
+        end
+    end
+    return res
+end
+
 -- деление клетки
---function actions.cross(cell: Cell): boolean
-function actions.cross(): boolean
+function actions.cross(cell: Cell): boolean
     local res = true
     --XXX Не работает
-    --[[
-    if cell.energy > 0 then
-        cell.wantdivide = true
+    if cell.wantdivide and cell.wantdivide > 0 and cell.energy > 0 then
         -- найти соседей клетки
-        listNeighbours(cell.pos.x, cell.pos.y, function(x: number, y: number, value: Cell): boolean
-            -- сосед тоже хочет делиться
-            if value.wantdivide then
-                print("cell.pos", cell.pos.x, cell.pos.y)
-                -- поиск свободной ячейки для новой клетки
-                local found, pos = findFreePos(cell.pos.x, cell.pos.y)
-                if found then
-                    local t = {
-                        pos = {x = pos.x, y = pos.y},
-                        code = mixCode(cell, getGrid()[x][y])
-                    }
-                    print(pos.x, pos.y)
-                    print(string.format("new cell at (%d, %d)", pos.x, pos.y))
-                    initCell(t)
+        listNeighbours4(
+            cell.pos.x, 
+            cell.pos.y, 
+            function(_: number, _: number, other: Cell): boolean
+                -- сосед тоже хочет делиться
+                if other.wantdivide and 
+                    other.wantdivide > 0 and 
+                    other.energy > 0 then
+                    print("cell.pos", cell.pos.x, cell.pos.y)
+                    -- поиск свободной ячейки для новой клетки
+                    local found, pos = findFreePos4(cell.pos.x, cell.pos.y)
+                    if found then
+                        local t = {
+                            pos = {x = pos.x, y = pos.y},
+                            --code = mixCode(cell, getGrid()[x][y])
+                            code = {},
+                            color = {1, 0, 0}
+                        }
+                        print(pos.x, pos.y)
+                        print(string.format("new cell at (%d, %d)", pos.x, pos.y))
+                        initCell(t)
+                    end
                 end
+                return false
             end
-            return false
-        end)
+        )
     end
-    return false
     --]]
     return res
 end

@@ -341,6 +341,16 @@ end
 
 
 
+local function listNeighbours(x, y, cb)
+   for _, displacement in ipairs(around) do
+      local nx, ny = x + displacement[1], y + displacement[2]
+      if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
+         if cb(nx, ny, getGrid()[nx][ny]) == false then
+            break
+         end
+      end
+   end
+end
 
 
 
@@ -392,59 +402,70 @@ end
 
 
 
+local function findFreePos(x, y)
+   local pos = {}
+   listNeighbours(x, y,
+   function(xp, yp, value)
+      if (not value.energy) and (not value.food) then
+         pos.x = xp
+         pos.y = yp
+         return false
+      end
+      return true
+   end)
+   return pos.x ~= nil and pos.y ~= nil, pos
+end
 
 
+function actions.wantdivide(cell)
+   local res = true
+   if cell.energy > 0 then
 
+      if cell.wantdivide and cell.wantdivide > 0 then
+         return res
+      end
 
+      if setup.rng:random(1, 1000) == 1 then
+         cell.wantdivide = setup.rng:random(1, 10)
+         cell.color = { 1, 0, 0 }
+      end
+   end
+   return res
+end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function actions.cross()
+function actions.cross(cell)
    local res = true
 
+   if cell.wantdivide and cell.wantdivide > 0 and cell.energy > 0 then
 
+      listNeighbours(
+      cell.pos.x,
+      cell.pos.y,
+      function(_, _, other)
 
+         if other.wantdivide and
+            other.wantdivide > 0 and
+            other.energy > 0 then
+            print("cell.pos", cell.pos.x, cell.pos.y)
 
+            local found, pos = findFreePos(cell.pos.x, cell.pos.y)
+            if found then
+               local t = {
+                  pos = { x = pos.x, y = pos.y },
 
+                  code = {},
+                  color = { 1, 0, 0 },
+               }
+               print(pos.x, pos.y)
+               print(string.format("new cell at (%d, %d)", pos.x, pos.y))
+               initCell(t)
+            end
+         end
+         return false
+      end)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   end
 
    return res
 end

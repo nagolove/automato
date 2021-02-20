@@ -688,6 +688,7 @@ local function doSetup()
         foodenergy = istate.foodenergy,
         popCommand = popCommand,
         writelog = writelog,
+        rng = istate.rng,
     })
 
     -- установка ссылки на таблицу действий - язык клетки.

@@ -38,6 +38,7 @@ local sim = require("simulator")
 
 
 
+
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
@@ -72,6 +73,7 @@ function SimulatorRender.new(commonSetup, cam)
       canvas = nil,
       cellCanvas = gr.newCanvas(pixSize, pixSize),
       mealCanvas = gr.newCanvas(pixSize, pixSize),
+      enabled = true,
    }
    self = setmetatable(self, SimulatorRender_mt)
    self:computeGrid()
@@ -135,6 +137,10 @@ end
 local testing = require('testing')
 
 function SimulatorRender:draw()
+   if not self.enabled then
+      return
+   end
+
    self:bakeCanvas()
 
 
@@ -158,10 +164,12 @@ function SimulatorRender:draw()
 
 
 
-   local font = love.graphics.newFont("fonts/DroidSansMono.ttf", 32)
-   gr.setFont(font)
-   gr.setColor(1, 1, 1)
-   gr.print('привет галактика!', 100, 100)
+
+
+
+
+
+
 end
 
 function SimulatorRender:update(_)

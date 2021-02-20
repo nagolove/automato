@@ -561,6 +561,17 @@ local function bindKeys()
    'enable or disable profiler. Dev only',
    'profiler')
 
+
+   KeyConfig.bind(
+   'keypressed',
+   { key = '0' },
+   function(sc)
+      simulatorRender.enabled = not simulatorRender.enabled
+      return false, sc
+   end,
+   'enable or disable rendering. Dev only',
+   'enablerender')
+
 end
 
 local function init()

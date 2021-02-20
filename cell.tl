@@ -88,9 +88,11 @@ function Cell:update(): boolean
         isalive = actions[code](self)
         self.ip = self.ip + 1
         self.energy = self.energy - istate.denergy
+
+        if self.wantdivide and self.wantdivide - 1 >= 0 then
+            self.wantdivide = self.wantdivide - 1
+        end
     else
-        print("cell died with energy", self.energy, "moves", inspect(self.moves))
-        --os.exit()
         isalive = false
         -- увеличить количество умерших
         stat.died = stat.died + 1
