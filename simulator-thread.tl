@@ -526,12 +526,17 @@ function commands.continuos()
 end
 
 local function writelog(...: string)
+end
+
+--[[
+local function writelog(...: string)
     local buf = ""
     for i = 1, select("#", ...) do
         buf = buf .. select(i, ...)
     end
     love.filesystem.append(logName, buf .. "\n")
 end
+--]]
 
 function commands.isalive()
     local x, y = channels.msg:pop() as number, channels.msg:pop() as number  

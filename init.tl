@@ -237,10 +237,11 @@ local function activatePreset(num: number)
 end
 
 local function readState()
-    -- тут какой-то список сохраненных на диске состояний
-    -- как отображать список? ограниченное количество сохранений?
-    -- инкрементальное именование числами?
-    --sim.readState()
+    local fname = snaphotsDirectory .. '/' .. states[selectedState]
+    local fileData = love.filesystem.read(fname)
+    if not sim.readState(fileData) then
+        linesbuf:push(linesbufDelay, 'could not load state')
+    end
 end
 
 local function writeState()
@@ -367,7 +368,6 @@ local function drawui()
     if status then
         selectedState = num
     end
-
     if imgui.Button(i18n("readstate")) then
         readState()
     end

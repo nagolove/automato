@@ -325,8 +325,25 @@ function Simulator.getUptime(): number
     return love.timer.getTime() - starttime
 end
 
-local function unpackState(data: string)
+local function unpackState(data: string): {string}
+    local threadNum, len: number, number = struct.unpack('<dd', data) as (number, number)
+    local intSize = 4
+    print('threadNum', threadNum, 'len', len)
+    local idx = 0
+    local s = string.sub(data, idx + intSize * 2, idx + intSize * 2 + len)
 
+    --[[
+    data string structure:
+                first record            |               second record
+    --------------------------------------------------------------------------
+    threadNum   len     string data     |threadNum   len     string data     |
+    --------------------------------------------------------------------------
+    xxxx        xxxx    yyyyyyyyy       |xxxx        xxxx    yyyyyyyyy       |
+    --]]
+
+    local last = idx
+    love.filesystem.write(string.format('unpack-%d.txt', threadNum), s)
+    return nil
 end
 
 function Simulator.readState(data: string): boolean
@@ -340,6 +357,13 @@ function Simulator.readState(data: string): boolean
     --          полное восстановление конфигурации
 
     print("readState")
+
+    local decompData = love.data.decompress('string', 'zlib', data) as string
+    local threadStates = unpackState(decompData)
+
+    do
+        return false
+    end
 
     infoTimer = timer.new()
 
@@ -419,6 +443,8 @@ function Simulator.readState(data: string): boolean
         end
         statistic = newstat
     end)
+
+    return true
 end
 
 function Simulator.writeState(): string
@@ -450,7 +476,8 @@ function Simulator.writeState(): string
         print('demand time', t2 - t1)
         if st and #st ~= 0 then
             -- запись 4х байт номера потока и длины строки
-            local len = struct.pack("<dd", i, #st)
+            --local len = struct.pack("<dd", i, #st)
+            local len = struct.pack("<d", #st)
             table.insert(t, len)
             table.insert(t, st)
         else
@@ -458,6 +485,9 @@ function Simulator.writeState(): string
         end
     end
     print('writestate by', threadCount, ' not written ', notwritten)
+
+    -- записываю в начале будущей строки количество потоков(кусков данных)
+    table.insert(t, 1, struct.pack('<d', threadCount))
 
     local fullData = table.concat(t)
 

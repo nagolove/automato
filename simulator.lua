@@ -326,7 +326,13 @@ function Simulator.getUptime()
 end
 
 local function unpackState(data)
-
+   local threadNum, len = struct.unpack('<dd', data)
+   local intSize = 4
+   print('threadNum', threadNum, 'len', len)
+   local idx = 0
+   local s = string.sub(data, idx + intSize * 2, idx + intSize * 2 + len)
+   love.filesystem.write(string.format('unpack-%d.txt', threadNum), s)
+   return nil
 end
 
 function Simulator.readState(data)
@@ -340,6 +346,13 @@ function Simulator.readState(data)
 
 
    print("readState")
+
+   local decompData = love.data.decompress('string', 'zlib', data)
+   local threadStates = unpackState(decompData)
+
+   do
+      return false
+   end
 
    infoTimer = timer.new()
 
@@ -419,6 +432,8 @@ function Simulator.readState(data)
       end
       statistic = newstat
    end)
+
+   return true
 end
 
 function Simulator.writeState()
