@@ -69,6 +69,7 @@ global type CellSetup = record
     pos: Pos
     code: {string}
     --code: {Expression}
+    energy: number
     generation: number
 end
 
@@ -88,6 +89,7 @@ global type CellActionsInit = record
     foodenergy: number
     writelog: function(...:string)
     rng: love.math.RandomGenerator
+    setStepMode: function()
 end
 
 global type Statistic = record

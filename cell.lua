@@ -54,6 +54,9 @@ function Cell.new(t)
    else
       self.generation = 1
    end
+   if t.energy then
+      self.energy = t.energy
+   end
    self.ip = 1
    self.id = istate.cellId
    istate.cellId = istate.cellId + 1

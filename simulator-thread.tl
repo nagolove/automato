@@ -689,6 +689,8 @@ local function doSetup()
         popCommand = popCommand,
         writelog = writelog,
         rng = istate.rng,
+        -- XXX работает только для текущей нити
+        setStepMode = commands.step,
     })
 
     -- установка ссылки на таблицу действий - язык клетки.

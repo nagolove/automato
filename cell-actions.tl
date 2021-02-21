@@ -480,6 +480,9 @@ function actions.cross(cell: Cell): boolean
                     other.wantdivide > 0 and 
                     other.energy > 0 then
                     print("cell.pos", cell.pos.x, cell.pos.y)
+                    
+                    setup.setStepMode()
+
                     -- поиск свободной ячейки для новой клетки
                     local found, pos = findFreePos4(cell.pos.x, cell.pos.y)
                     if found then
@@ -487,14 +490,16 @@ function actions.cross(cell: Cell): boolean
                             pos = {x = pos.x, y = pos.y},
                             --code = mixCode(cell, getGrid()[x][y])
                             code = {},
-                            color = {1, 0, 0}
+                            color = {0.5, 0.5, 0.5}
                         }
                         print(pos.x, pos.y)
                         print(string.format("new cell at (%d, %d)", pos.x, pos.y))
                         initCell(t)
+                        setup.setStepMode()
+                        return false
                     end
                 end
-                return false
+                return true
             end
         )
     end

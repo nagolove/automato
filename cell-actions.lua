@@ -259,7 +259,13 @@ end
 
 
 
-local around = {
+local around4 = {
+   { 0, -1 },
+   { -1, 0 }, { 1, 0 },
+   { 0, 1 },
+}
+
+local around8 = {
    { -1, -1 }, { 0, -1 }, { 1, -1 },
    { -1, 0 }, { 1, 0 },
    { -1, 1 }, { 0, 1 }, { 1, 1 },
@@ -278,7 +284,7 @@ end
 function actions.eat8(cell)
    local res = true
    local nx, ny = cell.pos.x, cell.pos.y
-   for _, displacement in ipairs(around) do
+   for _, displacement in ipairs(around8) do
       nx = nx + displacement[1]
       ny = ny + displacement[2]
 
@@ -305,7 +311,7 @@ function actions.eat8move(cell)
    local res = true
    local pos = cell.pos
    local newt = shallowCopy(pos)
-   for _, displacement in ipairs(around) do
+   for _, displacement in ipairs(around8) do
       newt.x = newt.x + displacement[1]
       newt.y = newt.y + displacement[2]
 
@@ -341,8 +347,19 @@ end
 
 
 
-local function listNeighbours(x, y, cb)
-   for _, displacement in ipairs(around) do
+local function listNeighbours8(x, y, cb)
+   for _, displacement in ipairs(around8) do
+      local nx, ny = x + displacement[1], y + displacement[2]
+      if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
+         if cb(nx, ny, getGrid()[nx][ny]) == false then
+            break
+         end
+      end
+   end
+end
+
+local function listNeighbours4(x, y, cb)
+   for _, displacement in ipairs(around4) do
       local nx, ny = x + displacement[1], y + displacement[2]
       if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
          if cb(nx, ny, getGrid()[nx][ny]) == false then
@@ -399,12 +416,27 @@ end
 
 
 
-
-
-
-local function findFreePos(x, y)
+local function findFreePos4(x, y)
    local pos = {}
-   listNeighbours(x, y,
+   listNeighbours4(x, y,
+   function(xp, yp, value)
+      if (not value.energy) and (not value.food) then
+         pos.x = xp
+         pos.y = yp
+         return false
+      end
+      return true
+   end)
+   return pos.x ~= nil and pos.y ~= nil, pos
+end
+
+
+
+
+
+local function findFreePos8(x, y)
+   local pos = {}
+   listNeighbours8(x, y,
    function(xp, yp, value)
       if (not value.energy) and (not value.food) then
          pos.x = xp
@@ -439,7 +471,7 @@ function actions.cross(cell)
 
    if cell.wantdivide and cell.wantdivide > 0 and cell.energy > 0 then
 
-      listNeighbours(
+      listNeighbours4(
       cell.pos.x,
       cell.pos.y,
       function(_, _, other)
@@ -449,20 +481,25 @@ function actions.cross(cell)
             other.energy > 0 then
             print("cell.pos", cell.pos.x, cell.pos.y)
 
-            local found, pos = findFreePos(cell.pos.x, cell.pos.y)
+            setup.setStepMode()
+
+
+            local found, pos = findFreePos4(cell.pos.x, cell.pos.y)
             if found then
                local t = {
                   pos = { x = pos.x, y = pos.y },
 
                   code = {},
-                  color = { 1, 0, 0 },
+                  color = { 0.5, 0.5, 0.5 },
                }
                print(pos.x, pos.y)
                print(string.format("new cell at (%d, %d)", pos.x, pos.y))
                initCell(t)
+               setup.setStepMode()
+               return false
             end
          end
-         return false
+         return true
       end)
 
    end

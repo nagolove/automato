@@ -689,6 +689,8 @@ local function doSetup()
       popCommand = popCommand,
       writelog = writelog,
       rng = istate.rng,
+
+      setStepMode = commands.step,
    })
 
 
