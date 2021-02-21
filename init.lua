@@ -239,7 +239,6 @@ local function writeState()
 end
 
 local function start()
-
    commonSetup.spreadPoint = {
       x = math.floor(commonSetup.gridSize / 2),
       y = math.floor(commonSetup.gridSize / 2),
@@ -247,6 +246,7 @@ local function start()
    commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
    commonSetup.mode = 'continuos'
    mode = 'continuos'
+
    sim.create(commonSetup)
    simulatorRender = SimulatorRender.new(commonSetup, cam)
    simulatorRender:cameraToCenter()
@@ -523,6 +523,19 @@ local function bindKeys()
    end,
    'do a simulation step',
    'step')
+
+
+   KeyConfig.bind(
+   "keypressed",
+   { key = 'c' },
+   function(sc)
+
+      sim.setMode('continuos')
+      linesbuf:push(linesbufDelay, 'continuos ..')
+      return false, sc
+   end,
+   'go to continuos mode',
+   'continuos')
 
 
    KeyConfig.bind(

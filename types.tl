@@ -274,12 +274,9 @@ global type Simulator = record
     findThreadByPos: function(x: number, y: number): number
     getObject : function(number, number): Cell
     step : function()
-    --doStep : function()
     getStatistic : function(): {Statistic}
-    --getIter : function(): number
     getGridSize : function(): number
     getSchema : function()
-    --getThreadsInfo: function(): {ThreadInfo}
     -- время симуляции в секундах
     getUptime: function(): number
 end
