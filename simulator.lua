@@ -325,6 +325,10 @@ function Simulator.getUptime()
    return love.timer.getTime() - starttime
 end
 
+local function unpackState(data)
+
+end
+
 function Simulator.readState(data)
 
 
@@ -334,6 +338,87 @@ function Simulator.readState(data)
 
 
 
+
+   print("readState")
+
+   infoTimer = timer.new()
+
+   if isdone == false then
+      Simulator.shutdown()
+   end
+
+
+   print("threadCount", threadCount)
+
+
+
+
+   local mainRng = love.math.newRandomGenerator()
+
+   mainRng:setSeed(love.timer.getTime())
+
+
+
+   mtschema = require("mtschemes")[threadCount]
+   print("mtschema", inspect(mtschema))
+
+   if not mtschema then
+      error(string.format("Unsupported scheme for %d threads.", threadCount))
+   end
+
+   for i = 1, threadCount do
+      print("Channels for thread", i)
+      table.insert(channels, initChannels(i))
+
+
+      channels[i].setup:push(serpent.dump(mtschema[i]))
+
+
+
+
+      local th = love.thread.newThread("scenes/automato/simulator-thread.lua")
+      table.insert(threads, th)
+      th:start(i)
+      local errmsg = th:getError()
+      if errmsg then
+
+         print("Thread %s", errmsg)
+      end
+   end
+
+
+
+   print("threads", inspect(threads))
+   print("thread errors")
+   for _, v in ipairs(threads) do
+      print(v:getError())
+   end
+   print("end thread errors")
+
+   local processorCount = love.system.getProcessorCount()
+   print("processorCount", processorCount)
+
+   starttime = love.timer.getTime()
+   isdone = false
+   infoTimer:every(statGatherDelay, function(_)
+
+
+
+      local newstat = {}
+      for i, _ in ipairs(threads) do
+         local t
+         if channels[i].stat:getCount() > 1 then
+            t = channels[i].stat:pop()
+         else
+            t = channels[i].stat:peek()
+         end
+         print('channels[i].stat:getCount()', channels[i].stat:getCount())
+         if t then
+            table.insert(newstat, t)
+         end
+      end
+      statistic = newstat
+   end)
 end
 
 function Simulator.writeState()
@@ -375,6 +460,7 @@ function Simulator.writeState()
    print('writestate by', threadCount, ' not written ', notwritten)
 
    local fullData = table.concat(t)
+
 
 
 

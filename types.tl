@@ -182,6 +182,7 @@ global type ThreadCommandsStore = record
     insertcell: function
     info: function
     writestate: function
+    readstate: function
 end
 
 global type ThreadCommands = enum
@@ -201,6 +202,8 @@ global type ThreadCommands = enum
     --"info"
     -- сохранить состояние на диск
     "writestate"
+    -- прочитать состояние с диска
+    'readstate'
 end
 
 global type Channels = {string: love.thread.Channel}

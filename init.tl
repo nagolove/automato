@@ -64,6 +64,17 @@ local commonSetup: CommonSetup = {
     emitInvSpeed = 1
 }
 
+local prevStat: {Statistic}
+-- открыт ли модальный диалог(пока только сохранение пресета)
+--local ismodal = false
+
+local presetsNames: {string} = {}
+local presets: {CommonSetup} = {}
+local selectedPreset = 1
+
+local states: {string}
+local selectedState = 0
+
 local function loadLocales()
     local localePath = "scenes/automato/locales"
     local files = love.filesystem.getDirectoryItems(localePath)
@@ -79,6 +90,17 @@ local function loadLocales()
     end
     i18n.setLocale('en')
     print("i18n", inspect(i18n))
+end
+
+local function loadStates()
+    local files = love.filesystem.getDirectoryItems(snaphotsDirectory)
+    print('loadStates', inspect(files))
+    states = files
+    if #states ~= 0 then
+        selectedState = 1
+    else
+        selectedState = 0
+    end
 end
 
 -- возвращает структуру клетки под курсором pos
@@ -188,8 +210,6 @@ end
 --print("checkValidThreadCount(10)", checkValidThreadCount(10))
 --print("checkValidThreadCount(19)", checkValidThreadCount(19))
 
-local prevStat: {Statistic}
-
 local function printStat()
     local starr: {Statistic} = sim.getStatistic()
 
@@ -212,13 +232,6 @@ local function printStat()
     end
 end
 
--- открыт ли модальный диалог(пока только сохранение пресета)
---local ismodal = false
-
-local presetsNames: {string} = {}
-local presets: {CommonSetup} = {}
-local selectedPreset = 1
-
 local function activatePreset(num: number)
     commonSetup = shallowCopy(presets[num])
 end
@@ -236,6 +249,8 @@ local function writeState()
     local res = sim.writeState()
     local fname = snaphotsDirectory .. string.format("/sim-%d.data", #files)
     love.filesystem.write(fname, res)
+    -- update snaphots list
+    loadStates()
 end
 
 local function start()
@@ -319,6 +334,7 @@ local function drawui()
     imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
     local num, status: number, boolean
+
     num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
     if status then
         selectedPreset = num
@@ -346,6 +362,11 @@ local function drawui()
     end
 
     imgui.Text(string.format("mode %s", mode))
+
+    num, status = imgui.Combo('state', selectedState, states, #states)
+    if status then
+        selectedState = num
+    end
 
     if imgui.Button(i18n("readstate")) then
         readState()
@@ -599,6 +620,7 @@ local function init()
 
     bindKeys()
     loadPresets()
+    loadStates()
     print("automato init done.")
 end
 

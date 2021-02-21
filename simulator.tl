@@ -325,6 +325,10 @@ function Simulator.getUptime(): number
     return love.timer.getTime() - starttime
 end
 
+local function unpackState(data: string)
+
+end
+
 function Simulator.readState(data: string): boolean
     -- отправить сообщение о завершении всем нитям
     -- подождать
@@ -334,6 +338,87 @@ function Simulator.readState(data: string): boolean
     --          преимущество в быстродействии при перемотке
     -- * запустить потоки заново, передав прочтенные данные как параметр
     --          полное восстановление конфигурации
+
+    print("readState")
+
+    infoTimer = timer.new()
+
+    if isdone == false then
+        Simulator.shutdown()
+    end
+
+    --threadCount = commonSetup.threadCount
+    print("threadCount", threadCount)
+
+    --gridSize = commonSetup.gridSize
+    --commonSetup.cellId = 0
+
+    local mainRng = love.math.newRandomGenerator()
+    -- XXX или лучше os.time()?
+    mainRng:setSeed(love.timer.getTime())
+
+    --commonSetup.rngState = mainRng:getState()
+
+    mtschema = require "mtschemes"[threadCount] as {MtSchema}
+    print("mtschema", inspect(mtschema))
+
+    if not mtschema then
+        error(string.format("Unsupported scheme for %d threads.", threadCount))
+    end
+
+    for i = 1, threadCount do
+        print("Channels for thread", i)
+        table.insert(channels, initChannels(i))
+
+        --channels[i].setup:push(commonSetup)
+        channels[i].setup:push(serpent.dump(mtschema[i]))
+        --love.thread.getChannel(setupName):push(serpent.dump(commonSetup))
+        --love.thread.getChannel(setupName):push(commonSetup)
+        --love.thread.getChannel(setupName):push(serpent.dump(mtschema[i]))
+
+        local th: love.thread.Thread = love.thread.newThread("scenes/automato/simulator-thread.lua")
+        table.insert(threads, th)
+        th:start(i)
+        local errmsg = th:getError()
+        if errmsg then
+            --logfwarn("Thread %s", errmsg)
+            print("Thread %s", errmsg)
+        end
+    end
+
+    --pushSync()
+
+    print("threads", inspect(threads))
+    print("thread errors")
+    for _, v in ipairs(threads) do
+        print(v:getError())
+    end
+    print("end thread errors")
+
+    local processorCount = love.system.getProcessorCount()
+    print("processorCount", processorCount)
+
+    starttime = love.timer.getTime()
+    isdone = false
+    infoTimer:every(statGatherDelay, function(_: number)
+        -- TODO собирать значения реже, брать таймаут по таймеру
+
+        -- получить структуру статистики из всех запущенных нитей
+        local newstat: {Statistic} = {}
+        for i, _ in ipairs(threads) do
+            local t: Statistic
+            if channels[i].stat:getCount() > 1 then
+                t = channels[i].stat:pop() as Statistic
+            else
+                t = channels[i].stat:peek() as Statistic
+            end
+            print('channels[i].stat:getCount()', channels[i].stat:getCount())
+            if t then
+                table.insert(newstat, t)
+            end
+        end
+        statistic = newstat
+    end)
 end
 
 function Simulator.writeState(): string
@@ -391,6 +476,7 @@ function Simulator.writeState(): string
     -- Вызывающая сторона получает ссылку на межпрцессный канал и выставляет 
     -- кнопку записи состояния в неактивное положение пока не прочитает 'done'
     --]]
+
     return love.data.compress("string", "zlib", fullData, 9) as string
 end
 

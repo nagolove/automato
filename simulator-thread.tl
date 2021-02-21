@@ -582,6 +582,16 @@ function commands.insertcell()
   table.insert(cells, newcell)
 end
 
+function commands.readstate()
+    local s: string = channels.state:demand() as string
+    local idx = 0
+    local intSize = 4
+
+    local len = struct.unpack('<d', s) as number
+    local dumped = string.sub(s, idx + intSize, idx + intSize + len)
+    love.filesystem.write('dump1.txt', dumped)
+end
+
 function commands.writestate()
     print('commands.writestate')
 
