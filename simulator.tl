@@ -326,24 +326,27 @@ function Simulator.getUptime(): number
 end
 
 local function unpackState(data: string): {string}
-    local threadNum, len: number, number = struct.unpack('<dd', data) as (number, number)
+    local res = {}
+    local threadNum: number = struct.unpack('<d', data) as number
     local intSize = 4
-    print('threadNum', threadNum, 'len', len)
-    local idx = 0
-    local s = string.sub(data, idx + intSize * 2, idx + intSize * 2 + len)
+    local idx = intSize + 1
+    print('threadNum', threadNum)
+    print('data', #data)
+    for i = 1, threadNum do
+        print('idx', idx)
+        print('idx + intSize', idx + intSize)
+        local s = string.sub(data, idx, idx + intSize)
+        print('subs', #s)
+        print('s', s)
+        local len = struct.unpack('<d', s) as number
+        local payload = string.sub(data, idx + intSize + 1, idx + intSize + len + 1)
+        idx = idx + len + 1
+        table.insert(res, payload)
 
-    --[[
-    data string structure:
-                first record            |               second record
-    --------------------------------------------------------------------------
-    threadNum   len     string data     |threadNum   len     string data     |
-    --------------------------------------------------------------------------
-    xxxx        xxxx    yyyyyyyyy       |xxxx        xxxx    yyyyyyyyy       |
-    --]]
+        love.filesystem.write(string.format('unpack-%d.txt', i), payload)
+    end
 
-    local last = idx
-    love.filesystem.write(string.format('unpack-%d.txt', threadNum), s)
-    return nil
+    return res
 end
 
 function Simulator.readState(data: string): boolean
@@ -455,18 +458,16 @@ function Simulator.writeState(): string
     -- отключить паузу для потоков
 
     for i = 1, threadCount do
-        --local msgChan = love.thread.getChannel("msg" .. i)
-        --msgChan:push("writeState")
         channels[i].msg:push('writestate')
     end
 
     local t = {}
-    -- добавить схему mtschema
     local notwritten = 0
 
     -- TODO
+    -- добавить схему mtschema??
     -- примитивный цикл обработки. Попробовать while allDemanded do
-    -- с методом :pee() для проверки готовы-ли данные
+    -- с методом :peek() для проверки готовы-ли данные
 
     for i = 1, threadCount do
         local t1 = love.timer.getTime()
@@ -475,8 +476,7 @@ function Simulator.writeState(): string
         local t2 = love.timer.getTime()
         print('demand time', t2 - t1)
         if st and #st ~= 0 then
-            -- запись 4х байт номера потока и длины строки
-            --local len = struct.pack("<dd", i, #st)
+            -- запись 4х байт длины строки
             local len = struct.pack("<d", #st)
             table.insert(t, len)
             table.insert(t, st)
@@ -486,7 +486,7 @@ function Simulator.writeState(): string
     end
     print('writestate by', threadCount, ' not written ', notwritten)
 
-    -- записываю в начале будущей строки количество потоков(кусков данных)
+    -- записываю в начале будущего файла количество потоков(кусков данных)
     table.insert(t, 1, struct.pack('<d', threadCount))
 
     local fullData = table.concat(t)

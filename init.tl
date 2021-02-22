@@ -332,6 +332,8 @@ end
 local function drawui()
     linesbuf:draw()
 
+    imgui.ShowDemoWindow()
+    --imgui.ShowUserGuide()
     imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
 
     local num, status: number, boolean
@@ -341,6 +343,8 @@ local function drawui()
         selectedPreset = num
         activatePreset(num)
     end
+
+    imgui.Spacing()
 
     --if imgui.Button("save preset") then
         ---- TODO открыть режим модального диалога

@@ -326,13 +326,27 @@ function Simulator.getUptime()
 end
 
 local function unpackState(data)
-   local threadNum, len = struct.unpack('<dd', data)
+   local res = {}
+   local threadNum = struct.unpack('<d', data)
    local intSize = 4
-   print('threadNum', threadNum, 'len', len)
-   local idx = 0
-   local s = string.sub(data, idx + intSize * 2, idx + intSize * 2 + len)
-   love.filesystem.write(string.format('unpack-%d.txt', threadNum), s)
-   return nil
+   local idx = intSize + 1
+   print('threadNum', threadNum)
+   print('data', #data)
+   for i = 1, threadNum do
+      print('idx', idx)
+      print('idx + intSize', idx + intSize)
+      local s = string.sub(data, idx, idx + intSize)
+      print('subs', #s)
+      print('s', s)
+      local len = struct.unpack('<d', s)
+      local payload = string.sub(data, idx + intSize + 1, idx + intSize + len + 1)
+      idx = idx + len + 1
+      table.insert(res, payload)
+
+      love.filesystem.write(string.format('unpack-%d.txt', i), payload)
+   end
+
+   return res
 end
 
 function Simulator.readState(data)
@@ -444,14 +458,12 @@ function Simulator.writeState()
 
 
    for i = 1, threadCount do
-
-
       channels[i].msg:push('writestate')
    end
 
    local t = {}
-
    local notwritten = 0
+
 
 
 
@@ -465,7 +477,7 @@ function Simulator.writeState()
       print('demand time', t2 - t1)
       if st and #st ~= 0 then
 
-         local len = struct.pack("<dd", i, #st)
+         local len = struct.pack("<d", #st)
          table.insert(t, len)
          table.insert(t, st)
       else
@@ -473,6 +485,9 @@ function Simulator.writeState()
       end
    end
    print('writestate by', threadCount, ' not written ', notwritten)
+
+
+   table.insert(t, 1, struct.pack('<d', threadCount))
 
    local fullData = table.concat(t)
 
