@@ -329,6 +329,9 @@ local function stop()
 
 end
 
+local drFloat = 10.9
+local drFloats = { 10.9, 0.1 }
+
 local function drawui()
    linesbuf:draw()
 
@@ -368,6 +371,7 @@ local function drawui()
 
    imgui.Text(string.format("mode %s", mode))
 
+
    num, status = imgui.Combo('state', selectedState, states, #states)
    if status then
       selectedState = num
@@ -390,6 +394,14 @@ local function drawui()
 
    foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300, 200);
    imgui.Text(string.format("uptime %d sec", sim.getUptime()))
+
+
+
+   imgui.Bullet()
+   drFloat, status = imgui.DragFloat('drug', drFloat, 1, 0, 100)
+
+
+   drFloat, status = imgui.SliderAngle('resonator', drFloat, 0, 360)
 
    printStat()
 
