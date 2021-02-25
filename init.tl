@@ -26,6 +26,7 @@ local linesbuf = require 'kons'.new()
 local camera = require "camera"
 local gr = love.graphics
 local imgui = require "imgui"
+--local imgui = require "love-imgui"
 local inspect = require "inspect"
 local mtschemes = require "mtschemes"
 --local prof = require "jprof"
@@ -337,11 +338,16 @@ local function drawui()
 
     imgui.ShowDemoWindow()
     --imgui.ShowUserGuide()
-    imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
+    imgui.Begin("sim", false, "AlwaysAutoResize")
 
     local num, status: number, boolean
 
-    num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
+    local presetsNamesByZeros = ""
+    for _, v in ipairs(presetsNames) do
+        presetsNamesByZeros  = presetsNamesByZeros .. v .. "\0"
+    end
+    num, status = imgui.Combo("preset", selectedPreset, presetsNamesByZeros, #presetsNames)
+    --num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
     if status then
         selectedPreset = num
         activatePreset(num)
@@ -372,7 +378,12 @@ local function drawui()
     imgui.Text(string.format("mode %s", mode))
 
     -- TODO использовать BeginCombo/EndCombo для создания динамичного списка.
-    num, status = imgui.Combo('state', selectedState, states, #states)
+    local statesByZeros = ""
+    for _, v in ipairs(states) do
+        statesByZeros = statesByZeros .. v .. "\0"
+    end
+    num, status = imgui.Combo('state', selectedState, statesByZeros, #states)
+    --num, status = imgui.Combo('state', selectedState, states, #states)
     if status then
         selectedState = num
     end
@@ -392,7 +403,7 @@ local function drawui()
         --writeState()
     end
 
-    foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300, 200);
+    foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300);
     imgui.Text(string.format("uptime %d sec", sim.getUptime()))
 
     -- nil value
@@ -633,6 +644,8 @@ local function init()
 
     cam = camera.new()
     simulatorRender = SimulatorRender.new(commonSetup, cam)
+
+    imgui.Init()
 
     bindKeys()
     loadPresets()

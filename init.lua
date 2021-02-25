@@ -26,6 +26,7 @@ local linesbuf = require('kons').new()
 local camera = require("camera")
 local gr = love.graphics
 local imgui = require("imgui")
+
 local inspect = require("inspect")
 local mtschemes = require("mtschemes")
 
@@ -337,11 +338,16 @@ local function drawui()
 
    imgui.ShowDemoWindow()
 
-   imgui.Begin("sim", false, "ImGuiWindowFlags_AlwaysAutoResize")
+   imgui.Begin("sim", false, "AlwaysAutoResize")
 
    local num, status
 
-   num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
+   local presetsNamesByZeros = ""
+   for _, v in ipairs(presetsNames) do
+      presetsNamesByZeros = presetsNamesByZeros .. v .. "\0"
+   end
+   num, status = imgui.Combo("preset", selectedPreset, presetsNamesByZeros, #presetsNames)
+
    if status then
       selectedPreset = num
       activatePreset(num)
@@ -372,7 +378,12 @@ local function drawui()
    imgui.Text(string.format("mode %s", mode))
 
 
-   num, status = imgui.Combo('state', selectedState, states, #states)
+   local statesByZeros = ""
+   for _, v in ipairs(states) do
+      statesByZeros = statesByZeros .. v .. "\0"
+   end
+   num, status = imgui.Combo('state', selectedState, statesByZeros, #states)
+
    if status then
       selectedState = num
    end
@@ -392,7 +403,7 @@ local function drawui()
 
    end
 
-   foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300, 200);
+   foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300);
    imgui.Text(string.format("uptime %d sec", sim.getUptime()))
 
 
@@ -633,6 +644,8 @@ local function init()
 
    cam = camera.new()
    simulatorRender = SimulatorRender.new(commonSetup, cam)
+
+   imgui.Init()
 
    bindKeys()
    loadPresets()
