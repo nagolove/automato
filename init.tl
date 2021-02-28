@@ -645,8 +645,6 @@ local function init()
     cam = camera.new()
     simulatorRender = SimulatorRender.new(commonSetup, cam)
 
-    imgui.Init()
-
     bindKeys()
     loadPresets()
     loadStates()
