@@ -1,6 +1,4 @@
---[[
-Клеточный автомат-симулятор. Действие происходит на плоском поле в клетку, 
-замкнутом на себя. Создается популяция клеток которые двигаются по 
+--[[ Клеточный автомат-симулятор. Действие происходит на плоском поле в клетку, замкнутом на себя. Создается популяция клеток которые двигаются по 
 сгенерированной случайным образом программе из простого языка.
 Клетки питаются едой(зеленый цвет) и имеют конечный запас энергии.
 Цель игры - создать и развить долгоживущюю популяцию.
@@ -347,10 +345,9 @@ local function drawui()
         presetsNamesByZeros  = presetsNamesByZeros .. v .. "\0"
     end
     num, status = imgui.Combo("preset", selectedPreset, presetsNamesByZeros, #presetsNames)
-    --num, status = imgui.Combo("preset", selectedPreset, presetsNames, #presetsNames)
     if status then
         selectedPreset = num
-        activatePreset(num)
+        activatePreset(num + 1)
     end
 
     imgui.Spacing()

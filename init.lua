@@ -4,8 +4,6 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 
 
 
-
-
 require("love")
 love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 package.path = package.path .. ";scenes/automato/?.lua"
@@ -350,7 +348,10 @@ local function drawui()
 
    if status then
       selectedPreset = num
-      activatePreset(num)
+      print("selectedPreset", selectedPreset)
+      print("status", status)
+      print("num", num)
+      activatePreset(num + 1)
    end
 
    imgui.Spacing()
