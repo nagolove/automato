@@ -332,9 +332,10 @@ local drFloat = 10.9
 local drFloats = { 10.9, 0.1 }
 
 local function drawui()
-   linesbuf:draw()
+   imgui.StyleColorsLight()
 
    imgui.ShowDemoWindow()
+   imgui.ShowUserGuide()
 
    imgui.Begin("sim", false, "AlwaysAutoResize")
 
@@ -345,12 +346,8 @@ local function drawui()
       presetsNamesByZeros = presetsNamesByZeros .. v .. "\0"
    end
    num, status = imgui.Combo("preset", selectedPreset, presetsNamesByZeros, #presetsNames)
-
    if status then
       selectedPreset = num
-      print("selectedPreset", selectedPreset)
-      print("status", status)
-      print("num", num)
       activatePreset(num + 1)
    end
 
@@ -421,6 +418,7 @@ local function drawui()
 end
 
 local function draw()
+   linesbuf:draw()
    if viewState == "sim" then
       local zazor = 10
       simulatorRender:draw()

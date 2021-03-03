@@ -332,10 +332,11 @@ local drFloat = 10.9
 local drFloats = {10.9, 0.1}
 
 local function drawui()
-    linesbuf:draw()
+    imgui.StyleColorsLight()
 
     imgui.ShowDemoWindow()
-    --imgui.ShowUserGuide()
+    imgui.ShowUserGuide()
+
     imgui.Begin("sim", false, "AlwaysAutoResize")
 
     local num, status: number, boolean
@@ -417,6 +418,7 @@ local function drawui()
 end
 
 local function draw()
+    linesbuf:draw()
     if viewState == "sim" then
         local zazor: number = 10
         simulatorRender:draw()
