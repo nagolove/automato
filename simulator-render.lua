@@ -44,7 +44,9 @@ local SimulatorRender_mt = {
 }
 
 
-local pixSize = 10
+local pixSize = 20
+
+
 
 local gridLineWidth = 3
 
@@ -141,6 +143,8 @@ function SimulatorRender:draw()
       return
    end
 
+
+
    self:bakeCanvas()
 
 
@@ -186,12 +190,23 @@ function SimulatorRender:prerender()
    gr.rectangle("fill", 0, 0, pixSize, pixSize)
    gr.setCanvas()
 
+   local tmpImage = gr.newImage("scenes/automato/cell.png")
    local n = 2
    gr.setCanvas(self.cellCanvas)
    gr.clear(cellcolor1)
    gr.setColor(cellcolor2)
    gr.rectangle("fill", n, n, pixSize - 2 * n, pixSize - 2 * n)
+   gr.draw(
+   tmpImage, 0, 0, 0,
+   (self.cellCanvas):getWidth() / tmpImage:getWidth(),
+   (self.cellCanvas):getHeight() / tmpImage:getHeight())
+
    gr.setCanvas()
+
+
+
+   self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas-1.png')
+
 end
 
 function SimulatorRender:drawCells()

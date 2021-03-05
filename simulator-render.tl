@@ -44,7 +44,9 @@ local SimulatorRender_mt: metatable<SimulatorRender> = {
 }
 
 -- размер клетки поля суб канваса в пикселях
-local pixSize: number = 10
+local pixSize: number = 20
+--local pixSize: number = 160
+--local pixSize: number = 10
 -- ширина линий сетки
 local gridLineWidth = 3
 -- во сколько раз полотно больше размера картинки
@@ -141,6 +143,8 @@ function SimulatorRender:draw()
         return
     end
 
+    -- TODO запекать только есть есть события отрисовки клеток или поля
+    -- с предыдущего кадра.
     self:bakeCanvas()
     --print("SimulatorRender:draw() self.canvas", self.canvas)
 
@@ -186,12 +190,23 @@ function SimulatorRender:prerender()
     gr.rectangle("fill", 0, 0, pixSize, pixSize)
     gr.setCanvas()
 
+    local tmpImage = gr.newImage("scenes/automato/cell.png") as gr.Texture
     local n = 2
     gr.setCanvas(self.cellCanvas)
     gr.clear(cellcolor1)
     gr.setColor(cellcolor2)
     gr.rectangle("fill", n, n, pixSize - 2 * n, pixSize - 2 * n)
+    gr.draw(
+        tmpImage as gr.Drawable, 0, 0, 0,
+        (self.cellCanvas as gr.Texture):getWidth() / tmpImage:getWidth(),
+        (self.cellCanvas as gr.Texture):getHeight() / tmpImage:getHeight()
+    )
     gr.setCanvas()
+
+    --gr.setCanvas(self.cellCanvas)
+    --gr.setCanvas()
+    self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas-1.png')
+
 end
 
 function SimulatorRender:drawCells()
