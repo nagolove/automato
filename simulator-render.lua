@@ -44,9 +44,9 @@ local SimulatorRender_mt = {
 }
 
 
-local pixSize = 20
 
 
+local pixSize = 10
 
 local gridLineWidth = 3
 

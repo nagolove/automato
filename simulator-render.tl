@@ -44,9 +44,9 @@ local SimulatorRender_mt: metatable<SimulatorRender> = {
 }
 
 -- размер клетки поля суб канваса в пикселях
-local pixSize: number = 20
+--local pixSize: number = 20
 --local pixSize: number = 160
---local pixSize: number = 10
+local pixSize: number = 10
 -- ширина линий сетки
 local gridLineWidth = 3
 -- во сколько раз полотно больше размера картинки
