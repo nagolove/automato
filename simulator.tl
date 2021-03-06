@@ -14,6 +14,7 @@ require "log"
 require "love"
 require "mtschemes"
 require "types"
+require "common"
 
 local infoTimer: Timer = timer.new()
 local gridSize: number
@@ -30,6 +31,7 @@ local channels: {Channels} = {}
 channels[1].cellrequest:push()
 --]]
 local isdone: boolean = true
+local setup: CommonSetup
 
 function Simulator.getDrawLists(): {DrawNode}
     local list = {}
@@ -102,6 +104,8 @@ function love.threaderror(_: love.thread.Thread, errstr: string)
 end
 
 function Simulator.create(commonSetup: CommonSetup)
+    print('commonSetup', inspect(commonSetup))
+    setup = deepCopy(commonSetup)
     print("--------------------------------------------")
 
     print("commonSetup", inspect(commonSetup))
@@ -110,7 +114,9 @@ function Simulator.create(commonSetup: CommonSetup)
         Simulator.shutdown()
     end
 
+    -- установка глобальной переменной модуля
     threadCount = commonSetup.threadCount
+
     print("threadCount", threadCount)
 
     gridSize = commonSetup.gridSize
@@ -356,8 +362,12 @@ function Simulator.readState(data: string): boolean
     -- два варианта восстановления состояния :
     -- * разосласть сообщения потокам 
     --          преимущество в быстродействии при перемотке
+    --          нужно писать код для потока
     -- * запустить потоки заново, передав прочтенные данные как параметр
     --          полное восстановление конфигурации
+    --          нужно дописать код завершения потока. Добавить прерывание
+    --          главного цикла
+    --          нужно заменить идентификаторы потоков в модуле simulator
 
     print("readState")
 
@@ -457,6 +467,8 @@ function Simulator.writeState(): string
     -- объеденить результаты
     -- отключить паузу для потоков
 
+    -- TODO добавить сериализацию commonSetup
+
     for i = 1, threadCount do
         channels[i].msg:push('writestate')
     end
@@ -468,26 +480,51 @@ function Simulator.writeState(): string
     -- добавить схему mtschema??
     -- примитивный цикл обработки. Попробовать while allDemanded do
     -- с методом :peek() для проверки готовы-ли данные
+    local setupString = serpent.dump(setup)
+    local mtschemaString = serpent.dump(mtschema)
+    local threadCountString = tostring(threadCount)
+    --[[
+    local blobStructure = {
+        [1] = 'setup',
+        [2] = 'mtschema',
+        [3] = 'threadCount',
+        [4] = 'threads',
+    }
+    --]]
+
+    local function writeString(str: string)
+        local len = struct.pack("<d", #str) as string
+        table.insert(t, len)
+        table.insert(t, str)
+    end
+
+    -- записываю структуру для запуска потока
+    writeString(setupString)
+    -- записываю массив схем многопоточности
+    writeString(mtschemaString)
+    -- записываю количество потоков(кусков данных)
+    writeString(threadCountString)
 
     for i = 1, threadCount do
         local t1 = love.timer.getTime()
         ---- XXX Может все завесить навечно
-        local st = channels[i].state:demand() as string
+        local thread = channels[i].state:demand() as string
         local t2 = love.timer.getTime()
         print('demand time', t2 - t1)
-        if st and #st ~= 0 then
-            -- запись 4х байт длины строки
-            local len = struct.pack("<d", #st)
-            table.insert(t, len)
-            table.insert(t, st)
-        else
+
+        if not thread then
+            error("Could'not retrive string from thread")
+        end
+
+        -- записываю содержимое потока
+        writeString(thread)
+
+        if not (thread and #thread ~= 0) then
             notwritten = notwritten + 1
         end
     end
-    print('writestate by', threadCount, ' not written ', notwritten)
 
-    -- записываю в начале будущего файла количество потоков(кусков данных)
-    table.insert(t, 1, struct.pack('<d', threadCount))
+    print('writestate by', threadCount, ' not written ', notwritten)
 
     local fullData = table.concat(t)
 

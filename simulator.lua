@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local os = _tl_compat and _tl_compat.os or os; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
 local serpent = require("serpent")
 local struct = require("struct")
 local timer = require("Timer")
@@ -14,6 +14,7 @@ require("log")
 require("love")
 require("mtschemes")
 require("types")
+require("common")
 
 local infoTimer = timer.new()
 local gridSize
@@ -30,6 +31,7 @@ local channels = {}
 
 
 local isdone = true
+local setup
 
 function Simulator.getDrawLists()
    local list = {}
@@ -102,6 +104,9 @@ function love.threaderror(_, errstr)
 end
 
 function Simulator.create(commonSetup)
+   print('commonSetup', inspect(commonSetup))
+   setup = deepCopy(commonSetup)
+   os.exit()
    print("--------------------------------------------")
 
    print("commonSetup", inspect(commonSetup))
@@ -359,6 +364,10 @@ function Simulator.readState(data)
 
 
 
+
+
+
+
    print("readState")
 
    local decompData = love.data.decompress('string', 'zlib', data)
@@ -451,6 +460,8 @@ function Simulator.readState(data)
 end
 
 function Simulator.writeState()
+
+
 
 
 
