@@ -228,8 +228,9 @@ global ChannelsTypes<const>: {string} = {
     -- статистика 
     'stat',
     'isstopped',
-    'busy',
+    --'busy',
     'cells',
+    'alive',
 }
 
 function initChannels(n: number): Channels

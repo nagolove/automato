@@ -541,7 +541,8 @@ end
 
 
 function commands.isalive()
-   local x, y = channels.msg:pop(), channels.msg:pop()
+
+   local x, y = channels.alive:pop(), channels.alive:pop()
 
    if type(x) ~= 'number' or type(y) ~= 'number' then
       assert(string.format("x, y " .. x .. " " .. y .. " threadNum " .. threadNum))
@@ -579,21 +580,27 @@ end
 function commands.insertcell()
 
 
-   local msg = channels.cell:pop()
+
+   local msg = channels.cells:pop()
+   print('cell channel', channels.cells)
+   print('insertcell', msg)
 
 
 
-   local newcellfun, err = load(msg)
-   if (not newcellfun) and err then
-      error(string.format("insertcell '%s', msg = '%s'", err, msg))
+   if msg then
+      local newcellfun, err = load(msg)
+      if (not newcellfun) and err then
+         error(string.format("insertcell '%s', msg = '%s'", err, msg))
+      end
+      local newcell = newcellfun()
+      newcell = setmetatable(newcell, { __index = Cell })
+      newcell.id = istate.cellId
+      istate.cellId = istate.cellId + 1
+
+
+      table.insert(cells, newcell)
+
    end
-   local newcell = newcellfun()
-   newcell = setmetatable(newcell, { __index = Cell })
-   newcell.id = istate.cellId
-   istate.cellId = istate.cellId + 1
-
-
-   table.insert(cells, newcell)
 end
 
 function commands.readstate()

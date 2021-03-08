@@ -80,8 +80,9 @@ local function isAliveNeighbours(x: number, y: number, threadNum: number): boole
 
     local msgChan = love.thread.getChannel("msg" .. threadNum)
     msgChan:push("isalive")
-    msgChan:push(x)
-    msgChan:push(y)
+    local aliveChan = love.thread.getChannel('alive' .. threadNum)
+    aliveChan:push(x)
+    aliveChan:push(y)
 
     -- блокирующий вызов, вешает программу
     --local state: boolean = love.thread.getChannel("request" .. threadNum):demand() as boolean
@@ -139,7 +140,10 @@ local function moveCellToThread(cell: Cell, threadNum: number)
     -- пишу из рабочего
     chan:push("insertcell")
     --<<-- еще что-то вклинивается
-    local cellsChan = love.thread.getChannel('cell' .. threadNum)
+    local cellsChan = love.thread.getChannel('cells' .. threadNum)
+    print('cellsChan', cellsChan)
+    -- XXX нужна ли здесь очистка?
+    --cellsChan:clear()
     cellsChan:push(dump)
     bchan:clear()
 end

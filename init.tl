@@ -87,7 +87,8 @@ local function loadLocales()
             return chunk
         end) 
     end
-    i18n.setLocale('en')
+    --i18n.setLocale('en')
+    i18n.setLocale('ru')
     print("i18n", inspect(i18n))
 end
 
@@ -239,7 +240,18 @@ local function printStat()
 
     for _, st in ipairs(starr) do
         for k, v in pairs(st as {string: number}) do
-            imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
+            --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
+            if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k as Statistic.Types], k, v), true) then
+                --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
+                --imgui.SameLine()
+                --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
+                --print(k, v)
+                local someText = "formatMods." .. k as Statistic.Types
+                print('someText', someText)
+                imgui.Text(i18n(someText))
+            end
+            --print('CollapsingHeader', r1, r2)
+            --if (ImGui::CollapsingHeader("Window options"))
         end
     end
 end

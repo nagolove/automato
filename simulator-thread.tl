@@ -541,7 +541,8 @@ end
 --]]
 
 function commands.isalive()
-    local x, y = channels.msg:pop() as number, channels.msg:pop() as number  
+    --local x, y = channels.msg:pop() as number, channels.msg:pop() as number  
+    local x, y = channels.alive:pop() as number, channels.alive:pop() as number  
     --if not x or not y or not threadNum then
     if type(x) ~= 'number' or type(y) ~= 'number' then
         assert(string.format("x, y " ..  x .. " " .. y .. " threadNum " .. threadNum))
@@ -578,22 +579,28 @@ end
 -- метод для пересылки клеток между нитями
 function commands.insertcell()
     -- получить сохраненную клетку
-    --local msg = channels.msg:pop() as string
-    local msg = channels.cell:pop() as string
-
     -- FIXME сюда приходит в msg сообщение 'getobject'
+    --local msg = channels.msg:pop() as string
+    local msg = channels.cells:pop() as string
+    print('cell channel', channels.cells)
+    print('insertcell', msg)
 
-    local newcellfun, err = load(msg)
-    if (not newcellfun) and err then
-        error(string.format("insertcell '%s', msg = '%s'", err, msg))
+    --[[
+    --]]
+    if msg then
+        local newcellfun, err = load(msg)
+        if (not newcellfun) and err then
+            error(string.format("insertcell '%s', msg = '%s'", err, msg))
+        end
+        local newcell: Cell = newcellfun() as Cell
+        newcell = setmetatable(newcell, { __index = Cell })
+        newcell.id = istate.cellId
+        istate.cellId = istate.cellId + 1
+        -- нормально, что grid не устанавливается и синхронизация пройдет только на
+        -- следущем шаге?
+        table.insert(cells, newcell)
+        --]]
     end
-    local newcell: Cell = newcellfun() as Cell
-    newcell = setmetatable(newcell, { __index = Cell })
-    newcell.id = istate.cellId
-    istate.cellId = istate.cellId + 1
-    -- нормально, что grid не устанавливается и синхронизация пройдет только на
-    -- следущем шаге?
-    table.insert(cells, newcell)
 end
 
 function commands.readstate()

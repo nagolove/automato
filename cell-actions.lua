@@ -80,8 +80,9 @@ local function isAliveNeighbours(x, y, threadNum)
 
    local msgChan = love.thread.getChannel("msg" .. threadNum)
    msgChan:push("isalive")
-   msgChan:push(x)
-   msgChan:push(y)
+   local aliveChan = love.thread.getChannel('alive' .. threadNum)
+   aliveChan:push(x)
+   aliveChan:push(y)
 
 
 
@@ -139,7 +140,10 @@ local function moveCellToThread(cell, threadNum)
 
    chan:push("insertcell")
 
-   local cellsChan = love.thread.getChannel('cell' .. threadNum)
+   local cellsChan = love.thread.getChannel('cells' .. threadNum)
+   print('cellsChan', cellsChan)
+
+
    cellsChan:push(dump)
    bchan:clear()
 end

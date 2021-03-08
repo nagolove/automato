@@ -1,6 +1,21 @@
 return {
     language = "English", 
     en = {
+
+        formatMods = {
+            allEated = 'bla-bla-bla',
+            maxEnergy = 'bla-bla-bla',
+            minEnergy = 'bla-bla-bla',
+            midEnergy = 'bla-bla-bla',
+            cells = 'bla-bla',
+            iterations = 'bla-bla',
+            meals = 'bla-bla',
+            born = 'bla-bla',
+            died = 'bla-bla',
+            percentAreaFilled = 'bla-bla',
+            stepsPerSecond = 'bla-bla',
+        },
+
         nofood = 'no food',
         initpopulation = 'initial population',
         invemmspeed = 'inverted emmision speed',
