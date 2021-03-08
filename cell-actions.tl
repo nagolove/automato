@@ -3,6 +3,7 @@ require "mtschemes"
 require "love"
 require "common"
 
+local marshal = require 'marshal'
 local inspect = require "inspect"
 local serpent = require "serpent"
 
@@ -127,9 +128,18 @@ local function moveCellToThread(cell: Cell, threadNum: number)
     --local dump: string = serpent.dump(cell)
     local dump = serpent.dump(cell)
     local chan = love.thread.getChannel("msg" .. threadNum)
-    chan:push("insertcell")
     print('moveCellToThread dump', inspect(dump))
+    local bchan = love.thread.getChannel('busy' .. threadNum)
+    local state = bchan:peek() as string
+    -- блокировка в ожидании
+    while state do
+        state = bchan:peek() as string
+    end
+    bchan:push('b')
+    -- пишу из рабочего
+    chan:push("insertcell")
     chan:push(dump)
+    bchan:clear()
 end
 
 function actions.left(cell: Cell): boolean

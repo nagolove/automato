@@ -228,6 +228,7 @@ ChannelsTypes = {
 
    'stat',
    'isstopped',
+   'busy',
 }
 
 function initChannels(n)

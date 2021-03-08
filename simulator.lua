@@ -2,6 +2,7 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 local serpent = require("serpent")
 local struct = require("struct")
 local timer = require("Timer")
+local marshal = require('marshal')
 
 
 
@@ -233,11 +234,20 @@ function Simulator.getObject(x, y)
       error(string.format("threadNum == -1 for %d, %d with schema %s", x, y, inspect(mtschema)))
    end
 
-   local mchan = love.thread.getChannel("msg" .. threadNum)
+
+   local mchan = channels[threadNum].msg
+   local bchan = love.thread.getChannel('busy' .. threadNum)
+
+
+
+
+   bchan:push('b')
 
    mchan:push("getobject")
    mchan:push(x)
    mchan:push(y)
+
+   bchan:clear()
 
 
 

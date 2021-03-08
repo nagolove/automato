@@ -2,6 +2,7 @@ local inspect = require "inspect"
 local serpent = require "serpent"
 local struct = require "struct"
 local timer = require "Timer"
+local marshal = require 'marshal'
 
 --local profi = require "profi"
 --profi:start()
@@ -233,11 +234,20 @@ function Simulator.getObject(x: number, y: number): Cell
         error(string.format("threadNum == -1 for %d, %d with schema %s", x, y, inspect(mtschema)))
     end
 
-    local mchan = love.thread.getChannel("msg" .. threadNum)
+    --local mchan = love.thread.getChannel("msg" .. threadNum)
+    local mchan = channels[threadNum].msg
+    local bchan = love.thread.getChannel('busy' .. threadNum)
+    --local state = bchan:peek() as string
+
     --channels[threadNum].msg:push('getobject')
+    -- пишу из главного
+    bchan:push('b')
+
     mchan:push("getobject")
     mchan:push(x)
     mchan:push(y)
+
+    bchan:clear()
 
     --[[
     { 
