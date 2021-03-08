@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local os = _tl_compat and _tl_compat.os or os; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
 local serpent = require("serpent")
 local struct = require("struct")
 local timer = require("Timer")
@@ -106,7 +106,6 @@ end
 function Simulator.create(commonSetup)
    print('commonSetup', inspect(commonSetup))
    setup = deepCopy(commonSetup)
-   os.exit()
    print("--------------------------------------------")
 
    print("commonSetup", inspect(commonSetup))
@@ -115,7 +114,9 @@ function Simulator.create(commonSetup)
       Simulator.shutdown()
    end
 
+
    threadCount = commonSetup.threadCount
+
    print("threadCount", threadCount)
 
    gridSize = commonSetup.gridSize
@@ -233,9 +234,18 @@ function Simulator.getObject(x, y)
    end
 
    local mchan = love.thread.getChannel("msg" .. threadNum)
+
    mchan:push("getobject")
    mchan:push(x)
    mchan:push(y)
+
+
+
+
+
+
+
+
 
 
 
@@ -443,11 +453,11 @@ function Simulator.readState(data)
       local newstat = {}
       for i, _ in ipairs(threads) do
          local t
-         if channels[i].stat:getCount() > 1 then
-            t = channels[i].stat:pop()
-         else
-            t = channels[i].stat:peek()
-         end
+
+         t = channels[i].stat:pop()
+
+
+
          print('channels[i].stat:getCount()', channels[i].stat:getCount())
          if t then
             table.insert(newstat, t)
@@ -479,26 +489,51 @@ function Simulator.writeState()
 
 
 
+   local setupString = serpent.dump(setup)
+   local mtschemaString = serpent.dump(mtschema)
+   local threadCountString = tostring(threadCount)
+
+
+
+
+
+
+
+
+
+   local function writeString(str)
+      local len = struct.pack("<d", #str)
+      table.insert(t, len)
+      table.insert(t, str)
+   end
+
+
+   writeString(setupString)
+
+   writeString(mtschemaString)
+
+   writeString(threadCountString)
 
    for i = 1, threadCount do
       local t1 = love.timer.getTime()
 
-      local st = channels[i].state:demand()
+      local thread = channels[i].state:demand()
       local t2 = love.timer.getTime()
       print('demand time', t2 - t1)
-      if st and #st ~= 0 then
 
-         local len = struct.pack("<d", #st)
-         table.insert(t, len)
-         table.insert(t, st)
-      else
+      if not thread then
+         error("Could'not retrive string from thread")
+      end
+
+
+      writeString(thread)
+
+      if not (thread and #thread ~= 0) then
          notwritten = notwritten + 1
       end
    end
+
    print('writestate by', threadCount, ' not written ', notwritten)
-
-
-   table.insert(t, 1, struct.pack('<d', threadCount))
 
    local fullData = table.concat(t)
 

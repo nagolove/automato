@@ -128,14 +128,19 @@ local function drawCellInfo(cell)
       return
    end
 
+   local mx, my = love.mouse.getPosition()
+
+   mx, my = cam:worldCoords(mx, my)
+
 
    if next(cell) ~= nil then
-      local mx, my = love.mouse.getPosition()
       gr.setColor(1, 0, 0)
 
       gr.circle("line", mx, my, 5)
    end
 
+   imgui.SetNextWindowPos(mx, my)
+   imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize")
    local msg
    for k, v in pairs(cell) do
       if k ~= "code" then
@@ -156,9 +161,12 @@ local function drawCellInfo(cell)
             a = tostring(a)
          end
          msg = string.format(fmt, a)
-         imgui.LabelText(k, msg)
+         print('drawCellInfo', msg)
+
+         imgui.Text(k .. " " .. tostring(msg))
       end
    end
+   imgui.End()
 end
 
 local function nextMode()
@@ -212,9 +220,9 @@ end
 local function printStat()
    local starr = sim.getStatistic()
 
-   print("starr = ", inspect(starr))
-   print("#starr", #starr)
-   print("prevStat", inspect(prevStat))
+
+
+
 
 
    if #starr ~= 0 then
@@ -222,6 +230,11 @@ local function printStat()
    elseif #starr == 0 and prevStat then
       starr = prevStat
       print("used prevStat", inspect(prevStat))
+   end
+
+
+   if #starr > 1 then
+      table.remove(starr, 2)
    end
 
    for _, st in ipairs(starr) do
@@ -331,12 +344,27 @@ end
 local drFloat = 10.9
 local drFloats = { 10.9, 0.1 }
 
-local function drawui()
-   imgui.StyleColorsLight()
+local function drawLog()
+   imgui.SetNextWindowPos(0, 0)
+   imgui.Begin('log', false, "NoTitleBar|NoMove|NoResize")
+   imgui.End()
+end
 
-   imgui.ShowDemoWindow()
-   imgui.ShowUserGuide()
+local SimulatorLog = {}
 
+
+
+
+local SimulatorLog_mt = {
+   __index = SimulatorLog,
+}
+
+function SimulatorLog:new()
+   local o = {}
+   return setmetatable(o, SimulatorLog_mt)
+end
+
+local function drawSim()
    imgui.Begin("sim", false, "AlwaysAutoResize")
 
    local num, status
@@ -355,12 +383,9 @@ local function drawui()
 
 
 
-
-
    if mode == "stop" then
       roundSettings()
    end
-
    if imgui.Button(i18n("start")) then
       start()
    end
@@ -372,9 +397,7 @@ local function drawui()
    if imgui.Button(i18n("changemode")) then
       nextMode()
    end
-
    imgui.Text(string.format("mode %s", mode))
-
 
    local statesByZeros = ""
    for _, v in ipairs(states) do
@@ -412,9 +435,24 @@ local function drawui()
 
    drFloat, status = imgui.SliderAngle('resonator', drFloat, 0, 360)
 
+   if underCursor then
+      local cell = getCell(underCursor)
+      drawCellInfo(cell)
+   end
+
    printStat()
 
    imgui.End()
+end
+
+local function drawui()
+   imgui.StyleColorsLight()
+
+   imgui.ShowDemoWindow()
+   imgui.ShowUserGuide()
+
+   drawSim()
+   drawLog()
 end
 
 local function draw()
@@ -431,15 +469,9 @@ local function draw()
 
 
 
-
       if underCursor then
 
          local cell = getCell(underCursor)
-
-
-         drawCellInfo(cell)
-
-         simulatorRender:drawCellPath(cell)
 
       end
 

@@ -394,7 +394,6 @@ local function experiment()
 
 
 
-
    while true do
 
 
@@ -574,9 +573,10 @@ function commands.isalive()
 end
 
 function commands.insertcell()
-   local newcellfun, err = load(channels.msg:pop())
-   if err then
-      error(string.format("insertcell %s", err))
+   local msg = channels.msg:pop()
+   local newcellfun, err = load(msg)
+   if (not newcellfun) and err then
+      error(string.format("insertcell '%s', msg = '%s'", err, msg))
    end
    local newcell = newcellfun()
    newcell = setmetatable(newcell, { __index = Cell })

@@ -234,9 +234,18 @@ function Simulator.getObject(x: number, y: number): Cell
     end
 
     local mchan = love.thread.getChannel("msg" .. threadNum)
+    --channels[threadNum].msg:push('getobject')
     mchan:push("getobject")
     mchan:push(x)
     mchan:push(y)
+
+    --[[
+    { 
+        cmd = 'getobject',
+        ...,
+        ...,
+    }
+    ]]
 
     -- FIXME demand не дает ответа за таймаут и вешает программу
     --local sobject = rchan:demand(0.01) as string
@@ -444,11 +453,11 @@ function Simulator.readState(data: string): boolean
         local newstat: {Statistic} = {}
         for i, _ in ipairs(threads) do
             local t: Statistic
-            if channels[i].stat:getCount() > 1 then
+            --if channels[i].stat:getCount() > 1 then
                 t = channels[i].stat:pop() as Statistic
-            else
-                t = channels[i].stat:peek() as Statistic
-            end
+            --else
+                --t = channels[i].stat:peek() as Statistic
+            --end
             print('channels[i].stat:getCount()', channels[i].stat:getCount())
             if t then
                 table.insert(newstat, t)

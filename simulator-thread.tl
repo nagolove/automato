@@ -392,7 +392,6 @@ local function experiment()
     end
     print("#Experiment started with", #cells)
 
-    --while #cells > 0 do
     -- если нет живых клеток, то вставать на паузу, но сохранять возможность
     -- вставки клеток через сообщение insertcell
     while true do
@@ -574,17 +573,18 @@ function commands.isalive()
 end
 
 function commands.insertcell()
-  local newcellfun, err = load(channels.msg:pop() as string)
-  if err then
-    error(string.format("insertcell %s", err))
-  end
-  local newcell: Cell = newcellfun() as Cell
-  newcell = setmetatable(newcell, { __index = Cell })
-  newcell.id = istate.cellId
-  istate.cellId = istate.cellId + 1
-  -- нормально, что grid не устанавливается и синхронизация пройдет только на
-  -- следущем шаге?
-  table.insert(cells, newcell)
+    local msg = channels.msg:pop() as string
+    local newcellfun, err = load(msg)
+    if (not newcellfun) and err then
+        error(string.format("insertcell '%s', msg = '%s'", err, msg))
+    end
+    local newcell: Cell = newcellfun() as Cell
+    newcell = setmetatable(newcell, { __index = Cell })
+    newcell.id = istate.cellId
+    istate.cellId = istate.cellId + 1
+    -- нормально, что grid не устанавливается и синхронизация пройдет только на
+    -- следущем шаге?
+    table.insert(cells, newcell)
 end
 
 function commands.readstate()

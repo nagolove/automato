@@ -128,6 +128,7 @@ local function moveCellToThread(cell, threadNum)
    local dump = serpent.dump(cell)
    local chan = love.thread.getChannel("msg" .. threadNum)
    chan:push("insertcell")
+   print('moveCellToThread dump', inspect(dump))
    chan:push(dump)
 end
 

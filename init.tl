@@ -128,14 +128,19 @@ local function drawCellInfo(cell: Cell)
         return
     end
 
+    local mx, my = love.mouse.getPosition()
+    --mx, my = cam:cameraCoords(mx, my)
+    mx, my = cam:worldCoords(mx, my)
+
     -- сделать нормальное выделение клетки под курсором
     if next(cell as {any:any}) ~= nil then
-        local mx, my = love.mouse.getPosition()
         gr.setColor(1, 0, 0)
         --gr.circle("line", mx, my, pixSize * cam.scale)
         gr.circle("line", mx, my, 5)
     end
 
+    imgui.SetNextWindowPos(mx, my)
+    imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize")
     local msg: string
     for k, v in pairs(cell as {any: any}) do
         if k ~= "code" then
@@ -156,9 +161,12 @@ local function drawCellInfo(cell: Cell)
                 a = tostring(a)
             end
             msg = string.format(fmt, a)
-            imgui.LabelText(k as string, msg)
+            print('drawCellInfo', msg)
+            --imgui.LabelText(k as string, tostring(msg))
+            imgui.Text(k as string .. " " .. tostring(msg))
         end
     end
+    imgui.End()
 end
 
 local function nextMode()
@@ -212,9 +220,9 @@ end
 local function printStat()
     local starr: {Statistic} = sim.getStatistic()
 
-    print("starr = ", inspect(starr))
-    print("#starr", #starr)
-    print("prevStat", inspect(prevStat))
+    --print("starr = ", inspect(starr))
+    --print("#starr", #starr)
+    --print("prevStat", inspect(prevStat))
 
     -- XXX работает ли такая подмена массива?
     if #starr ~= 0 then
@@ -222,6 +230,11 @@ local function printStat()
     elseif #starr == 0 and prevStat then
         starr = prevStat
         print("used prevStat", inspect(prevStat))
+    end
+
+    -- XXX hack
+    if #starr > 1 then
+        table.remove(starr, 2)
     end
 
     for _, st in ipairs(starr) do
@@ -331,12 +344,27 @@ end
 local drFloat = 10.9
 local drFloats = {10.9, 0.1}
 
-local function drawui()
-    imgui.StyleColorsLight()
+local function drawLog()
+    imgui.SetNextWindowPos(0, 0)
+    imgui.Begin('log', false, "NoTitleBar|NoMove|NoResize")
+    imgui.End()
+end
 
-    imgui.ShowDemoWindow()
-    imgui.ShowUserGuide()
+local type SimulatorLog = record
+    new: function(): SimulatorLog
+    add: function(string)
+end
 
+local SimulatorLog_mt: metatable<SimulatorLog> = {
+    __index = SimulatorLog,
+}
+
+function SimulatorLog:new(): SimulatorLog
+    local o: SimulatorLog = {}
+    return setmetatable(o, SimulatorLog_mt)
+end
+
+local function drawSim()
     imgui.Begin("sim", false, "AlwaysAutoResize")
 
     local num, status: number, boolean
@@ -352,15 +380,12 @@ local function drawui()
     end
 
     imgui.Spacing()
-
     --if imgui.Button("save preset") then
-        ---- TODO открыть режим модального диалога
+    ---- TODO открыть режим модального диалога
     --end
-
     if mode == "stop" then
         roundSettings()
     end
-
     if imgui.Button(i18n("start")) then
         start()
     end
@@ -372,9 +397,7 @@ local function drawui()
     if imgui.Button(i18n("changemode")) then
         nextMode()
     end
-
     imgui.Text(string.format("mode %s", mode))
-
     -- TODO использовать BeginCombo/EndCombo для создания динамичного списка.
     local statesByZeros = ""
     for _, v in ipairs(states) do
@@ -404,17 +427,32 @@ local function drawui()
     foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300);
     imgui.Text(string.format("uptime %d sec", sim.getUptime()))
 
-    -- nil value
-    --imgui.ArrowButton("hi", "")
+-- nil value
+--imgui.ArrowButton("hi", "")
     imgui.Bullet()
     drFloat, status = imgui.DragFloat('drug', drFloat, 1, 0, 100)
     --drFloats, status = imgui.DragFloat2('drug', drFloats, 1, 0, 100)
 
     drFloat, status = imgui.SliderAngle('resonator', drFloat, 0, 360)
 
+    if underCursor then
+        local cell = getCell(underCursor)
+        drawCellInfo(cell)
+    end
+
     printStat()
 
     imgui.End()
+end
+
+local function drawui()
+    imgui.StyleColorsLight()
+
+    imgui.ShowDemoWindow()
+    imgui.ShowUserGuide()
+
+    drawSim()
+    drawLog()
 end
 
 local function draw()
@@ -431,16 +469,10 @@ local function draw()
         simulatorRender.cam:detach()
         gr.pop()
         --]]
-
         if underCursor then
             -- XXX FIXME Not work
             local cell = getCell(underCursor)
-            --print("cell", inspect(cell))
-
-            drawCellInfo(cell)
-            --simulatorRender.cam:attach()
-            simulatorRender:drawCellPath(cell)
-            --simulatorRender.cam:detach()
+            --simulatorRender:drawCellPath(cell)
         end
 
     elseif viewState == "graph" then
