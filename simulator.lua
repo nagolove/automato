@@ -33,6 +33,7 @@ local channels = {}
 
 local isdone = true
 local setup
+local colonyDied = false
 
 function Simulator.getDrawLists()
    local list = {}
@@ -188,6 +189,13 @@ function Simulator.create(commonSetup)
          end
       end
       statistic = newstat
+
+      colonyDied = true
+      for _, v in ipairs(statistic) do
+         if v.isalive then
+            colonyDied = false
+         end
+      end
    end)
 end
 
@@ -197,7 +205,7 @@ end
 
 
 function Simulator.isColonyDied()
-   return false
+   return colonyDied
 end
 
 

@@ -763,7 +763,7 @@ end
 
 local function mousemoved(x: number, y: number, _: number, _: number)
     underCursor = simulatorRender:mouseToCamera(x, y)
-    underCursor.x, underCursor.y = checkCursorBounds(underCursor.x, underCursor.y)
+    --underCursor.x, underCursor.y = checkCursorBounds(underCursor.x, underCursor.y)
 end
 
 local function wheelmoved(_: number, y: number)

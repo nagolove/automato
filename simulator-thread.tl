@@ -471,6 +471,8 @@ local function experiment()
         --stat = gatherStatistic(cells)
         gatherStatistic(cells)
 
+        stat.isalive = #cells ~= 0
+
         -- слишком часто идет отправка.
         channels.stat:push(stat)
 

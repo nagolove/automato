@@ -145,6 +145,8 @@ global type Statistic = record
         клетка съевшая больше всех остальных других клеток
         клетка съевшая меньше всех других клеток
     --]]
+
+    isalive: boolean
 end
 
 global formatMods<const>: {Statistic.Types:string} = {

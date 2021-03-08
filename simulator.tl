@@ -33,6 +33,7 @@ channels[1].cellrequest:push()
 --]]
 local isdone: boolean = true
 local setup: CommonSetup
+local colonyDied = false
 
 function Simulator.getDrawLists(): {DrawNode}
     local list = {}
@@ -188,6 +189,13 @@ function Simulator.create(commonSetup: CommonSetup)
             end
         end
         statistic = newstat
+
+        colonyDied = true
+        for _, v in ipairs(statistic) do
+            if v.isalive then
+                colonyDied = false
+            end
+        end
     end)
 end
 
@@ -197,7 +205,7 @@ end
 --end
 
 function Simulator.isColonyDied(): boolean
-    return false
+    return colonyDied
 end
 
 -- возвращает номер нити многопоточной схемы по целочисленным координатам 

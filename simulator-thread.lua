@@ -471,6 +471,8 @@ local function experiment()
 
       gatherStatistic(cells)
 
+      stat.isalive = #cells ~= 0
+
 
       channels.stat:push(stat)
 

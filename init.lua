@@ -59,7 +59,9 @@ local commonSetup = {
    threadCount = 1,
 
    nofood = false,
+
    denergy = 1,
+
    foodenergy = 10,
    emitInvSpeed = 1,
 }
@@ -242,7 +244,8 @@ local function printStat()
    for _, st in ipairs(starr) do
       for k, v in pairs(st) do
 
-         if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k], k, v), true) then
+
+         if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k], k, v), false) then
 
 
 
@@ -760,7 +763,7 @@ end
 
 local function mousemoved(x, y, _, _)
    underCursor = simulatorRender:mouseToCamera(x, y)
-   underCursor.x, underCursor.y = checkCursorBounds(underCursor.x, underCursor.y)
+
 end
 
 local function wheelmoved(_, y)

@@ -113,8 +113,10 @@ end
 function SimulatorRender:mouseToCamera(x: number, y: number): Pos
     local nx, ny: number, number = self.cam:worldCoords(x, y)
     return {
-        x = math.floor(nx / self:getPixSize() * self.cam.scale),
-        y = math.floor(ny / self:getPixSize() * self.cam.scale)
+        x = math.ceil((nx / self:getPixSize()) * self.cam.scale),
+        y = math.ceil((ny / self:getPixSize()) * self.cam.scale)
+        --x = math.floor((nx / self:getPixSize()) * self.cam.scale),
+        --y = math.floor((ny / self:getPixSize()) * self.cam.scale)
     }
 end
 
