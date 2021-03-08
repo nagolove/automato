@@ -218,7 +218,9 @@ ChannelsTypes = {
 
    "msg",
 
-   "object",
+   "object_r",
+
+   "object_w",
 
 
 

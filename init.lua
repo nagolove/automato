@@ -105,6 +105,7 @@ end
 
 
 local function getCell(pos)
+
    if not pos or not pos.x or not pos.y then
       return nil
    end
@@ -131,42 +132,46 @@ local function drawCellInfo(cell)
 
    local mx, my = love.mouse.getPosition()
 
-   mx, my = cam:worldCoords(mx, my)
 
 
-   if next(cell) ~= nil then
-      gr.setColor(1, 0, 0)
 
-      gr.circle("line", mx, my, 5)
-   end
+
+
+
+
+
 
    imgui.SetNextWindowPos(mx, my)
    imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize")
    local msg
-   for k, v in pairs(cell) do
-      if k ~= "code" then
-         local fmt
+   print('drawCellInfo', inspect(cell))
 
 
 
-         local a = v
-         local tp = type(v)
-         if tp == "number" then
-            fmt = "%d"
-            a = tonumber(a)
-         elseif tp == "table" then
-            fmt = "%s"
-            a = replaceCaret(inspect(a))
-         else
-            fmt = "%s"
-            a = tostring(a)
-         end
-         msg = string.format(fmt, a)
-         print('drawCellInfo', msg)
 
-         imgui.Text(k .. " " .. tostring(msg))
-      end
-   end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
    imgui.End()
 end
 
@@ -447,9 +452,17 @@ local function drawSim()
 
    drFloat, status = imgui.SliderAngle('resonator', drFloat, 0, 360)
 
-   if underCursor then
+   local mx, my = love.mouse.getPosition()
+   local x, y, w, h = simulatorRender:getRect()
 
+   gr.setColor(0.5, 0.5, 1, 0.2)
+   gr.rectangle('fill', x, y, w, h)
 
+   print('getRect', x, y, w, h)
+   if underCursor and pointInRect(mx, my, x, y, w, h) then
+      linesbuf:push(1, string.format('underCursor %d*%d', underCursor.x, underCursor.y))
+      local cell = getCell(underCursor)
+      drawCellInfo(cell)
    end
 
    printStat()
@@ -697,19 +710,25 @@ end
 local function quit()
 end
 
-local function mousemoved(x, y, _, _)
-   local w, h = gr.getDimensions()
-   local tlx, tly, brx, bry = 0, 0, w, h
-
-   if cam then
-      tlx, tly = cam:worldCoords(tlx, tly)
-      brx, bry = cam:worldCoords(brx, bry)
+local function checkCursorBounds(x, y)
+   if x <= 0 then
+      x = 1
    end
+   if x > commonSetup.gridSize then
+      x = commonSetup.gridSize
+   end
+   if y <= 0 then
+      y = 1
+   end
+   if y > commonSetup.gridSize then
+      y = commonSetup.gridSize
+   end
+   return x, y
+end
 
-   underCursor = {
-      x = math.floor(x / simulatorRender:getPixSize()),
-      y = math.floor(y / simulatorRender:getPixSize()),
-   }
+local function mousemoved(x, y, _, _)
+   underCursor = simulatorRender:mouseToCamera(x, y)
+   underCursor.x, underCursor.y = checkCursorBounds(underCursor.x, underCursor.y)
 end
 
 local function wheelmoved(_, y)

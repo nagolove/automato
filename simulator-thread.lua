@@ -495,8 +495,8 @@ end
 function commands.getobject()
 
    local x, y
-   x = channels.object:pop()
-   y = channels.object:pop()
+   x = channels.object_w:pop()
+   y = channels.object_w:pop()
    print("commands.getobject", x, y)
    local ok, errmsg = pcall(function()
       if grid then
@@ -505,12 +505,12 @@ function commands.getobject()
 
             local dump = serpent.dump(cell)
             print("dump", dump)
-            channels.object:push(dump)
+            channels.object_r:push(dump)
          end
       end
    end)
    if not ok then
-      print("Error in getobject operation", errmsg)
+      error("Error in getobject operation " .. errmsg)
    end
 end
 

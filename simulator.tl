@@ -235,13 +235,13 @@ function Simulator.getObject(x: number, y: number): Cell
     end
 
     --local mchan = love.thread.getChannel("msg" .. threadNum)
-    local mchan = channels[threadNum].msg
-    local bchan = love.thread.getChannel('busy' .. threadNum)
+    --local mchan = channels[threadNum].msg
+    --local bchan = love.thread.getChannel('busy' .. threadNum)
     --local state = bchan:peek() as string
 
     --channels[threadNum].msg:push('getobject')
     -- пишу из главного
-    bchan:push('b')
+    --bchan:push('b')
 
     --mchan:push("getobject")
     --mchan:push(x)
@@ -250,13 +250,12 @@ function Simulator.getObject(x: number, y: number): Cell
     -- передать команду
     channels[threadNum].msg:push("getobject")
     -- передать параметры команды
-    channels[threadNum].object:push(x)
-    channels[threadNum].object:push(y)
+    channels[threadNum].object_w:push(x)
+    channels[threadNum].object_w:push(y)
 
-    bchan:clear()
+    --bchan:clear()
 
     --[[
-
 
     --mchan:push("getobject")
     channels[threadNum].msg:push("getobject")
@@ -273,7 +272,8 @@ function Simulator.getObject(x: number, y: number): Cell
 
     -- FIXME demand не дает ответа за таймаут и вешает программу
     --local sobject = rchan:demand(0.01) as string
-    local sobject = channels[threadNum].object:pop() as string
+    local sobject = channels[threadNum].object_r:demand(0.01) as string
+    --local sobject = channels[threadNum].object:pop() as string
 
     --print("sobject", sobject)
 
@@ -292,8 +292,8 @@ function Simulator.getObject(x: number, y: number): Cell
         return nil
     end
 
-    print("rchan:getCount()", channels[threadNum].object:getCount())
-    print("object", inspect(object))
+    --print("rchan:getCount()", channels[threadNum].object:getCount())
+    --print("object", inspect(object))
     return object
 end
 

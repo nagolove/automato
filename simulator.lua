@@ -235,13 +235,13 @@ function Simulator.getObject(x, y)
    end
 
 
-   local mchan = channels[threadNum].msg
-   local bchan = love.thread.getChannel('busy' .. threadNum)
 
 
 
 
-   bchan:push('b')
+
+
+
 
 
 
@@ -250,10 +250,8 @@ function Simulator.getObject(x, y)
 
    channels[threadNum].msg:push("getobject")
 
-   channels[threadNum].object:push(x)
-   channels[threadNum].object:push(y)
-
-   bchan:clear()
+   channels[threadNum].object_w:push(x)
+   channels[threadNum].object_w:push(y)
 
 
 
@@ -273,7 +271,9 @@ function Simulator.getObject(x, y)
 
 
 
-   local sobject = channels[threadNum].object:pop()
+
+   local sobject = channels[threadNum].object_r:demand(0.01)
+
 
 
 
@@ -292,8 +292,8 @@ function Simulator.getObject(x, y)
       return nil
    end
 
-   print("rchan:getCount()", channels[threadNum].object:getCount())
-   print("object", inspect(object))
+
+
    return object
 end
 

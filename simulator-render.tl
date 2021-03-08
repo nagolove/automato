@@ -22,7 +22,8 @@ global record SimulatorRender
     drawGrid: function(SimulatorRender)
     drawCells: function(SimulatorRender)
     cameraToCenter: function(SimulatorRender)
-
+    mouseToCamera: function(SimulatorRender, x: number, y: number): Pos
+    getRect: function(SimulatorRender): number, number, number, number
     update: function(SimulatorRender, number)
 
     getPixSize: function(SimulatorRender): number
@@ -102,6 +103,21 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
     return self
 end
 
+function SimulatorRender:getRect(): number, number, number, number
+    local x, y = self.cam:cameraCoords(0, 0)
+    local w = self.commonSetup.gridSize * self.cam.scale * pixSize 
+    local h = self.commonSetup.gridSize * self.cam.scale * pixSize
+    return x, y, w, h
+end
+
+function SimulatorRender:mouseToCamera(x: number, y: number): Pos
+    local nx, ny: number, number = self.cam:worldCoords(x, y)
+    return {
+        x = math.floor(nx / self:getPixSize() * self.cam.scale),
+        y = math.floor(ny / self:getPixSize() * self.cam.scale)
+    }
+end
+
 function SimulatorRender:cameraToCenter()
     local w, h = gr.getDimensions()
     --print(self.canvas)
@@ -114,7 +130,7 @@ function SimulatorRender:cameraToCenter()
     --local dx = (w - self.fieldWidthPixels) / 2
     --local dy = (h - self.fieldHeightPixels) / 2
     print("camera position", self.cam:position())
-    print("dx, dy", dx, dy)
+    print("lookAt", dx, dy)
     self.cam.scale = 1.
     self.cam:lookAt(dx, dy)
     print("camera position2", self.cam:position())

@@ -39,6 +39,7 @@ local sim = require("simulator")
 
 
 
+
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
@@ -102,6 +103,31 @@ function SimulatorRender.new(commonSetup, cam)
    return self
 end
 
+function SimulatorRender:getRect()
+
+
+
+   local x, y = self.cam:cameraCoords(0, 0)
+   local w, h = 
+
+
+
+   self.commonSetup.gridSize * self.cam.scale * pixSize,
+   self.commonSetup.gridSize * self.cam.scale * pixSize
+
+
+
+   return x, y, w, h
+end
+
+function SimulatorRender:mouseToCamera(x, y)
+   local nx, ny = self.cam:worldCoords(x, y)
+   return {
+      x = math.floor(nx / self:getPixSize() * self.cam.scale),
+      y = math.floor(ny / self:getPixSize() * self.cam.scale),
+   }
+end
+
 function SimulatorRender:cameraToCenter()
    local w, h = gr.getDimensions()
 
@@ -114,7 +140,7 @@ function SimulatorRender:cameraToCenter()
 
 
    print("camera position", self.cam:position())
-   print("dx, dy", dx, dy)
+   print("lookAt", dx, dy)
    self.cam.scale = 1.
    self.cam:lookAt(dx, dy)
    print("camera position2", self.cam:position())
