@@ -196,6 +196,10 @@ end
 
 
 
+function Simulator.isColonyDied()
+   return false
+end
+
 
 
 function Simulator.findThreadByPos(x, y)

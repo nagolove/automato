@@ -63,6 +63,8 @@ global type CommonSetup = record
     cellId:number
     -- используется в классе Cell
     cellActions: CellActions
+    -- как располагать начальные клетки
+    emitFlags: EmitFlags
 end
 
 global type CellSetup = record
@@ -206,6 +208,11 @@ global type ThreadCommands = enum
     'readstate'
 end
 
+global type EmitFlags = enum
+    'normal'
+    'directions_only'
+end
+
 global type Channels = {string: love.thread.Channel}
 
 global ChannelsTypes<const>: {string} = {
@@ -272,6 +279,9 @@ global type Simulator = record
     shutdown: function()
     setMode : function(m: SimulatorMode)
     getMode : function(): SimulatorMode
+
+    -- возвращает истину если колония умерла
+    isColonyDied: function(): boolean
 
     -- получить массив данных для рисования
     getDrawLists : function(): {DrawNode}

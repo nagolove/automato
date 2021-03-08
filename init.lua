@@ -22,8 +22,7 @@ PROF_CAPTURE = false
 
 local linesbuf = require('kons').new()
 local camera = require("camera")
-local gr = love.graphics
-local imgui = require("imgui")
+
 
 local inspect = require("inspect")
 local mtschemes = require("mtschemes")
@@ -43,11 +42,13 @@ local mode = "stop"
 local foodProduction = ''
 local maxCellsNum = 5000
 local snaphotsDirectory = 'snaphots'
+local cellUnderCursor
+local timer = require("Timer").new()
 
 
 local commonSetup = {
 
-   gridSize = 50,
+   gridSize = 100,
 
    cellsNum = 1000,
 
@@ -104,7 +105,7 @@ local function loadStates()
 end
 
 
-local function getCell(pos)
+local function getCellUnderCursor(pos)
 
    if not pos or not pos.x or not pos.y then
       return nil
@@ -125,7 +126,7 @@ local function replaceCaret(str)
    return string.gsub(str, "\n", "")
 end
 
-local function drawCellInfo(cell)
+local function drawCellInfo(pos, cell)
    if not cell then
       return
    end
@@ -134,42 +135,37 @@ local function drawCellInfo(cell)
 
 
 
-
-
-
-
-
-
-
    imgui.SetNextWindowPos(mx, my)
-   imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize")
+   imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize|AlwaysAutoResize")
    local msg
-   print('drawCellInfo', inspect(cell))
 
 
 
+   imgui.Text(string.format('at point %d, %d', pos.x, pos.y))
+   for k, v in pairs(cell) do
+      if k ~= "code" then
+         local fmt
 
 
 
+         local a = v
+         local tp = type(v)
+         if tp == "number" then
+            fmt = "%d"
+            a = tonumber(a)
+         elseif tp == "table" then
+            fmt = "%s"
+            a = replaceCaret(inspect(a))
+         else
+            fmt = "%s"
+            a = tostring(a)
+         end
+         msg = string.format(fmt, a)
+         print('drawCellInfo', msg)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+         imgui.Text(k .. " " .. tostring(msg))
+      end
+   end
 
 
    imgui.End()
@@ -291,8 +287,30 @@ local function start()
    commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
    commonSetup.mode = 'continuos'
    mode = 'continuos'
+   commonSetup.emitFlags = 'normal'
 
    sim.create(commonSetup)
+   cellUnderCursor = getCellUnderCursor()
+   simulatorRender = SimulatorRender.new(commonSetup, cam)
+   simulatorRender:cameraToCenter()
+
+   if useProfi then
+      profi:start()
+   end
+end
+
+local function specialStart()
+   commonSetup.spreadPoint = {
+      x = math.floor(commonSetup.gridSize / 2),
+      y = math.floor(commonSetup.gridSize / 2),
+   }
+   commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
+   commonSetup.mode = 'continuos'
+   commonSetup.emitFlags = 'directions_only'
+   mode = 'continuos'
+
+   sim.create(commonSetup)
+   cellUnderCursor = getCellUnderCursor()
    simulatorRender = SimulatorRender.new(commonSetup, cam)
    simulatorRender:cameraToCenter()
 
@@ -406,6 +424,9 @@ local function drawSim()
    if imgui.Button(i18n("start")) then
       start()
    end
+   if imgui.Button("spec_start") then
+      specialStart()
+   end
    imgui.SameLine()
    if imgui.Button(i18n("stp")) then
       stop()
@@ -445,24 +466,15 @@ local function drawSim()
    imgui.Text(string.format("uptime %d sec", sim.getUptime()))
 
 
-
    imgui.Bullet()
    drFloat, status = imgui.DragFloat('drug', drFloat, 1, 0, 100)
-
-
    drFloat, status = imgui.SliderAngle('resonator', drFloat, 0, 360)
 
    local mx, my = love.mouse.getPosition()
    local x, y, w, h = simulatorRender:getRect()
 
-   gr.setColor(0.5, 0.5, 1, 0.2)
-   gr.rectangle('fill', x, y, w, h)
-
-   print('getRect', x, y, w, h)
    if underCursor and pointInRect(mx, my, x, y, w, h) then
-      linesbuf:push(1, string.format('underCursor %d*%d', underCursor.x, underCursor.y))
-      local cell = getCell(underCursor)
-      drawCellInfo(cell)
+      drawCellInfo(underCursor, cellUnderCursor)
    end
 
    printStat()
@@ -478,12 +490,32 @@ local function drawui()
 
    drawSim()
    drawLog()
+
+   if sim.isColonyDied() then
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   end
 end
 
 local function draw()
    linesbuf:draw()
    if viewState == "sim" then
-      local zazor = 10
+
+
+
       simulatorRender:draw()
 
 
@@ -495,8 +527,6 @@ local function draw()
 
 
       if underCursor then
-
-         local cell = getCell(underCursor)
 
       end
 
@@ -527,6 +557,8 @@ local function update(dt)
    linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
    linesbuf:update()
    simulatorRender:update(dt)
+   cellUnderCursor = getCellUnderCursor(underCursor)
+   timer:update(dt)
    sim.update(dt)
 end
 
@@ -733,9 +765,13 @@ end
 
 local function wheelmoved(_, y)
    if y == -1 then
-      KeyConfig.send("zoomin")
+      timer:during(0.5, function()
+         KeyConfig.send("zoomin")
+      end)
    else
-      KeyConfig.send("zoomout")
+      timer:during(0.5, function()
+         KeyConfig.send("zoomout")
+      end)
    end
 end
 

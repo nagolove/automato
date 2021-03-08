@@ -22,8 +22,7 @@ global PROF_CAPTURE = false
 
 local linesbuf = require 'kons'.new()
 local camera = require "camera"
-local gr = love.graphics
-local imgui = require "imgui"
+--local gr = love.graphics
 --local imgui = require "love-imgui"
 local inspect = require "inspect"
 local mtschemes = require "mtschemes"
@@ -43,11 +42,13 @@ local mode: SimulatorMode = "stop"
 local foodProduction: string = ''
 local maxCellsNum = 5000
 local snaphotsDirectory = 'snaphots'
+local cellUnderCursor: Cell
+local timer: Timer = require "Timer".new()
 
 --[[ Начальные установки симуляции ]]
 local commonSetup: CommonSetup = {
     -- размер сетки одного потока
-    gridSize = 50,
+    gridSize = 100,
     -- количество клеток создаваемых на один поток
     cellsNum = 1000, 
     -- разброс начальной энергии клеток
@@ -58,7 +59,9 @@ local commonSetup: CommonSetup = {
     threadCount = 1,
     -- отключить создание пищи
     nofood = false,
+    -- убавлять энергию на это количество
     denergy = 1,
+    -- сколько дает энергии клетка пищи
     foodenergy = 10,
     emitInvSpeed = 1
 }
@@ -104,7 +107,7 @@ local function loadStates()
 end
 
 -- возвращает структуру клетки под курсором pos
-local function getCell(pos: Pos): Cell
+local function getCellUnderCursor(pos: Pos): Cell
     -- XXX возможно убрать все проверки в sim.getObject()
     if not pos or not pos.x or not pos.y then
         return nil
@@ -125,27 +128,22 @@ local function replaceCaret(str: string): string
     return string.gsub(str, "\n", "") as string
 end
 
-local function drawCellInfo(cell: Cell)
+local function drawCellInfo(pos: Pos, cell: Cell)
     if not cell then
         return
     end
 
     local mx, my = love.mouse.getPosition()
-    --mx, my = cam:cameraCoords(mx, my)
-    --mx, my = cam:worldCoords(mx, my)
 
     -- сделать нормальное выделение клетки под курсором
-    --if next(cell as {any:any}) ~= nil then
-        --gr.setColor(1, 0, 0)
-        ----gr.circle("line", mx, my, pixSize * cam.scale)
-        --gr.circle("line", mx, my, 5)
-    --end
 
     imgui.SetNextWindowPos(mx, my)
-    imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize")
+    imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize|AlwaysAutoResize")
     local msg: string
-    print('drawCellInfo', inspect(cell))
+    --print('drawCellInfo', inspect(cell))
     --[[
+    --]]
+    imgui.Text(string.format('at point %d, %d', pos.x, pos.y))
     for k, v in pairs(cell as {any: any}) do
         if k ~= "code" then
             local fmt: string
@@ -246,7 +244,8 @@ local function printStat()
     for _, st in ipairs(starr) do
         for k, v in pairs(st as {string: number}) do
             --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
-            if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k as Statistic.Types], k, v), true) then
+            --if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k as Statistic.Types], k, v), true) then
+            if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k as Statistic.Types], k, v), false) then
                 --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
                 --imgui.SameLine()
                 --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
@@ -291,8 +290,30 @@ local function start()
     commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
     commonSetup.mode = 'continuos'
     mode = 'continuos'
+    commonSetup.emitFlags = 'normal'
 
     sim.create(commonSetup)
+    cellUnderCursor = getCellUnderCursor()
+    simulatorRender = SimulatorRender.new(commonSetup, cam)
+    simulatorRender:cameraToCenter()
+
+    if useProfi then
+        profi:start()
+    end
+end
+
+local function specialStart()
+    commonSetup.spreadPoint = { 
+        x = math.floor(commonSetup.gridSize / 2),
+        y = math.floor(commonSetup.gridSize / 2)
+    }
+    commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
+    commonSetup.mode = 'continuos'
+    commonSetup.emitFlags = 'directions_only'
+    mode = 'continuos'
+
+    sim.create(commonSetup)
+    cellUnderCursor = getCellUnderCursor()
     simulatorRender = SimulatorRender.new(commonSetup, cam)
     simulatorRender:cameraToCenter()
 
@@ -406,6 +427,9 @@ local function drawSim()
     if imgui.Button(i18n("start")) then
         start()
     end
+    if imgui.Button("spec_start") then
+        specialStart()
+    end
     imgui.SameLine()
     if imgui.Button(i18n("stp")) then
         stop()
@@ -444,25 +468,16 @@ local function drawSim()
     foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300);
     imgui.Text(string.format("uptime %d sec", sim.getUptime()))
 
--- nil value
---imgui.ArrowButton("hi", "")
+    --imgui.ArrowButton("hi", "")
     imgui.Bullet()
     drFloat, status = imgui.DragFloat('drug', drFloat, 1, 0, 100)
-    --drFloats, status = imgui.DragFloat2('drug', drFloats, 1, 0, 100)
-
     drFloat, status = imgui.SliderAngle('resonator', drFloat, 0, 360)
 
     local mx, my = love.mouse.getPosition()
     local x, y, w, h = simulatorRender:getRect()
 
-    gr.setColor(0.5, 0.5, 1, 0.2)
-    gr.rectangle('fill', x, y, w, h)
-
-    print('getRect', x, y, w, h)
     if underCursor and pointInRect(mx, my, x, y, w, h) then
-        linesbuf:push(1, string.format('underCursor %d*%d', underCursor.x, underCursor.y))
-        local cell = getCell(underCursor)
-        drawCellInfo(cell)
+        drawCellInfo(underCursor, cellUnderCursor)
     end
 
     printStat()
@@ -478,12 +493,32 @@ local function drawui()
 
     drawSim()
     drawLog()
+
+    if sim.isColonyDied() then
+        --imgui.BeginPopupModal('Колония умерла')
+        --if imgui.BeginPopupModal('Colony died', false, 'MenuBar') then
+        --if imgui.BeginPopupModal('Colony died', false, 'MenuBar') then
+        --local r1, r2 = imgui.BeginPopupModal('Colony died', false, 'Modal|AlwaysAutoResize|Popup') 
+        --local r1, r2 = imgui.Begin('Colony died', false, 'Modal|AlwaysAutoResize|Popup') 
+        --local r1, r2 = imgui.BeginPopupModal('Colony died', false, 'Modal|AlwaysAutoResize|Popup')  
+        --print('BeginPopupModal', r1, r2)
+        --if r1 then
+            --imgui.Text('some text')
+            --if imgui.Button('OK') then
+            ---- рестар
+            --end
+        --end
+            --imgui.EndPopup()
+        --imgui.End()
+    end
 end
 
 local function draw()
     linesbuf:draw()
     if viewState == "sim" then
-        local zazor: number = 10
+        --local zazor: number = 10
+
+        -- рисовать несколько симуляторов разных поколений
         simulatorRender:draw()
 
         --[[
@@ -495,9 +530,7 @@ local function draw()
         gr.pop()
         --]]
         if underCursor then
-            -- XXX FIXME Not work
-            local cell = getCell(underCursor)
-            --simulatorRender:drawCellPath(cell)
+            --simulatorRender:drawCellPath(cellUnderCursor)
         end
 
     elseif viewState == "graph" then
@@ -527,6 +560,8 @@ local function update(dt: number)
     linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
     linesbuf:update()
     simulatorRender:update(dt)
+    cellUnderCursor = getCellUnderCursor(underCursor)
+    timer:update(dt)
     sim.update(dt)
 end
 
@@ -733,9 +768,13 @@ end
 
 local function wheelmoved(_: number, y: number)
     if y == -1 then
-        KeyConfig.send("zoomin")
+        timer:during(0.5, function()
+            KeyConfig.send("zoomin")
+        end)
     else
-        KeyConfig.send("zoomout")
+        timer:during(0.5, function()
+            KeyConfig.send("zoomout")
+        end)
     end
 end
 

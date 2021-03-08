@@ -340,12 +340,62 @@ local function emitCell(iter: number)
     --]]
 
     print('istate.cellsNum', istate.cellsNum)
-    for i = 1, istate.cellsNum do
-        local cx = rng:random(1, istate.gridSize)
-        local cy = rng:random(1, istate.gridSize)
-        print('cx, cy', cx, cy)
-        table.insert(cells, Cell.new({ pos = { x = cx, y = cy } }))
-        coroutine.yield()
+
+    if istate.emitFlags then
+        if istate.emitFlags == 'normal' then
+            for i = 1, istate.cellsNum do
+                local cx, cy = genPosition()
+                --local cx = rng:random(1, istate.gridSize)
+                --local cy = rng:random(1, istate.gridSize)
+                print('cx, cy', cx, cy)
+                table.insert(
+                    cells, 
+                    Cell.new({ pos = { x = cx, y = cy } })
+                )
+                coroutine.yield()
+            end
+        elseif istate.emitFlags == 'directions_only' then
+                local cx, cy = genPosition()
+                table.insert(
+                    cells, 
+                    Cell.new(
+                        { 
+                            pos = { x = cx, y = cy }, 
+                            code = {'left',}
+                        }
+                    )
+                )
+                cx, cy = genPosition()
+                table.insert(
+                    cells, 
+                    Cell.new(
+                        { 
+                            pos = { x = cx, y = cy }, 
+                            code = {'right',}
+                        }
+                    )
+                )
+                cx, cy = genPosition()
+                table.insert(
+                    cells, 
+                    Cell.new(
+                        { 
+                            pos = { x = cx, y = cy }, 
+                            code = {'up',}
+                        }
+                    )
+                )
+                cx, cy = genPosition()
+                table.insert(
+                    cells, 
+                    Cell.new(
+                        { 
+                            pos = { x = cx, y = cy }, 
+                            code = {'down',}
+                        }
+                    )
+                )
+        end
     end
 
     coroutine.yield()

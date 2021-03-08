@@ -104,19 +104,9 @@ function SimulatorRender.new(commonSetup, cam)
 end
 
 function SimulatorRender:getRect()
-
-
-
    local x, y = self.cam:cameraCoords(0, 0)
-   local w, h = 
-
-
-
-   self.commonSetup.gridSize * self.cam.scale * pixSize,
-   self.commonSetup.gridSize * self.cam.scale * pixSize
-
-
-
+   local w = self.commonSetup.gridSize * self.cam.scale * pixSize
+   local h = self.commonSetup.gridSize * self.cam.scale * pixSize
    return x, y, w, h
 end
 

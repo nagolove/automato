@@ -196,6 +196,10 @@ end
        --return 0
 --end
 
+function Simulator.isColonyDied(): boolean
+    return false
+end
+
 -- возвращает номер нити многопоточной схемы по целочисленным координатам 
 -- клетки. Отсчет с левого верхнего угла
 function Simulator.findThreadByPos(x: number, y: number): number
