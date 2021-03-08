@@ -243,13 +243,27 @@ function Simulator.getObject(x: number, y: number): Cell
     -- пишу из главного
     bchan:push('b')
 
-    mchan:push("getobject")
-    mchan:push(x)
-    mchan:push(y)
+    --mchan:push("getobject")
+    --mchan:push(x)
+    --mchan:push(y)
+
+    -- передать команду
+    channels[threadNum].msg:push("getobject")
+    -- передать параметры команды
+    channels[threadNum].object:push(x)
+    channels[threadNum].object:push(y)
 
     bchan:clear()
 
     --[[
+
+
+    --mchan:push("getobject")
+    channels[threadNum].msg:push("getobject")
+    channels[threadNum].object:push(x)
+    channels[threadNum].object:push(y)
+
+
     { 
         cmd = 'getobject',
         ...,

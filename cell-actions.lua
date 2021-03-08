@@ -138,7 +138,9 @@ local function moveCellToThread(cell, threadNum)
    bchan:push('b')
 
    chan:push("insertcell")
-   chan:push(dump)
+
+   local cellsChan = love.thread.getChannel('cell' .. threadNum)
+   cellsChan:push(dump)
    bchan:clear()
 end
 

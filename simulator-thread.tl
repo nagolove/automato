@@ -493,7 +493,10 @@ function commands.stop()
 end
 
 function commands.getobject()
-    local x, y: number, number = channels.msg:pop() as number, channels.msg:pop() as number
+    --local x, y: number, number = channels.msg:pop() as number, channels.msg:pop() as number
+    local x, y: number, number
+    x = channels.object:pop() as number
+    y = channels.object:pop() as number
     print("commands.getobject", x, y)
     local ok, errmsg: boolean, string = pcall(function()
         if grid then
@@ -572,8 +575,14 @@ function commands.isalive()
     end
 end
 
+-- метод для пересылки клеток между нитями
 function commands.insertcell()
-    local msg = channels.msg:pop() as string
+    -- получить сохраненную клетку
+    --local msg = channels.msg:pop() as string
+    local msg = channels.cell:pop() as string
+
+    -- FIXME сюда приходит в msg сообщение 'getobject'
+
     local newcellfun, err = load(msg)
     if (not newcellfun) and err then
         error(string.format("insertcell '%s', msg = '%s'", err, msg))

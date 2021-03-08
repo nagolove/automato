@@ -436,8 +436,8 @@ local function drawSim()
     drFloat, status = imgui.SliderAngle('resonator', drFloat, 0, 360)
 
     if underCursor then
-        local cell = getCell(underCursor)
-        drawCellInfo(cell)
+        --local cell = getCell(underCursor)
+        --drawCellInfo(cell)
     end
 
     printStat()

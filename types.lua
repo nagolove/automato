@@ -229,6 +229,7 @@ ChannelsTypes = {
    'stat',
    'isstopped',
    'busy',
+   'cells',
 }
 
 function initChannels(n)

@@ -243,11 +243,25 @@ function Simulator.getObject(x, y)
 
    bchan:push('b')
 
-   mchan:push("getobject")
-   mchan:push(x)
-   mchan:push(y)
+
+
+
+
+
+   channels[threadNum].msg:push("getobject")
+
+   channels[threadNum].object:push(x)
+   channels[threadNum].object:push(y)
 
    bchan:clear()
+
+
+
+
+
+
+
+
 
 
 

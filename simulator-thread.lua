@@ -493,7 +493,10 @@ function commands.stop()
 end
 
 function commands.getobject()
-   local x, y = channels.msg:pop(), channels.msg:pop()
+
+   local x, y
+   x = channels.object:pop()
+   y = channels.object:pop()
    print("commands.getobject", x, y)
    local ok, errmsg = pcall(function()
       if grid then
@@ -572,8 +575,14 @@ function commands.isalive()
    end
 end
 
+
 function commands.insertcell()
-   local msg = channels.msg:pop()
+
+
+   local msg = channels.cell:pop()
+
+
+
    local newcellfun, err = load(msg)
    if (not newcellfun) and err then
       error(string.format("insertcell '%s', msg = '%s'", err, msg))
