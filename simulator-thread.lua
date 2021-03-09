@@ -431,7 +431,7 @@ local function updateMeal(meal)
 end
 
 local function experiment()
-   local cellEmitCoro = coroutine.create(emitCell)
+   local emitCellCoro = coroutine.create(emitCell)
    local emitFoodCoro = coroutine.create(emitFood)
 
    iter = 0
@@ -454,7 +454,7 @@ local function experiment()
    }
 
    coroutine.yield()
-   local ok, errmsg = coroutine.resume(cellEmitCoro, iter)
+   local ok, errmsg = coroutine.resume(emitCellCoro, iter)
    if not ok then
       error(errmsg)
       stop = true
@@ -465,13 +465,18 @@ local function experiment()
 
    while true do
 
+      local ok, msg = pcall(function()
 
-      if cellEmitCoro and not coroutine.resume(cellEmitCoro, iter) then
-         cellEmitCoro = nil
-      end
+         if emitCellCoro and not coroutine.resume(emitCellCoro, iter) then
+            emitCellCoro = nil
+         end
 
-      if emitFoodCoro and not coroutine.resume(emitFoodCoro, iter) then
-         emitFoodCoro = nil
+         if emitFoodCoro and not coroutine.resume(emitFoodCoro, iter) then
+            emitFoodCoro = nil
+         end
+      end)
+      if not ok then
+         print('emit pcall error ' .. msg)
       end
 
 
@@ -496,6 +501,7 @@ local function experiment()
       channels.stat:push(stat)
 
       iter = iter + 1
+      print('iter', iter)
 
       coroutine.yield()
    end
@@ -586,15 +592,19 @@ function commands.getobject()
 end
 
 function commands.step()
+
+
    checkStep = true
    doStep = true
 
 
    stepsPerSecond = stepsCount
    stepsCount = 0
+
 end
 
 function commands.continuos()
+   print('commands.continuos')
    checkStep = false
 end
 
@@ -710,10 +720,16 @@ function commands.writestate()
    channels.state:push(data)
 end
 
+local function clearLogs()
+   love.filesystem.write(string.format('commands-thread-%d.log.txt', threadNum), "")
+end
+
 local function popCommand()
    local cmd
    repeat
       cmd = channels.msg:pop()
+      local logstr = string.format('iter %d msg %s\n', iter, cmd)
+      love.filesystem.append(string.format('commands-thread-%d.log.txt', threadNum), logstr)
       if cmd then
          local command = commands[cmd]
          if command then
@@ -793,6 +809,7 @@ local function doSetup()
       rng = istate.rng,
 
       setStepMode = commands.step,
+      channels = channels,
    })
 
 
@@ -826,19 +843,24 @@ local function main()
 
 
    timestamp = love.timer.getTime()
+   local __step_done = false
    while not stop do
+      __step_done = false
       popCommand()
       if not free then
          if checkStep then
             if doStep then
                step()
+               __step_done = true
             end
             love.timer.sleep(0.001)
          else
             step()
+            __step_done = true
          end
          pushDrawList()
-         print('main loop')
+
+
          doStep = false
       else
          love.timer.sleep(0.001)
@@ -848,6 +870,7 @@ local function main()
 
 end
 
+clearLogs()
 doSetup()
 main()
 

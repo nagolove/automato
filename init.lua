@@ -20,6 +20,7 @@ local ViewState = {}
 
 PROF_CAPTURE = false
 
+local serpent = require("serpent")
 local linesbuf = require('kons').new()
 local camera = require("camera")
 
@@ -39,11 +40,12 @@ local simulatorRender
 local cam
 local useProfi = false
 local mode = "stop"
-local foodProduction = ''
+
 local maxCellsNum = 5000
 local snaphotsDirectory = 'snaphots'
 local cellUnderCursor
 local timer = require("Timer").new()
+local cameraZoomTimeout = 0.5
 
 
 local commonSetup = {
@@ -222,9 +224,10 @@ end
 
 
 local function printStat()
+
    local starr = sim.getStatistic()
 
-
+   print("starr = ", inspect(starr))
 
 
 
@@ -241,11 +244,13 @@ local function printStat()
       table.remove(starr, 2)
    end
 
+   love.filesystem.append('printstat.txt', string.format("starr = %s\n", inspect(starr)))
+
    for _, st in ipairs(starr) do
       for k, v in pairs(st) do
 
+         if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k], k, v), true) then
 
-         if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k], k, v), false) then
 
 
 
@@ -403,9 +408,9 @@ local drFloat = 10.9
 local drFloats = { 10.9, 0.1 }
 
 local function drawLog()
-   imgui.SetNextWindowPos(0, 0)
-   imgui.Begin('log', false, "NoTitleBar|NoMove|NoResize")
-   imgui.End()
+
+
+
 end
 
 local SimulatorLog = {}
@@ -488,7 +493,7 @@ local function drawSim()
 
    end
 
-   foodProduction = imgui.InputTextMultiline("[Lua]: function(iter: number): ", foodProduction, 200, 300);
+
    imgui.Text(string.format("uptime %d sec", sim.getUptime()))
 
 
@@ -503,8 +508,13 @@ local function drawSim()
       drawCellInfo(underCursor, cellUnderCursor)
    end
 
-   printStat()
+   imgui.End()
+end
 
+local function drawBrief()
+
+   imgui.Begin('brief', false)
+   printStat()
    imgui.End()
 end
 
@@ -516,6 +526,7 @@ local function drawui()
 
    drawSim()
    drawLog()
+   drawBrief()
 
    if sim.isColonyDied() then
 
@@ -749,7 +760,12 @@ local function bindKeys()
 
 end
 
+local function clearLogs()
+   love.filesystem.write('printstat.txt', "")
+end
+
 local function init()
+   clearLogs()
    print("automato init()")
    love.filesystem.createDirectory('snaphots')
    loadLocales()
@@ -766,6 +782,10 @@ local function init()
 end
 
 local function quit()
+   love.filesystem.write('camera.txt', '')
+   if simulatorRender then
+      love.filesystem.append('camera.txt', serpent.dump(simulatorRender.cam))
+   end
 end
 
 local function checkCursorBounds(x, y)
@@ -791,11 +811,11 @@ end
 
 local function wheelmoved(_, y)
    if y == -1 then
-      timer:during(0.5, function()
+      timer:during(cameraZoomTimeout, function()
          KeyConfig.send("zoomin")
       end)
    else
-      timer:during(0.5, function()
+      timer:during(cameraZoomTimeout, function()
          KeyConfig.send("zoomout")
       end)
    end

@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("types")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("types")
 require("mtschemes")
 require("love")
 require("common")
@@ -192,6 +192,25 @@ function actions.up(cell)
    local res = true
    local pos = cell.pos
    pushPosition(cell)
+
+
+   print('actions.up()')
+   local node = {}
+   node.x = cell.pos.x
+   node.y = cell.pos.y
+   node.color = { 1, 1, 1, 1 }
+   print('setup.channels', inspect(setup.channels))
+   for _ = 1, 100 do
+
+      local ok, errmsg = pcall(function()
+         setup.channels.drawlist_fn:push(node)
+      end)
+      if not ok then
+         print('error in actions.cross()', errmsg)
+      end
+   end
+
+
    if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
       pos.y = pos.y - 1
 
@@ -488,38 +507,66 @@ end
 function actions.cross(cell)
    local res = true
 
-   if cell.wantdivide and cell.wantdivide == 0 and cell.energy > 0 then
-
-      listNeighbours4(
-      cell.pos.x,
-      cell.pos.y,
-      function(_, _, other)
-
-         if other.wantdivide and
-            other.wantdivide == 0 and
-            other.energy > 0 then
-            print("cell.pos", cell.pos.x, cell.pos.y)
-
-            setup.setStepMode()
+   if cell.wantdivide and cell.wantdivide == 0 and cell.energy and cell.energy > 0 then
 
 
-            local found, pos = findFreePos4(cell.pos.x, cell.pos.y)
-            if found then
-               local t = {
-                  pos = { x = pos.x, y = pos.y },
+      print('actions.cross()')
+      local node = {}
+      node.x = cell.pos.x
+      node.y = cell.pos.y
+      node.color = { 1, 1, 1, 1 }
+      print('setup.channels', inspect(setup.channels))
+      for i = 1, 100 do
 
-                  code = {},
-                  color = { 0.5, 0.5, 0.5 },
-               }
-               print(pos.x, pos.y)
-               print(string.format("new cell at (%d, %d)", pos.x, pos.y))
-               initCell(t)
-               setup.setStepMode()
-               return false
-            end
+         local ok, errmsg = pcall(function()
+            setup.channels.drawlist_fn:push(node)
+         end)
+         if not ok then
+            print('error in actions.cross()', errmsg)
          end
-         return true
-      end)
+      end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
    end
 

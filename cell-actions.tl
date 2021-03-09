@@ -192,6 +192,27 @@ function actions.up(cell: Cell): boolean
     local res = true
     local pos = cell.pos
     pushPosition(cell)
+
+    ----------------------------------------
+    --[[
+    print('actions.up()')
+    local node: DrawNode = {}
+    node.x = cell.pos.x
+    node.y = cell.pos.y
+    node.color = {1, 1, 1, 1}
+    print('setup.channels', inspect(setup.channels))
+    for _ = 1, 100 do 
+        --do
+        local ok, errmsg: boolean, string = pcall(function()
+            setup.channels.drawlist_fn:push(node)
+        end)
+        if not ok then
+            print('error in actions.cross()', errmsg)
+        end
+    end
+    --]]
+    ----------------------------------------
+
     if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
         pos.y = pos.y - 1
     --elseif pos.y <= 1 and not isAlive(pos.x, gridSize) then
@@ -487,8 +508,28 @@ end
 -- деление клетки
 function actions.cross(cell: Cell): boolean
     local res = true
-    --XXX Не работает
-    if cell.wantdivide and cell.wantdivide == 0 and cell.energy > 0 then
+    -- эффективное преобразование композиции булевых выражений 
+    if cell.wantdivide and cell.wantdivide == 0 and cell.energy and cell.energy > 0 then
+        --[[
+        --]]
+        print('actions.cross()')
+        local node: DrawNode = {}
+        node.x = cell.pos.x
+        node.y = cell.pos.y
+        node.color = {1, 1, 1, 1}
+        print('setup.channels', inspect(setup.channels))
+        for i = 1, 100 do 
+        --do
+            local ok, errmsg: boolean, string = pcall(function()
+                setup.channels.drawlist_fn:push(node)
+            end)
+            if not ok then
+                print('error in actions.cross()', errmsg)
+            end
+        end
+        --]]
+
+        --[[
         -- найти соседей клетки
         listNeighbours4(
             cell.pos.x, 
@@ -501,6 +542,13 @@ function actions.cross(cell: Cell): boolean
                     print("cell.pos", cell.pos.x, cell.pos.y)
                     
                     setup.setStepMode()
+
+                    -- здесь переход в шаговый режим, но должна быть анимация поиска
+                    -- свободных клеток вокруг данной. Как вариант - создать дополнительный
+                    -- канал для рисования и посылать в него номера ячеек?
+
+                    -- если сделать графическую анимацию плавной, то будет завешиваться
+                    -- обработка все остальных клеток поля
 
                     -- поиск свободной ячейки для новой клетки
                     local found, pos = findFreePos4(cell.pos.x, cell.pos.y)
@@ -521,6 +569,7 @@ function actions.cross(cell: Cell): boolean
                 return true
             end
         )
+        --]]
     end
     --]]
     return res

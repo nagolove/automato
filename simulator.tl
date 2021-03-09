@@ -35,36 +35,53 @@ local isdone: boolean = true
 local setup: CommonSetup
 local colonyDied = false
 
-function Simulator.getDrawLists(): {DrawNode}
-    local list = {}
-    for k, _ in ipairs(threads) do
-        local drawlist = channels[k].drawlist
-        --print("datachannel", inspect(drawlist))
-        if drawlist then
-            --local sublist: {DrawNode} = drawlist:pop() as {DrawNode}
-            local sublist: {DrawNode}
+local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
+    --print("datachannel", inspect(drawlist))
+    if channel then
+        --local sublist: {DrawNode} = drawlist:pop() as {DrawNode}
+        local sublist: {DrawNode}
 
-            if drawlist:getCount() > 1 then
-                sublist = drawlist:pop() as {DrawNode}
-            else
-                sublist = drawlist:peek() as {DrawNode}
-            end
+        if channel:getCount() > 1 then
+            sublist = channel:pop() as {DrawNode}
+        else
+            sublist = channel:peek() as {DrawNode}
+        end
 
-            -- XXX workaround
-            if drawlist:getCount() > 20 then
-                while drawlist:getCount() > 1 do
-                    drawlist:pop()
-                end
-            end
-
-            print('drawlist:getCount()', drawlist:getCount())
-
-            if sublist then
-                for _, node in ipairs(sublist) do
-                    table.insert(list, node)
-                end
+        -- XXX workaround
+        if channel:getCount() > 20 then
+            while channel:getCount() > 1 do
+                channel:pop()
             end
         end
+
+        print('channel:getCount()', channel:getCount())
+
+        if sublist then
+            for _, node in ipairs(sublist) do
+                table.insert(list, node)
+            end
+        end
+    end
+end
+
+function Simulator.getDrawLists(): {{DrawNode}}
+--function Simulator.getDrawLists(): {DrawNode}
+    local list = {}
+    list[#list + 1] = {}
+    list[#list + 1] = {}
+    for k, _ in ipairs(threads) do
+        local drawlist: love.thread.Channel = channels[k].drawlist
+        local drawlist_fn: love.thread.Channel = channels[k].drawlist_fn
+
+        print('lists', drawlist, drawlist_fn)
+
+        extractDrawList(list[1], drawlist)
+        --extractDrawList(list[2], drawlist)
+        extractDrawList(list[2], drawlist_fn)
+        print('drawlist_fn count', drawlist_fn:getCount())
+        --if #list[2] ~= 0 then
+            --love.event.quit()
+        --end
     end
     --print("getDrawLists", inspect(list))
     return list
@@ -85,6 +102,7 @@ end
 --]]
 
 local function pushMsg2Threads(t: any)
+    print('pushMsg2Threads()', tostring(t))
     for i = 1, threadCount do
         print("send to 'msg" .. i .. "'")
         channels[i].msg:push(t)
@@ -314,6 +332,7 @@ end
 function Simulator.setMode(m: SimulatorMode)
     mode = m
     print("push", mode)
+    print('Simulator.setMode', m)
     pushMsg2Threads(mode)
 end
 
@@ -322,6 +341,8 @@ function Simulator.getMode(): SimulatorMode
 end
 
 function Simulator.step()
+    print('Simulator.step()')
+    print('ppppppppppppppppppppppppppppppppppp')
     pushMsg2Threads("step")
 end
 

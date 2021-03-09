@@ -16,11 +16,13 @@ local sim = require "simulator"
 global record SimulatorRender
     new: function(commonSetup: CommonSetup, Camera): SimulatorRender
 
+    draw: function(SimulatorRender)
     drawCellPath: function(SimulatorRender, cell: Cell)
     prerender: function(SimulatorRender)
-    draw: function(SimulatorRender)
     drawGrid: function(SimulatorRender)
     drawCells: function(SimulatorRender)
+    presentList: function(SimulatorRender, list: {DrawNode})
+    
     cameraToCenter: function(SimulatorRender)
     mouseToCamera: function(SimulatorRender, x: number, y: number): Pos
     getRect: function(SimulatorRender): number, number, number, number
@@ -227,15 +229,8 @@ function SimulatorRender:prerender()
 
 end
 
-function SimulatorRender:drawCells()
-    local drawlist: {DrawNode} = sim.getDrawLists()
-    --print("SimulatorRender:drawCells")
-    --print("drawlist", inspect(drawlist))
-    if not drawlist then
-        return
-    end
-
-    for _, node in ipairs(drawlist) do
+function SimulatorRender:presentList(list: {DrawNode})
+    for _, node in ipairs(list) do
         local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
         if node.food then
             gr.setColor(1, 1, 1, 1)
@@ -247,6 +242,24 @@ function SimulatorRender:drawCells()
                 gr.setColor(1, 1, 1, 1)
             end
             gr.draw(self.cellCanvas as love.graphics.Drawable, x, y)
+        end
+    end
+end
+
+function SimulatorRender:drawCells()
+    local drawlists: {{DrawNode}} = sim.getDrawLists()
+    --print("SimulatorRender:drawCells")
+    --print("drawlist", inspect(drawlist))
+    if not drawlists then
+        return
+    end
+
+    print('drawlists', inspect(drawlists))
+
+    for i, list in ipairs(drawlists) do
+        if i == 2 then
+            --print('presentList', inspect(list))
+            self:presentList(list)
         end
     end
 end

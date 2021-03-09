@@ -40,6 +40,8 @@ local sim = require("simulator")
 
 
 
+
+
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
@@ -227,15 +229,8 @@ function SimulatorRender:prerender()
 
 end
 
-function SimulatorRender:drawCells()
-   local drawlist = sim.getDrawLists()
-
-
-   if not drawlist then
-      return
-   end
-
-   for _, node in ipairs(drawlist) do
+function SimulatorRender:presentList(list)
+   for _, node in ipairs(list) do
       local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
       if node.food then
          gr.setColor(1, 1, 1, 1)
@@ -247,6 +242,24 @@ function SimulatorRender:drawCells()
             gr.setColor(1, 1, 1, 1)
          end
          gr.draw(self.cellCanvas, x, y)
+      end
+   end
+end
+
+function SimulatorRender:drawCells()
+   local drawlists = sim.getDrawLists()
+
+
+   if not drawlists then
+      return
+   end
+
+   print('drawlists', inspect(drawlists))
+
+   for i, list in ipairs(drawlists) do
+      if i == 2 then
+
+         self:presentList(list)
       end
    end
 end

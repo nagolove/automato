@@ -35,36 +35,53 @@ local isdone = true
 local setup
 local colonyDied = false
 
-function Simulator.getDrawLists()
-   local list = {}
-   for k, _ in ipairs(threads) do
-      local drawlist = channels[k].drawlist
+local function extractDrawList(list, channel)
 
-      if drawlist then
+   if channel then
 
-         local sublist
+      local sublist
 
-         if drawlist:getCount() > 1 then
-            sublist = drawlist:pop()
-         else
-            sublist = drawlist:peek()
-         end
+      if channel:getCount() > 1 then
+         sublist = channel:pop()
+      else
+         sublist = channel:peek()
+      end
 
 
-         if drawlist:getCount() > 20 then
-            while drawlist:getCount() > 1 do
-               drawlist:pop()
-            end
-         end
-
-         print('drawlist:getCount()', drawlist:getCount())
-
-         if sublist then
-            for _, node in ipairs(sublist) do
-               table.insert(list, node)
-            end
+      if channel:getCount() > 20 then
+         while channel:getCount() > 1 do
+            channel:pop()
          end
       end
+
+      print('channel:getCount()', channel:getCount())
+
+      if sublist then
+         for _, node in ipairs(sublist) do
+            table.insert(list, node)
+         end
+      end
+   end
+end
+
+function Simulator.getDrawLists()
+
+   local list = {}
+   list[#list + 1] = {}
+   list[#list + 1] = {}
+   for k, _ in ipairs(threads) do
+      local drawlist = channels[k].drawlist
+      local drawlist_fn = channels[k].drawlist_fn
+
+      print('lists', drawlist, drawlist_fn)
+
+      extractDrawList(list[1], drawlist)
+
+      extractDrawList(list[2], drawlist_fn)
+      print('drawlist_fn count', drawlist_fn:getCount())
+
+
+
    end
 
    return list
@@ -85,6 +102,7 @@ end
 
 
 local function pushMsg2Threads(t)
+   print('pushMsg2Threads()', tostring(t))
    for i = 1, threadCount do
       print("send to 'msg" .. i .. "'")
       channels[i].msg:push(t)
@@ -314,6 +332,7 @@ end
 function Simulator.setMode(m)
    mode = m
    print("push", mode)
+   print('Simulator.setMode', m)
    pushMsg2Threads(mode)
 end
 
@@ -322,6 +341,8 @@ function Simulator.getMode()
 end
 
 function Simulator.step()
+   print('Simulator.step()')
+   print('ppppppppppppppppppppppppppppppppppp')
    pushMsg2Threads("step")
 end
 

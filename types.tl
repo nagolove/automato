@@ -93,6 +93,7 @@ global type CellActionsInit = record
     writelog: function(...:string)
     rng: love.math.RandomGenerator
     setStepMode: function()
+    channels: Channels
 end
 
 global type Statistic = record
@@ -164,11 +165,22 @@ global formatMods<const>: {Statistic.Types:string} = {
     ['stepsPerSecond'] = '%d',
 }
 
+global type PictureTypes = enum
+    "cell"
+    "food"
+    "search"
+end
+
+-- передается из рабочего потока в основой
 global type DrawNode = record
+    -- целочисленные координаты от (1,1) до размеров поля
     x: number
     y: number
+    -- ячейка еды?
     food: boolean
+    -- цвет, только для обычных клеток
     color: {number}
+    picture: PictureTypes
 end
 
 -- режим работы - протяженный, пошаговый или стоп
@@ -226,8 +238,10 @@ global ChannelsTypes<const>: {string} = {
     'setup',
     -- запрос клетки
     "cellrequest", 
-    -- получить графику для рисования клетки
+    -- получить графику для рисования клеток и еды
     "drawlist", 
+    -- получить графику для рисования анимации поиска соседней клетки(find neighbor)
+    "drawlist_fn",
     -- прием сообщений с параметрами
     "msg", 
     -- получить клетку
@@ -255,6 +269,7 @@ function initChannels(n: number): Channels
         result[v] = love.thread.getChannel(name)
     end
     print('initChannels', inspect(result))
+    print('initChannels traceback', debug.traceback())
     return result
 end
 
@@ -290,7 +305,7 @@ global type Simulator = record
     isColonyDied: function(): boolean
 
     -- получить массив данных для рисования
-    getDrawLists : function(): {DrawNode}
+    getDrawLists : function(): {{DrawNode}}
     -- пример запроса для рисования(предки-потомки и тд)
     --getDrawLists : function(query: function(Cell): boolean): {DrawNode}
 

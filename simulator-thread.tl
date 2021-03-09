@@ -431,7 +431,7 @@ local function updateMeal(meal: {Cell}): {Cell}
 end
 
 local function experiment()
-    local cellEmitCoro: thread = coroutine.create(emitCell)
+    local emitCellCoro: thread = coroutine.create(emitCell)
     local emitFoodCoro: thread = coroutine.create(emitFood)
 
     iter = 0
@@ -454,7 +454,7 @@ local function experiment()
     }
 
     coroutine.yield()
-    local ok, errmsg = coroutine.resume(cellEmitCoro, iter) as (boolean, string)
+    local ok, errmsg = coroutine.resume(emitCellCoro, iter) as (boolean, string)
     if not ok then
         error(errmsg)
         stop = true
@@ -465,13 +465,18 @@ local function experiment()
     -- вставки клеток через сообщение insertcell
     while true do
 
-        -- создание клеток
-        if cellEmitCoro and not coroutine.resume(cellEmitCoro, iter) then
-            cellEmitCoro = nil
-        end
-        -- создание питания
-        if emitFoodCoro and not coroutine.resume(emitFoodCoro, iter) then
-            emitFoodCoro = nil
+        local ok, msg: boolean, string = pcall(function()
+            -- создание клеток
+            if emitCellCoro and not coroutine.resume(emitCellCoro, iter) then
+                emitCellCoro = nil
+            end
+            -- создание питания
+            if emitFoodCoro and not coroutine.resume(emitFoodCoro, iter) then
+                emitFoodCoro = nil
+            end
+        end)
+        if not ok then
+            print('emit pcall error ' .. msg)
         end
 
         -- проход по списку клеток и вызов их программ. уничтожение некоторых клеток
@@ -496,6 +501,7 @@ local function experiment()
         channels.stat:push(stat)
 
         iter = iter + 1
+        print('iter', iter)
 
         coroutine.yield()
     end
@@ -586,16 +592,20 @@ function commands.getobject()
 end
 
 function commands.step()
-  checkStep = true
-  doStep = true
+    --print('commands.step()')
+    --print(debug.traceback())
+    checkStep = true
+    doStep = true
 
-  -- сброс таймера посчета итераций в секунду
-  stepsPerSecond = stepsCount
-  stepsCount = 0
+    -- сброс таймера посчета итераций в секунду
+    stepsPerSecond = stepsCount
+    stepsCount = 0
+    --]]
 end
 
 function commands.continuos()
-  checkStep = false
+    print('commands.continuos')
+    checkStep = false
 end
 
 local function writelog(...: string)
@@ -710,10 +720,16 @@ function commands.writestate()
     channels.state:push(data)
 end
 
+local function clearLogs()
+    love.filesystem.write(string.format('commands-thread-%d.log.txt', threadNum), "")
+end
+
 local function popCommand()
     local cmd: ThreadCommands
     repeat
         cmd = channels.msg:pop() as ThreadCommands
+        local logstr = string.format('iter %d msg %s\n', iter, cmd)
+        love.filesystem.append(string.format('commands-thread-%d.log.txt', threadNum), logstr)
         if cmd then
             local command = commands[cmd]
             if command then
@@ -793,6 +809,7 @@ local function doSetup()
         rng = istate.rng,
         -- XXX работает только для текущей нити
         setStepMode = commands.step,
+        channels = channels,
     })
 
     -- установка ссылки на таблицу действий - язык клетки.
@@ -826,19 +843,24 @@ local function main()
     --local syncChan = love.thread.getChannel("sync")
     --channels.ready:push("ready")
     timestamp = love.timer.getTime()
+    local __step_done = false
     while not stop do
+        __step_done = false
         popCommand()
         if not free then
             if checkStep then
                 if doStep then
                     step()
+                    __step_done = true
                 end
                 love.timer.sleep(0.001)
             else
                 step()
+                __step_done = true
             end
             pushDrawList()
-            print('main loop')
+            --print('main loop, __step_done', __step_done)
+            --print('checkStep, doStep', checkStep, doStep)
             doStep = false
         else
             love.timer.sleep(0.001)
@@ -848,6 +870,7 @@ local function main()
     --channels.ready:push("free")
 end
 
+clearLogs()
 doSetup()
 main()
 
