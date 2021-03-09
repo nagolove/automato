@@ -43,6 +43,9 @@ function Cell.new(t)
    else
       self.pos.y = istate.rng:random(1, istate.gridSize)
    end
+   if t.wantdivide then
+      self.wantdivide = t.wantdivide
+   end
    if t.code then
       self.code = shallowCopy(t.code)
    else

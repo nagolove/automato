@@ -18,7 +18,7 @@ global type Cell = record
     moves: {number} -- массив предыдущих положений клетки
     eated: number   -- сколько клетка съела других клеток
     food: boolean   -- является ли клетка едой
-    -- обратный счетчик деления. Если > 0, то клетка готова делится
+    -- Счетчик деления. Если == 0, то клетка готова делится
     wantdivide: number
     id: number
     generation: number
@@ -73,6 +73,7 @@ global type CellSetup = record
     --code: {Expression}
     energy: number
     generation: number
+    wantdivide: number
 end
 
 global type Cells = {Cell}
@@ -146,7 +147,7 @@ global type Statistic = record
         клетка съевшая меньше всех других клеток
     --]]
 
-    isalive: boolean
+    --isalive: boolean
 end
 
 global formatMods<const>: {Statistic.Types:string} = {
@@ -212,7 +213,10 @@ end
 
 global type EmitFlags = enum
     'normal'
+    -- для тестирования перемещений
     'directions_only'
+    -- для тестирования деления
+    'divide_only'
 end
 
 global type Channels = {string: love.thread.Channel}

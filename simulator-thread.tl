@@ -341,61 +341,80 @@ local function emitCell(iter: number)
 
     print('istate.cellsNum', istate.cellsNum)
 
-    if istate.emitFlags then
-        if istate.emitFlags == 'normal' then
-            for i = 1, istate.cellsNum do
-                local cx, cy = genPosition()
-                --local cx = rng:random(1, istate.gridSize)
-                --local cy = rng:random(1, istate.gridSize)
-                print('cx, cy', cx, cy)
-                table.insert(
-                    cells, 
-                    Cell.new({ pos = { x = cx, y = cy } })
-                )
-                coroutine.yield()
-            end
-        elseif istate.emitFlags == 'directions_only' then
-                local cx, cy = genPosition()
-                table.insert(
-                    cells, 
-                    Cell.new(
-                        { 
-                            pos = { x = cx, y = cy }, 
-                            code = {'left',}
-                        }
-                    )
-                )
-                cx, cy = genPosition()
-                table.insert(
-                    cells, 
-                    Cell.new(
-                        { 
-                            pos = { x = cx, y = cy }, 
-                            code = {'right',}
-                        }
-                    )
-                )
-                cx, cy = genPosition()
-                table.insert(
-                    cells, 
-                    Cell.new(
-                        { 
-                            pos = { x = cx, y = cy }, 
-                            code = {'up',}
-                        }
-                    )
-                )
-                cx, cy = genPosition()
-                table.insert(
-                    cells, 
-                    Cell.new(
-                        { 
-                            pos = { x = cx, y = cy }, 
-                            code = {'down',}
-                        }
-                    )
-                )
+    if istate.emitFlags == 'normal' then
+        for _ = 1, istate.cellsNum do
+            local cx, cy = genPosition()
+            --local cx = rng:random(1, istate.gridSize)
+            --local cy = rng:random(1, istate.gridSize)
+            print('cx, cy', cx, cy)
+            table.insert(
+                cells, 
+                Cell.new({ pos = { x = cx, y = cy } })
+            )
+            coroutine.yield()
         end
+    elseif istate.emitFlags == 'directions_only' then
+        local cx, cy = genPosition()
+        table.insert(
+            cells, 
+            Cell.new(
+                { 
+                    pos = { x = cx, y = cy }, 
+                    code = {'left',}
+                }
+            )
+        )
+        cx, cy = genPosition()
+        table.insert(
+            cells, 
+            Cell.new(
+                { 
+                    pos = { x = cx, y = cy }, 
+                    code = {'right',}
+                }
+            )
+        )
+        cx, cy = genPosition()
+        table.insert(
+            cells, 
+            Cell.new(
+                { 
+                    pos = { x = cx, y = cy }, 
+                    code = {'up',}
+                }
+            )
+        )
+        cx, cy = genPosition()
+        table.insert(
+            cells, 
+            Cell.new(
+                { 
+                    pos = { x = cx, y = cy }, 
+                    code = {'down',}
+                }
+            )
+        )
+    elseif istate.emitFlags == 'divide_only' then
+        table.insert(
+            cells, 
+            Cell.new(
+                { 
+                    pos = { x = 20, y = 20 }, 
+                    wantdivide = 0,
+                    code = {'cross',}
+                }
+            )
+        )
+        table.insert(
+            cells, 
+            Cell.new(
+                { 
+                    pos = { x = 21, y = 20 }, 
+                    wantdivide = 0,
+                    code = {'cross',}
+                }
+            )
+        )
     end
 
     coroutine.yield()
@@ -471,7 +490,7 @@ local function experiment()
         --stat = gatherStatistic(cells)
         gatherStatistic(cells)
 
-        stat.isalive = #cells ~= 0
+        --stat.isalive = #cells ~= 0
 
         -- слишком часто идет отправка.
         channels.stat:push(stat)

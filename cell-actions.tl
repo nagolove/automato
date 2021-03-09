@@ -470,10 +470,12 @@ function actions.wantdivide(cell: Cell): boolean
     local res = true
     if cell.energy > 0 then
 
-        if cell.wantdivide and cell.wantdivide > 0 then
+        -- если счетчик уже установлен, то вернуть управление
+        if cell.wantdivide and cell.wantdivide == 0 then
             return res
         end
 
+        -- тянуть жребий
         if setup.rng:random(1, 1000) == 1 then
             cell.wantdivide = setup.rng:random(1, 10)
             cell.color = {1, 0, 0}
@@ -486,7 +488,7 @@ end
 function actions.cross(cell: Cell): boolean
     local res = true
     --XXX Не работает
-    if cell.wantdivide and cell.wantdivide > 0 and cell.energy > 0 then
+    if cell.wantdivide and cell.wantdivide == 0 and cell.energy > 0 then
         -- найти соседей клетки
         listNeighbours4(
             cell.pos.x, 
@@ -494,7 +496,7 @@ function actions.cross(cell: Cell): boolean
             function(_: number, _: number, other: Cell): boolean
                 -- сосед тоже хочет делиться
                 if other.wantdivide and 
-                    other.wantdivide > 0 and 
+                    other.wantdivide == 0 and 
                     other.energy > 0 then
                     print("cell.pos", cell.pos.x, cell.pos.y)
                     

@@ -190,12 +190,14 @@ function Simulator.create(commonSetup: CommonSetup)
         end
         statistic = newstat
 
+        --[[
         colonyDied = true
         for _, v in ipairs(statistic) do
             if v.isalive then
                 colonyDied = false
             end
         end
+        --]]
     end)
 end
 

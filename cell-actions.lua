@@ -470,9 +470,11 @@ function actions.wantdivide(cell)
    local res = true
    if cell.energy > 0 then
 
-      if cell.wantdivide and cell.wantdivide > 0 then
+
+      if cell.wantdivide and cell.wantdivide == 0 then
          return res
       end
+
 
       if setup.rng:random(1, 1000) == 1 then
          cell.wantdivide = setup.rng:random(1, 10)
@@ -486,7 +488,7 @@ end
 function actions.cross(cell)
    local res = true
 
-   if cell.wantdivide and cell.wantdivide > 0 and cell.energy > 0 then
+   if cell.wantdivide and cell.wantdivide == 0 and cell.energy > 0 then
 
       listNeighbours4(
       cell.pos.x,
@@ -494,7 +496,7 @@ function actions.cross(cell)
       function(_, _, other)
 
          if other.wantdivide and
-            other.wantdivide > 0 and
+            other.wantdivide == 0 and
             other.energy > 0 then
             print("cell.pos", cell.pos.x, cell.pos.y)
 

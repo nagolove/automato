@@ -302,7 +302,7 @@ local function start()
     end
 end
 
-local function specialStart()
+local function moveStart()
     commonSetup.spreadPoint = { 
         x = math.floor(commonSetup.gridSize / 2),
         y = math.floor(commonSetup.gridSize / 2)
@@ -310,6 +310,26 @@ local function specialStart()
     commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
     commonSetup.mode = 'continuos'
     commonSetup.emitFlags = 'directions_only'
+    mode = 'continuos'
+
+    sim.create(commonSetup)
+    cellUnderCursor = getCellUnderCursor()
+    simulatorRender = SimulatorRender.new(commonSetup, cam)
+    simulatorRender:cameraToCenter()
+
+    if useProfi then
+        profi:start()
+    end
+end
+
+local function divStart()
+    commonSetup.spreadPoint = { 
+        x = math.floor(commonSetup.gridSize / 2),
+        y = math.floor(commonSetup.gridSize / 2)
+    }
+    commonSetup.spreadRad = math.floor(commonSetup.gridSize / 2)
+    commonSetup.mode = 'continuos'
+    commonSetup.emitFlags = 'divide_only'
     mode = 'continuos'
 
     sim.create(commonSetup)
@@ -427,8 +447,11 @@ local function drawSim()
     if imgui.Button(i18n("start")) then
         start()
     end
-    if imgui.Button("spec_start") then
-        specialStart()
+    if imgui.Button("move_start") then
+        moveStart()
+    end
+    if imgui.Button("div_start") then
+        divStart()
     end
     imgui.SameLine()
     if imgui.Button(i18n("stp")) then
