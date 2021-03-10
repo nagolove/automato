@@ -27,7 +27,7 @@ local camera = require("camera")
 
 local inspect = require("inspect")
 local mtschemes = require("mtschemes")
-
+local prof = require("jprof")
 local sim = require("simulator")
 local startInStepMode = false
 local binds = require("binds")
@@ -46,6 +46,7 @@ local snaphotsDirectory = 'snaphots'
 local cellUnderCursor
 local timer = require("Timer").new()
 local cameraZoomTimeout = 0.5
+local startGrap = {}
 
 
 local commonSetup = {
@@ -303,7 +304,7 @@ local function start()
    simulatorRender:cameraToCenter()
 
    if useProfi then
-      profi:start()
+
    end
 end
 
@@ -399,7 +400,6 @@ local function stop()
 
    sim.shutdown()
    mode = 'stop'
-
 
 
 end
@@ -570,6 +570,7 @@ local function draw()
 
    end
    linesbuf:draw()
+   prof.pop("frame")
 end
 
 
@@ -591,12 +592,20 @@ end
 
 
 local function update(dt)
+   prof.push("frame")
    linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
    linesbuf:update()
    simulatorRender:update(dt)
    cellUnderCursor = getCellUnderCursor(underCursor)
    timer:update(dt)
    sim.update(dt)
+
+   if love.mouse.isDown(1) then
+      startGrap = { love.mouse.getPosition() }
+
+   else
+      startGrap = nil
+   end
 end
 
 local function loadPresets()
@@ -619,6 +628,18 @@ end
 local function bindKeys()
    binds.bindCameraControl(cam)
    local Shortcut = KeyConfig.Shortcut
+
+   KeyConfig.bind(
+   "keypressed",
+   { key = "q" },
+   function(sc)
+      prof.write("prof.mpack")
+      print('prof.mpack written')
+      return false, sc
+   end,
+   "write profiler report to file",
+   "writeprofreport")
+
 
    KeyConfig.bind(
    "keypressed",
@@ -782,6 +803,8 @@ local function init()
 end
 
 local function quit()
+   prof.write('prof.mpack')
+   print('prof.mpack written')
    love.filesystem.write('camera.txt', '')
    if simulatorRender then
       love.filesystem.append('camera.txt', serpent.dump(simulatorRender.cam))
@@ -804,9 +827,13 @@ local function checkCursorBounds(x, y)
    return x, y
 end
 
-local function mousemoved(x, y, _, _)
+local function mousemoved(x, y, dx, dy)
    underCursor = simulatorRender:mouseToCamera(x, y)
 
+   if startGrap then
+      linesbuf:push(2, 'mousemoved')
+      simulatorRender.cam:move(-dx, -dy)
+   end
 end
 
 local function wheelmoved(_, y)

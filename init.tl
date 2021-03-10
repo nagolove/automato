@@ -27,7 +27,7 @@ local camera = require "camera"
 --local imgui = require "love-imgui"
 local inspect = require "inspect"
 local mtschemes = require "mtschemes"
---local prof = require "jprof"
+local prof = require "jprof"
 local sim = require "simulator"
 local startInStepMode = false
 local binds = require "binds"
@@ -46,6 +46,7 @@ local snaphotsDirectory = 'snaphots'
 local cellUnderCursor: Cell
 local timer: Timer = require "Timer".new()
 local cameraZoomTimeout = 0.5
+local startGrap = {}
 
 --[[ Начальные установки симуляции ]]
 local commonSetup: CommonSetup = {
@@ -303,7 +304,7 @@ local function start()
     simulatorRender:cameraToCenter()
 
     if useProfi then
-        profi:start()
+        --profi:start()
     end
 end
 
@@ -400,7 +401,6 @@ local function stop()
     sim.shutdown()
     mode = 'stop'
     --prof.pop()
-    --prof.write('prof.mpack')
     --print("written")
 end
 
@@ -570,6 +570,7 @@ local function draw()
 --        drawGraphs()
     end
     linesbuf:draw()
+    prof.pop("frame")
 end
 
 --local function checkMouse()
@@ -591,12 +592,20 @@ end
 --end
 
 local function update(dt: number)
+    prof.push("frame")
     linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
     linesbuf:update()
     simulatorRender:update(dt)
     cellUnderCursor = getCellUnderCursor(underCursor)
     timer:update(dt)
     sim.update(dt)
+
+    if love.mouse.isDown(1) then
+        startGrap = {love.mouse.getPosition()}
+        --linesbuf:push(2, 'startGrap ' .. inspect(startGrap))
+    else
+        startGrap = nil
+    end
 end
 
 local function loadPresets()
@@ -619,6 +628,18 @@ end
 local function bindKeys()
     binds.bindCameraControl(cam)
     local Shortcut = KeyConfig.Shortcut
+
+    KeyConfig.bind(
+        "keypressed",
+        { key = "q" }, 
+        function(sc: Shortcut): boolean, Shortcut
+            prof.write("prof.mpack")
+            print('prof.mpack written')
+            return false, sc
+        end, 
+        "write profiler report to file",
+        "writeprofreport"
+    )
 
     KeyConfig.bind(
         "keypressed",
@@ -782,6 +803,8 @@ local function init()
 end
 
 local function quit()
+    prof.write('prof.mpack')
+    print('prof.mpack written')
     love.filesystem.write('camera.txt', '')
     if simulatorRender then
         love.filesystem.append('camera.txt', serpent.dump(simulatorRender.cam))
@@ -804,9 +827,13 @@ local function checkCursorBounds(x: number, y: number): number, number
     return x, y
 end
 
-local function mousemoved(x: number, y: number, _: number, _: number)
+local function mousemoved(x: number, y: number, dx: number, dy: number)
     underCursor = simulatorRender:mouseToCamera(x, y)
     --underCursor.x, underCursor.y = checkCursorBounds(underCursor.x, underCursor.y)
+    if startGrap then
+        linesbuf:push(2, 'mousemoved')
+        simulatorRender.cam:move(-dx, -dy)
+    end
 end
 
 local function wheelmoved(_: number, y: number)
