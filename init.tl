@@ -102,11 +102,11 @@ local function loadStates()
     local files = love.filesystem.getDirectoryItems(snaphotsDirectory)
     print('loadStates', inspect(files))
     states = files
-    if #states ~= 0 then
-        selectedState = 1
-    else
+    --if #states ~= 0 then
+        --selectedState = 1
+    --else
         selectedState = 0
-    end
+    --end
 end
 
 -- возвращает структуру клетки под курсором pos
@@ -271,8 +271,10 @@ local function activatePreset(num: number)
 end
 
 local function readState()
-    local fname = snaphotsDirectory .. '/' .. states[selectedState]
+    local fname = snaphotsDirectory .. '/' .. states[selectedState + 1]
+    print('readState', fname)
     local fileData = love.filesystem.read(fname)
+    print('#fileData', #fileData)
     if not sim.readState(fileData) then
         linesbuf:push(linesbufDelay, 'could not load state')
     end
@@ -570,7 +572,7 @@ local function draw()
 --        drawGraphs()
     end
     linesbuf:draw()
-    prof.pop("frame")
+    --prof.pop("frame")
 end
 
 --local function checkMouse()
@@ -592,7 +594,7 @@ end
 --end
 
 local function update(dt: number)
-    prof.push("frame")
+    --prof.push("frame")
     linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
     linesbuf:update()
     simulatorRender:update(dt)

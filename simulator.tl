@@ -445,11 +445,25 @@ function Simulator.readState(data: string): boolean
     print("readState")
 
     local decompData = love.data.decompress('string', 'zlib', data) as string
-    local threadStates = unpackState(decompData)
+    print('#data', #data)
+    print('#decompData', #decompData)
+    local ok, store = serpent.load(decompData)
 
-    do
+    if not ok then
         return false
     end
+
+    print('store', store)
+    love.filesystem.write('restore.txt', inspect(store))
+
+    print("os.exit()")
+    os.exit()
+
+    local threadStates = unpackState(decompData)
+
+    --do
+        --return false
+    --end
 
     infoTimer = timer.new()
 
@@ -549,34 +563,11 @@ function Simulator.writeState(): string
     local t = {}
     local notwritten = 0
 
-    -- TODO
-    -- добавить схему mtschema??
-    -- примитивный цикл обработки. Попробовать while allDemanded do
-    -- с методом :peek() для проверки готовы-ли данные
-    local setupString = serpent.dump(setup)
-    local mtschemaString = serpent.dump(mtschema)
-    local threadCountString = tostring(threadCount)
-    --[[
-    local blobStructure = {
-        [1] = 'setup',
-        [2] = 'mtschema',
-        [3] = 'threadCount',
-        [4] = 'threads',
+    local store: {string:string} = {
+        setupString = serpent.dump(setup),
+        mtschemaString = serpent.dump(mtschema),
+        threadCountString = tostring(threadCount),
     }
-    --]]
-
-    local function writeString(str: string)
-        local len = struct.pack("<d", #str) as string
-        table.insert(t, len)
-        table.insert(t, str)
-    end
-
-    -- записываю структуру для запуска потока
-    writeString(setupString)
-    -- записываю массив схем многопоточности
-    writeString(mtschemaString)
-    -- записываю количество потоков(кусков данных)
-    writeString(threadCountString)
 
     for i = 1, threadCount do
         local t1 = love.timer.getTime()
@@ -589,8 +580,7 @@ function Simulator.writeState(): string
             error("Could'not retrive string from thread")
         end
 
-        -- записываю содержимое потока
-        writeString(thread)
+        store["thread" .. tostring(i)] = thread
 
         if not (thread and #thread ~= 0) then
             notwritten = notwritten + 1
@@ -599,7 +589,7 @@ function Simulator.writeState(): string
 
     print('writestate by', threadCount, ' not written ', notwritten)
 
-    local fullData = table.concat(t)
+    local fullData = serpent.dump(store)
 
     -- TODO возвращать управление сразу, сжатие проводить в отдельном потоке.
     -- возвращать флаг завершения и сжатую строчку через уникальный именованный

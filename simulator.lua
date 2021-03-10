@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local os = _tl_compat and _tl_compat.os or os; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
 local serpent = require("serpent")
 local struct = require("struct")
 local timer = require("Timer")
@@ -445,11 +445,25 @@ function Simulator.readState(data)
    print("readState")
 
    local decompData = love.data.decompress('string', 'zlib', data)
-   local threadStates = unpackState(decompData)
+   print('#data', #data)
+   print('#decompData', #decompData)
+   local ok, store = serpent.load(decompData)
 
-   do
+   if not ok then
       return false
    end
+
+   print('store', store)
+   love.filesystem.write('restore.txt', inspect(store))
+
+   print("os.exit()")
+   os.exit()
+
+   local threadStates = unpackState(decompData)
+
+
+
+
 
    infoTimer = timer.new()
 
@@ -564,19 +578,24 @@ function Simulator.writeState()
 
 
 
+   local store = {
+      setupString = serpent.dump(setup),
+      mtschemaString = serpent.dump(mtschema),
+      threadCountString = tostring(threadCount),
+   }
 
-   local function writeString(str)
-      local len = struct.pack("<d", #str)
-      table.insert(t, len)
-      table.insert(t, str)
-   end
 
 
-   writeString(setupString)
 
-   writeString(mtschemaString)
 
-   writeString(threadCountString)
+
+
+
+
+
+
+
+
 
    for i = 1, threadCount do
       local t1 = love.timer.getTime()
@@ -590,7 +609,9 @@ function Simulator.writeState()
       end
 
 
-      writeString(thread)
+
+
+      store["thread" .. tostring(i)] = thread
 
       if not (thread and #thread ~= 0) then
          notwritten = notwritten + 1
@@ -599,7 +620,8 @@ function Simulator.writeState()
 
    print('writestate by', threadCount, ' not written ', notwritten)
 
-   local fullData = table.concat(t)
+
+   local fullData = serpent.dump(store)
 
 
 
