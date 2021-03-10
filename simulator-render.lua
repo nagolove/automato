@@ -257,10 +257,10 @@ function SimulatorRender:drawCells()
    print('drawlists', inspect(drawlists))
 
    for i, list in ipairs(drawlists) do
-      if i == 2 then
 
-         self:presentList(list)
-      end
+
+      self:presentList(list)
+
    end
 end
 

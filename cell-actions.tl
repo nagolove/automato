@@ -514,12 +514,12 @@ function actions.cross(cell: Cell): boolean
         --]]
         print('actions.cross()')
         local node: DrawNode = {}
-        node.x = cell.pos.x
-        node.y = cell.pos.y
         node.color = {1, 1, 1, 1}
         print('setup.channels', inspect(setup.channels))
         for i = 1, 100 do 
         --do
+            node.x = setup.rng:random(1, 100)
+            node.y = setup.rng:random(1, 100)
             local ok, errmsg: boolean, string = pcall(function()
                 setup.channels.drawlist_fn:push(node)
             end)

@@ -194,21 +194,23 @@ function actions.up(cell)
    pushPosition(cell)
 
 
-   print('actions.up()')
-   local node = {}
-   node.x = cell.pos.x
-   node.y = cell.pos.y
-   node.color = { 1, 1, 1, 1 }
-   print('setup.channels', inspect(setup.channels))
-   for _ = 1, 100 do
 
-      local ok, errmsg = pcall(function()
-         setup.channels.drawlist_fn:push(node)
-      end)
-      if not ok then
-         print('error in actions.cross()', errmsg)
-      end
-   end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
    if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
@@ -512,12 +514,12 @@ function actions.cross(cell)
 
       print('actions.cross()')
       local node = {}
-      node.x = cell.pos.x
-      node.y = cell.pos.y
       node.color = { 1, 1, 1, 1 }
       print('setup.channels', inspect(setup.channels))
       for i = 1, 100 do
 
+         node.x = setup.rng:random(1, 100)
+         node.y = setup.rng:random(1, 100)
          local ok, errmsg = pcall(function()
             setup.channels.drawlist_fn:push(node)
          end)

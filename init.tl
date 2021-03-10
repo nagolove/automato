@@ -548,7 +548,6 @@ local function drawui()
 end
 
 local function draw()
-    linesbuf:draw()
     if viewState == "sim" then
         --local zazor: number = 10
 
@@ -570,6 +569,7 @@ local function draw()
     elseif viewState == "graph" then
 --        drawGraphs()
     end
+    linesbuf:draw()
 end
 
 --local function checkMouse()

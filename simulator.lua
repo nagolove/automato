@@ -282,8 +282,13 @@ function Simulator.getObject(x, y)
 
    channels[threadNum].msg:push("getobject")
 
-   channels[threadNum].object_w:push(x)
-   channels[threadNum].object_w:push(y)
+
+
+
+   channels[threadNum].object_w:performAtomic(function(channel)
+      channel:push(x)
+      channel:push(y)
+   end)
 
 
 

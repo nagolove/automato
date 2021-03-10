@@ -281,9 +281,14 @@ function Simulator.getObject(x: number, y: number): Cell
 
     -- передать команду
     channels[threadNum].msg:push("getobject")
+    --channels[threadNum].object_w:push(x)
+    --channels[threadNum].object_w:push(y)
+
     -- передать параметры команды
-    channels[threadNum].object_w:push(x)
-    channels[threadNum].object_w:push(y)
+    channels[threadNum].object_w:performAtomic(function(channel: love.thread.Channel)
+        channel:push(x)
+        channel:push(y)
+    end)
 
     --bchan:clear()
 
