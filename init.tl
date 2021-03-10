@@ -118,9 +118,10 @@ local function getCellUnderCursor(pos: Pos): Cell
     local size = sim.getGridSize()
     if size then
         local x, y = pos.x, pos.y
-        if x + 1 >= 1 and x + 1 <= size and
-            y + 1 >= 1 and y + 1 <= size then
-                local cell = sim.getObject(x + 1, y + 1)
+        if x + 1 >= 1 and x <= size and
+            y + 1 >= 1 and y <= size then
+                --local cell = sim.getObject(x + 1, y + 1)
+                local cell = sim.getObject(x + 0, y + 0)
                 return cell
             end
         end
@@ -135,7 +136,7 @@ local function drawCellInfo(pos: Pos, cell: Cell)
     if not cell then
         return
     end
-
+    --linesbuf:pushi('drawCellInfo')
     local mx, my = love.mouse.getPosition()
 
     -- сделать нормальное выделение клетки под курсором
@@ -147,6 +148,7 @@ local function drawCellInfo(pos: Pos, cell: Cell)
     --[[
     --]]
     imgui.Text(string.format('at point %d, %d', pos.x, pos.y))
+    linesbuf:pushi('cellUnderCursor', inspect(cell))
     for k, v in pairs(cell as {any: any}) do
         if k ~= "code" then
             local fmt: string
@@ -506,7 +508,8 @@ local function drawSim()
     local mx, my = love.mouse.getPosition()
     local x, y, w, h = simulatorRender:getRect()
 
-    if underCursor and pointInRect(mx, my, x, y, w, h) then
+    --if underCursor and pointInRect(mx, my, x, y, w, h) then
+    if underCursor then
         drawCellInfo(underCursor, cellUnderCursor)
     end
 
@@ -602,6 +605,11 @@ local function update(dt: number)
     timer:update(dt)
     sim.update(dt)
 
+    if simulatorRender then
+        local mx, my = love.mouse.getPosition()
+        underCursor = simulatorRender:mouseToCamera(mx, my)
+    end
+
     if love.mouse.isDown(1) then
         startGrap = {love.mouse.getPosition()}
         --linesbuf:push(2, 'startGrap ' .. inspect(startGrap))
@@ -635,7 +643,7 @@ local function bindKeys()
         "keypressed",
         { key = "q" }, 
         function(sc: Shortcut): boolean, Shortcut
-            prof.write("prof.mpack")
+            --prof.write("prof.mpack")
             print('prof.mpack written')
             return false, sc
         end, 
@@ -805,7 +813,7 @@ local function init()
 end
 
 local function quit()
-    prof.write('prof.mpack')
+    --prof.write('prof.mpack')
     print('prof.mpack written')
     love.filesystem.write('camera.txt', '')
     if simulatorRender then
@@ -830,7 +838,8 @@ local function checkCursorBounds(x: number, y: number): number, number
 end
 
 local function mousemoved(x: number, y: number, dx: number, dy: number)
-    underCursor = simulatorRender:mouseToCamera(x, y)
+    --underCursor = simulatorRender:mouseToCamera(x, y)
+    --linesbuf:push(1, string.format('underCursor %d, %d', underCursor.x, underCursor.y))
     --underCursor.x, underCursor.y = checkCursorBounds(underCursor.x, underCursor.y)
     if startGrap then
         linesbuf:push(2, 'mousemoved')

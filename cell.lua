@@ -95,6 +95,7 @@ function Cell:update()
       self.ip = self.ip + 1
       self.energy = self.energy - istate.denergy
 
+
       if self.wantdivide and self.wantdivide - 1 >= 0 then
          self.wantdivide = self.wantdivide - 1
       end

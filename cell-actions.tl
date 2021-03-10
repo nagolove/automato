@@ -508,11 +508,17 @@ end
 -- деление клетки
 function actions.cross(cell: Cell): boolean
     local res = true
+
+    cell.some1 = 1
+
     -- эффективное преобразование композиции булевых выражений 
     if cell.wantdivide and cell.wantdivide == 0 and cell.energy and cell.energy > 0 then
+
+        cell.some1 = 1
+
+        --(cell as {string:any}).some1 = 1
+
         --[[
-        --]]
-        print('actions.cross()')
         local node: DrawNode = {}
         node.color = {1, 1, 1, 1}
         print('setup.channels', inspect(setup.channels))

@@ -36,11 +36,11 @@ local setup: CommonSetup
 local colonyDied = false
 
 local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
-    --print("datachannel", inspect(drawlist))
     if channel then
-        --local sublist: {DrawNode} = drawlist:pop() as {DrawNode}
         local sublist: {DrawNode}
 
+        -- если элементов несколько, то снимаю последние. Если элемент один, то
+        -- оставляю
         if channel:getCount() > 1 then
             sublist = channel:pop() as {DrawNode}
         else
@@ -54,13 +54,15 @@ local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
             end
         end
 
-        print('channel:getCount()', channel:getCount())
+        --print('channel:getCount()', channel:getCount())
 
         if sublist then
             for _, node in ipairs(sublist) do
                 table.insert(list, node)
             end
         end
+    else
+        print('extractDrawList() with nil channel')
     end
 end
 
@@ -71,14 +73,17 @@ function Simulator.getDrawLists(): {{DrawNode}}
     list[#list + 1] = {}
     for k, _ in ipairs(threads) do
         local drawlist: love.thread.Channel = channels[k].drawlist
-        local drawlist_fn: love.thread.Channel = channels[k].drawlist_fn
+        local drawlist_fn: love.thread.Channel = channels[k].drawlist_fn_
 
         print('lists', drawlist, drawlist_fn)
 
         extractDrawList(list[1], drawlist)
         --extractDrawList(list[2], drawlist)
         extractDrawList(list[2], drawlist_fn)
-        print('drawlist_fn count', drawlist_fn:getCount())
+
+        love.filesystem.append('drawlist_fn.txt', inspect(list[2]) .. "\n\n\n\n")
+        --print('drawlist_fn count', drawlist_fn:getCount())
+
         --if #list[2] ~= 0 then
             --love.event.quit()
         --end
@@ -123,8 +128,42 @@ function love.threaderror(_: love.thread.Thread, errstr: string)
     print("Some thread failed with " .. errstr)    
 end
 
+local type ThreadCreateCallback = function(th: love.thread.Thread, i: number)
+local function createThreads(
+    threadCount: number,
+    mtschema: {MtSchema},
+    commonSetup: CommonSetup, 
+    cb: ThreadCreateCallback
+)
+    for i = 1, threadCount do
+        print("Channels for thread", i)
+        table.insert(channels, initChannels(i))
+
+        channels[i].setup:performAtomic(function(channel: love.thread.Channel)
+            channel:push(commonSetup)
+            channel:push(serpent.dump(mtschema[i]))
+        end)
+        -- создание рабочей нити
+        local th: love.thread.Thread = love.thread.newThread("scenes/automato/simulator-thread.lua")
+        table.insert(threads, th)
+        -- запуск нити, передаю номер
+        th:start(i)
+        if cb then
+            cb(th, i)
+        end
+        local errmsg = th:getError()
+        if errmsg then
+            --logfwarn("Thread %s", errmsg)
+            print("Thread %s", errmsg)
+        end
+    end
+end
+
 function Simulator.create(commonSetup: CommonSetup)
     print('commonSetup', inspect(commonSetup))
+
+    love.filesystem.write('drawlist_fn.txt', "")
+
     setup = deepCopy(commonSetup)
     print("--------------------------------------------")
 
@@ -155,27 +194,7 @@ function Simulator.create(commonSetup: CommonSetup)
         error(string.format("Unsupported scheme for %d threads.", threadCount))
     end
 
-    for i = 1, threadCount do
-        print("Channels for thread", i)
-        table.insert(channels, initChannels(i))
-
-        channels[i].setup:push(commonSetup)
-        channels[i].setup:push(serpent.dump(mtschema[i]))
-        --love.thread.getChannel(setupName):push(serpent.dump(commonSetup))
-        --love.thread.getChannel(setupName):push(commonSetup)
-        --love.thread.getChannel(setupName):push(serpent.dump(mtschema[i]))
-
-        local th: love.thread.Thread = love.thread.newThread("scenes/automato/simulator-thread.lua")
-        table.insert(threads, th)
-        th:start(i)
-        local errmsg = th:getError()
-        if errmsg then
-            --logfwarn("Thread %s", errmsg)
-            print("Thread %s", errmsg)
-        end
-    end
-
-    --pushSync()
+    createThreads(threadCount, mtschema, commonSetup)
 
     print("threads", inspect(threads))
     print("thread errors")
@@ -404,6 +423,7 @@ function Simulator.getUptime(): number
     return love.timer.getTime() - starttime
 end
 
+--[[
 local function unpackState(data: string): {string}
     local res = {}
     local threadNum: number = struct.unpack('<d', data) as number
@@ -427,8 +447,11 @@ local function unpackState(data: string): {string}
 
     return res
 end
+--]]
 
 function Simulator.readState(data: string): boolean
+    print('Simulator.readState()')
+
     -- отправить сообщение о завершении всем нитям
     -- подождать
 
@@ -442,12 +465,11 @@ function Simulator.readState(data: string): boolean
     --          главного цикла
     --          нужно заменить идентификаторы потоков в модуле simulator
 
-    print("readState")
-
     local decompData = love.data.decompress('string', 'zlib', data) as string
     print('#data', #data)
     print('#decompData', #decompData)
-    local ok, store = serpent.load(decompData)
+    local ok, store_any = serpent.load(decompData)
+    local store: {string: any} = store_any as {string: any}
 
     if not ok then
         return false
@@ -456,14 +478,12 @@ function Simulator.readState(data: string): boolean
     print('store', store)
     love.filesystem.write('restore.txt', inspect(store))
 
-    print("os.exit()")
-    os.exit()
+    --print("os.exit()")
+    --os.exit()
+    ----local threadStates = unpackState(decompData)
 
-    local threadStates = unpackState(decompData)
-
-    --do
-        --return false
-    --end
+    setup = deepCopy(store.setup as CommonSetup)
+    mtschema = store.mtschema as {MtSchema}
 
     infoTimer = timer.new()
 
@@ -472,6 +492,7 @@ function Simulator.readState(data: string): boolean
     end
 
     --threadCount = commonSetup.threadCount
+    threadCount = tonumber(store.threadCount)
     print("threadCount", threadCount)
 
     --gridSize = commonSetup.gridSize
@@ -479,38 +500,36 @@ function Simulator.readState(data: string): boolean
 
     local mainRng = love.math.newRandomGenerator()
     -- XXX или лучше os.time()?
-    mainRng:setSeed(love.timer.getTime())
+    --mainRng:setSeed(love.timer.getTime())
+    if setup.rngState then
+        mainRng:setState(setup.rngState)
+    else
+        print('No rngState in store structure')
+    end
 
     --commonSetup.rngState = mainRng:getState()
 
-    mtschema = require "mtschemes"[threadCount] as {MtSchema}
+    --mtschema = require "mtschemes"[threadCount] as {MtSchema}
     print("mtschema", inspect(mtschema))
 
     if not mtschema then
         error(string.format("Unsupported scheme for %d threads.", threadCount))
     end
 
-    for i = 1, threadCount do
-        print("Channels for thread", i)
-        table.insert(channels, initChannels(i))
-
-        --channels[i].setup:push(commonSetup)
-        channels[i].setup:push(serpent.dump(mtschema[i]))
-        --love.thread.getChannel(setupName):push(serpent.dump(commonSetup))
-        --love.thread.getChannel(setupName):push(commonSetup)
-        --love.thread.getChannel(setupName):push(serpent.dump(mtschema[i]))
-
-        local th: love.thread.Thread = love.thread.newThread("scenes/automato/simulator-thread.lua")
-        table.insert(threads, th)
-        th:start(i)
-        local errmsg = th:getError()
-        if errmsg then
-            --logfwarn("Thread %s", errmsg)
-            print("Thread %s", errmsg)
+    createThreads(
+        setup.threadCount, 
+        mtschema, 
+        setup,
+        function(_: love.thread.Thread, i: number)
+            channels[i].state:performAtomic(
+                function(channel: love.thread.Channel)
+                    channel:clear()
+                    channel:push(store['thread' .. tostring(i)])
+                end
+            )
+            channels[i].msg:push('readstate')
         end
-    end
-
-    --pushSync()
+    )
 
     print("threads", inspect(threads))
     print("thread errors")
@@ -560,13 +579,14 @@ function Simulator.writeState(): string
         channels[i].msg:push('writestate')
     end
 
-    local t = {}
+    --local t = {}
     local notwritten = 0
 
-    local store: {string:string} = {
-        setupString = serpent.dump(setup),
-        mtschemaString = serpent.dump(mtschema),
-        threadCountString = tostring(threadCount),
+    local store: {string:any} = {
+        setup = setup,
+        mtschema= mtschema,
+        -- восстанавливаться будет тоже самое количество нитей
+        threadCount = tostring(threadCount),
     }
 
     for i = 1, threadCount do

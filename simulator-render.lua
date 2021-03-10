@@ -248,19 +248,11 @@ end
 
 function SimulatorRender:drawCells()
    local drawlists = sim.getDrawLists()
-
-
    if not drawlists then
       return
    end
-
-   print('drawlists', inspect(drawlists))
-
-   for i, list in ipairs(drawlists) do
-
-
+   for _, list in ipairs(drawlists) do
       self:presentList(list)
-
    end
 end
 

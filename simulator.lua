@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local os = _tl_compat and _tl_compat.os or os; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
 local serpent = require("serpent")
 local struct = require("struct")
 local timer = require("Timer")
@@ -36,10 +36,10 @@ local setup
 local colonyDied = false
 
 local function extractDrawList(list, channel)
-
    if channel then
-
       local sublist
+
+
 
       if channel:getCount() > 1 then
          sublist = channel:pop()
@@ -54,13 +54,15 @@ local function extractDrawList(list, channel)
          end
       end
 
-      print('channel:getCount()', channel:getCount())
+
 
       if sublist then
          for _, node in ipairs(sublist) do
             table.insert(list, node)
          end
       end
+   else
+      print('extractDrawList() with nil channel')
    end
 end
 
@@ -71,14 +73,17 @@ function Simulator.getDrawLists()
    list[#list + 1] = {}
    for k, _ in ipairs(threads) do
       local drawlist = channels[k].drawlist
-      local drawlist_fn = channels[k].drawlist_fn
+      local drawlist_fn = channels[k].drawlist_fn_
 
       print('lists', drawlist, drawlist_fn)
 
       extractDrawList(list[1], drawlist)
 
       extractDrawList(list[2], drawlist_fn)
-      print('drawlist_fn count', drawlist_fn:getCount())
+
+      love.filesystem.append('drawlist_fn.txt', inspect(list[2]) .. "\n\n\n\n")
+
+
 
 
 
@@ -123,8 +128,42 @@ function love.threaderror(_, errstr)
    print("Some thread failed with " .. errstr)
 end
 
+local ThreadCreateCallback = {}
+local function createThreads(
+   threadCount,
+   mtschema,
+   commonSetup,
+   cb)
+
+   for i = 1, threadCount do
+      print("Channels for thread", i)
+      table.insert(channels, initChannels(i))
+
+      channels[i].setup:performAtomic(function(channel)
+         channel:push(commonSetup)
+         channel:push(serpent.dump(mtschema[i]))
+      end)
+
+      local th = love.thread.newThread("scenes/automato/simulator-thread.lua")
+      table.insert(threads, th)
+
+      th:start(i)
+      if cb then
+         cb(th, i)
+      end
+      local errmsg = th:getError()
+      if errmsg then
+
+         print("Thread %s", errmsg)
+      end
+   end
+end
+
 function Simulator.create(commonSetup)
    print('commonSetup', inspect(commonSetup))
+
+   love.filesystem.write('drawlist_fn.txt', "")
+
    setup = deepCopy(commonSetup)
    print("--------------------------------------------")
 
@@ -155,27 +194,7 @@ function Simulator.create(commonSetup)
       error(string.format("Unsupported scheme for %d threads.", threadCount))
    end
 
-   for i = 1, threadCount do
-      print("Channels for thread", i)
-      table.insert(channels, initChannels(i))
-
-      channels[i].setup:push(commonSetup)
-      channels[i].setup:push(serpent.dump(mtschema[i]))
-
-
-
-
-      local th = love.thread.newThread("scenes/automato/simulator-thread.lua")
-      table.insert(threads, th)
-      th:start(i)
-      local errmsg = th:getError()
-      if errmsg then
-
-         print("Thread %s", errmsg)
-      end
-   end
-
-
+   createThreads(threadCount, mtschema, commonSetup)
 
    print("threads", inspect(threads))
    print("thread errors")
@@ -404,31 +423,34 @@ function Simulator.getUptime()
    return love.timer.getTime() - starttime
 end
 
-local function unpackState(data)
-   local res = {}
-   local threadNum = struct.unpack('<d', data)
-   local intSize = 4
-   local idx = intSize + 1
-   print('threadNum', threadNum)
-   print('data', #data)
-   for i = 1, threadNum do
-      print('idx', idx)
-      print('idx + intSize', idx + intSize)
-      local s = string.sub(data, idx, idx + intSize)
-      print('subs', #s)
-      print('s', s)
-      local len = struct.unpack('<d', s)
-      local payload = string.sub(data, idx + intSize + 1, idx + intSize + len + 1)
-      idx = idx + len + 1
-      table.insert(res, payload)
 
-      love.filesystem.write(string.format('unpack-%d.txt', i), payload)
-   end
 
-   return res
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function Simulator.readState(data)
+   print('Simulator.readState()')
 
 
 
@@ -442,12 +464,12 @@ function Simulator.readState(data)
 
 
 
-   print("readState")
 
    local decompData = love.data.decompress('string', 'zlib', data)
    print('#data', #data)
    print('#decompData', #decompData)
-   local ok, store = serpent.load(decompData)
+   local ok, store_any = serpent.load(decompData)
+   local store = store_any
 
    if not ok then
       return false
@@ -456,14 +478,12 @@ function Simulator.readState(data)
    print('store', store)
    love.filesystem.write('restore.txt', inspect(store))
 
-   print("os.exit()")
-   os.exit()
-
-   local threadStates = unpackState(decompData)
 
 
 
 
+   setup = deepCopy(store.setup)
+   mtschema = store.mtschema
 
    infoTimer = timer.new()
 
@@ -472,6 +492,7 @@ function Simulator.readState(data)
    end
 
 
+   threadCount = tonumber(store.threadCount)
    print("threadCount", threadCount)
 
 
@@ -479,37 +500,35 @@ function Simulator.readState(data)
 
    local mainRng = love.math.newRandomGenerator()
 
-   mainRng:setSeed(love.timer.getTime())
+
+   if setup.rngState then
+      mainRng:setState(setup.rngState)
+   else
+      print('No rngState in store structure')
+   end
 
 
 
-   mtschema = require("mtschemes")[threadCount]
+
    print("mtschema", inspect(mtschema))
 
    if not mtschema then
       error(string.format("Unsupported scheme for %d threads.", threadCount))
    end
 
-   for i = 1, threadCount do
-      print("Channels for thread", i)
-      table.insert(channels, initChannels(i))
+   createThreads(
+   setup.threadCount,
+   mtschema,
+   setup,
+   function(_, i)
+      channels[i].state:performAtomic(
+      function(channel)
+         channel:clear()
+         channel:push(store['thread' .. tostring(i)])
+      end)
 
-
-      channels[i].setup:push(serpent.dump(mtschema[i]))
-
-
-
-
-      local th = love.thread.newThread("scenes/automato/simulator-thread.lua")
-      table.insert(threads, th)
-      th:start(i)
-      local errmsg = th:getError()
-      if errmsg then
-
-         print("Thread %s", errmsg)
-      end
-   end
-
+      channels[i].msg:push('readstate')
+   end)
 
 
    print("threads", inspect(threads))
@@ -560,42 +579,15 @@ function Simulator.writeState()
       channels[i].msg:push('writestate')
    end
 
-   local t = {}
+
    local notwritten = 0
 
-
-
-
-
-   local setupString = serpent.dump(setup)
-   local mtschemaString = serpent.dump(mtschema)
-   local threadCountString = tostring(threadCount)
-
-
-
-
-
-
-
-
    local store = {
-      setupString = serpent.dump(setup),
-      mtschemaString = serpent.dump(mtschema),
-      threadCountString = tostring(threadCount),
+      setup = setup,
+      mtschema = mtschema,
+
+      threadCount = tostring(threadCount),
    }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
    for i = 1, threadCount do
       local t1 = love.timer.getTime()
@@ -608,9 +600,6 @@ function Simulator.writeState()
          error("Could'not retrive string from thread")
       end
 
-
-
-
       store["thread" .. tostring(i)] = thread
 
       if not (thread and #thread ~= 0) then
@@ -619,7 +608,6 @@ function Simulator.writeState()
    end
 
    print('writestate by', threadCount, ' not written ', notwritten)
-
 
    local fullData = serpent.dump(store)
 

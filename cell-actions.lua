@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("types")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("types")
 require("mtschemes")
 require("love")
 require("common")
@@ -508,25 +508,27 @@ end
 
 function actions.cross(cell)
    local res = true
+   cell.some1 = 1
 
    if cell.wantdivide and cell.wantdivide == 0 and cell.energy and cell.energy > 0 then
+      cell.some1 = 1
 
 
-      print('actions.cross()')
-      local node = {}
-      node.color = { 1, 1, 1, 1 }
-      print('setup.channels', inspect(setup.channels))
-      for i = 1, 100 do
 
-         node.x = setup.rng:random(1, 100)
-         node.y = setup.rng:random(1, 100)
-         local ok, errmsg = pcall(function()
-            setup.channels.drawlist_fn:push(node)
-         end)
-         if not ok then
-            print('error in actions.cross()', errmsg)
-         end
-      end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

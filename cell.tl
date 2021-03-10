@@ -95,6 +95,7 @@ function Cell:update(): boolean
         self.ip = self.ip + 1
         self.energy = self.energy - istate.denergy
 
+        -- если счетчик установлен, то постоянно умешьшать его значение до 0
         if self.wantdivide and self.wantdivide - 1 >= 0 then
             self.wantdivide = self.wantdivide - 1
         end

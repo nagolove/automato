@@ -248,19 +248,11 @@ end
 
 function SimulatorRender:drawCells()
     local drawlists: {{DrawNode}} = sim.getDrawLists()
-    --print("SimulatorRender:drawCells")
-    --print("drawlist", inspect(drawlist))
     if not drawlists then
         return
     end
-
-    print('drawlists', inspect(drawlists))
-
-    for i, list in ipairs(drawlists) do
-        --if i == 2 then
-            --print('presentList', inspect(list))
-            self:presentList(list)
-        --end
+    for _, list in ipairs(drawlists) do
+        self:presentList(list)
     end
 end
 

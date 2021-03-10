@@ -266,8 +266,14 @@ global ChannelsTypes<const>: {string} = {
     -- запрос?
     "request",
 
-    -- рабочий поток записывает состояние своих клеток
-    -- основной поток считывает состояния при сериализации
+    --[[
+    при сериализации:
+        * рабочий поток записывает состояние своих клеток
+        * основной поток считывает состояния при сериализации
+    при десериализации:
+        * рабочий поток считывает состояние клеток и еды
+        * основной потоко запичывает состояние клеток и еды
+    --]]
     "state",
 
     -- рабочий поток: запись
@@ -290,10 +296,9 @@ global ChannelsTypes<const>: {string} = {
 function initChannels(n: number): Channels
     local result: Channels = {}
     for _, v in ipairs(ChannelsTypes as {string}) do
-        local name = v .. tostring(n)
-        result[v] = love.thread.getChannel(name)
+        result[v] = love.thread.getChannel(v .. tostring(n))
     end
-    print('initChannels', inspect(result))
+    print(string.format('initChannels, n = %d', n), inspect(result))
     print('initChannels traceback', debug.traceback())
     return result
 end

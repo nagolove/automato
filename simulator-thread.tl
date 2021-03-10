@@ -401,7 +401,7 @@ local function emitCell(iter: number)
                 { 
                     pos = { x = 20, y = 20 }, 
                     wantdivide = 0,
-                    code = {'cross',}
+                    code = { 'wantdivide', 'cross',}
                 }
             )
         )
@@ -411,7 +411,7 @@ local function emitCell(iter: number)
                 { 
                     pos = { x = 21, y = 20 }, 
                     wantdivide = 0,
-                    code = {'cross',}
+                    code = { 'wantdivide', 'cross',}
                 }
             )
         )
@@ -685,37 +685,33 @@ function commands.insertcell()
 end
 
 function commands.readstate()
-    local s: string = channels.state:demand() as string
-    local idx = 0
-    local intSize = 4
+    local state: string = channels.state:demand() as string
+    local ok, store: boolean, any = serpent.load(state)
+    print('commands.readstate()', inspect(store))
+    if not ok then
+        print("commands.readstate() could'not load state")
+        return
+    end
 
-    local len = struct.unpack('<d', s) as number
-    local dumped = string.sub(s, idx + intSize, idx + intSize + len)
-    love.filesystem.write('dump1.txt', dumped)
+    cells = (store as {string:string}).cells as Cells
+    meals = (store as {string:string}).meals as {Cell}
+    schema = (store as {string:string}).schema as MtSchema
+    istate = (store as {string:string}).istate as CommonSetup
+    istate.rng = love.math.newRandomGenerator()
+    istate.rng:setState(istate.rngState)
 end
 
 function commands.writestate()
     print('commands.writestate')
 
-    local opts = {fatal = true}
-    local writeList: {any} = {}
+    local store = {
+        cells = cells,
+        meals = meals,
+        schema = schema,
+        istate = istate,
+    }
 
-    -- XXX важен порядок строк в табличке writeList при чтении readState
-    table.insert(writeList, cells)
-    table.insert(writeList, meals)
-    table.insert(writeList, schema)
-    table.insert(writeList, istate)
-
-    local result = {}
-    for _, v in ipairs(writeList) do
-        local dump = serpent.dump(v, opts)
-        ---- записываю 4 байта - длина строки
-        local lenMarker = struct.pack("<d", #dump)
-        table.insert(result, lenMarker)
-        table.insert(result, dump)
-    end
-
-    local data = table.concat(result)
+    local data = serpent.dump(store, {fatal = true})
     love.filesystem.write('data.txt', data)
     channels.state:push(data)
 end
@@ -858,6 +854,17 @@ local function main()
                 step()
                 __step_done = true
             end
+
+            channels.drawlist_fn:performAtomic(function(channel: love.thread.Channel)
+                for _ = 1, 100 do
+                    local node: DrawNode = {}
+                    node.x = rng:random(1, 100)
+                    node.y = rng:random(1, 100)
+                    node.color = {0.5, 0.7, 0.2}
+                    channel:push(node)
+                end
+            end)
+
             pushDrawList()
             --print('main loop, __step_done', __step_done)
             --print('checkStep, doStep', checkStep, doStep)
