@@ -508,11 +508,14 @@ end
 
 function actions.cross(cell)
    local res = true
-   cell.some1 = 1
+
+
+
 
    if cell.wantdivide and cell.wantdivide == 0 and cell.energy and cell.energy > 0 then
-      cell.some1 = 1
 
+
+      (cell).some1 = 1
 
 
 
