@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local pairs = _tl_compat and _tl_compat.pairs or pairs; local table = _tl_compat and _tl_compat.table or table; require("types")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local math = _tl_compat and _tl_compat.math or math; local pairs = _tl_compat and _tl_compat.pairs or pairs; local table = _tl_compat and _tl_compat.table or table; require("types")
 require("common")
 
 local inspect = require("inspect")
@@ -23,8 +23,8 @@ print("codeValues", inspect(codeValues))
 function genCode()
    local code = {}
    local len = #codeValues
-   for i = 1, istate.codeLen do
-      table.insert(code, codeValues[rng:random(1, len)])
+   for _ = 1, istate.codeLen do
+      table.insert(code, codeValues[math.floor(rng:random(1, len))])
    end
    return code
 end
@@ -36,12 +36,12 @@ function Cell.new(t)
    if t.pos and t.pos.x then
       self.pos.x = t.pos.x
    else
-      self.pos.x = istate.rng:random(1, istate.gridSize)
+      self.pos.x = math.floor(istate.rng:random(1, istate.gridSize))
    end
    if t.pos and t.pos.y then
       self.pos.y = t.pos.y
    else
-      self.pos.y = istate.rng:random(1, istate.gridSize)
+      self.pos.y = math.floor(istate.rng:random(1, istate.gridSize))
    end
    if t.wantdivide then
       self.wantdivide = t.wantdivide

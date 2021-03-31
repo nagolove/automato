@@ -3,7 +3,7 @@ require("mtschemes")
 require("love")
 require("common")
 
-local marshal = require('marshal')
+
 local inspect = require("inspect")
 local serpent = require("serpent")
 
@@ -17,7 +17,7 @@ local gridSize
 local actions = {}
 
 
-local ENERGY = 10
+local ENERGY = 10.
 
 
 local initCell
@@ -454,37 +454,39 @@ end
 
 
 
-local function findFreePos4(x, y)
-   local pos = {}
-   listNeighbours4(x, y,
-   function(xp, yp, value)
-      if (not value.energy) and (not value.food) then
-         pos.x = xp
-         pos.y = yp
-         return false
-      end
-      return true
-   end)
-   return pos.x ~= nil and pos.y ~= nil, pos
-end
 
 
 
 
 
-local function findFreePos8(x, y)
-   local pos = {}
-   listNeighbours8(x, y,
-   function(xp, yp, value)
-      if (not value.energy) and (not value.food) then
-         pos.x = xp
-         pos.y = yp
-         return false
-      end
-      return true
-   end)
-   return pos.x ~= nil and pos.y ~= nil, pos
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 function actions.wantdivide(cell)

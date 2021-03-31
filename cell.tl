@@ -23,8 +23,8 @@ print("codeValues", inspect(codeValues))
 function genCode(): {string}
     local code = {}
     local len = #codeValues
-    for i = 1, istate.codeLen do
-        table.insert(code, codeValues[rng:random(1, len)])
+    for _ = 1, istate.codeLen do
+        table.insert(code, codeValues[math.floor(rng:random(1, len))])
     end
     return code
 end
@@ -36,12 +36,12 @@ function Cell.new(t: CellSetup): Cell
     if t.pos and t.pos.x then
         self.pos.x = t.pos.x
     else
-        self.pos.x = istate.rng:random(1, istate.gridSize)
+        self.pos.x = math.floor(istate.rng:random(1, istate.gridSize))
     end
     if t.pos and t.pos.y then
         self.pos.y = t.pos.y
     else
-        self.pos.y = istate.rng:random(1, istate.gridSize)
+        self.pos.y = math.floor(istate.rng:random(1, istate.gridSize))
     end
     if t.wantdivide then
         self.wantdivide = t.wantdivide

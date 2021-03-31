@@ -13,13 +13,12 @@ love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 
 require("mobdebug").start()
 
-local threadNum: number = ... as number
+local threadNum: integer = ... as integer
 print("thread", threadNum, "is running")
 
 local inspect = require "inspect"
 local serpent = require "serpent"
-local struct = require "struct"
-local maxDataChannelCount = 10
+--local maxDataChannelCount = 10
 --local randseed: number = love.timer.getTime()
 local secondDelay = 1
 local rng: love.math.RandomGenerator
@@ -33,11 +32,11 @@ local cells: Cells = {}
 -- Grid на основе C-массива 2Д
 local grid: Grid = {}
 -- размер сетки
-local gridSize: number
+local gridSize: integer
 -- сколько клеток создавать корутиной в начальном впрыске
-local cellsNum: number
+local cellsNum: integer
 -- текущая итерация
-local iter: number = 0
+local iter: integer = 0
 -- таблица общей статистики
 local stat: Statistic = {}
 -- список еды
@@ -47,7 +46,7 @@ local stop = false
 -- схема многопоточности 
 local schema: MtSchema
 -- кортеж координат для сдвига площадки рисования одного потока
-local drawCoefficients: {number, number}
+local drawCoefficients: {integer, integer}
 -- шагнуть при шаговом режиме
 local doStep = false
 -- шаговый или продолжительный режим
@@ -57,7 +56,7 @@ local commands: ThreadCommandsStore = {}
 -- номер последней итерации на которой создавались клетки
 local lastEmitIter = 0
 -- через сколько итераций спустя создавать клетку
-local emitInvSpeed = 100
+local emitInvSpeed = 100.
 
 local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
@@ -98,9 +97,9 @@ local experimentCoro: thread
 -- пустые таблицы {}
 function getFalseGrid(): Grid
   local res = {}
-  for i = 1, gridSize do
+  for _ = 1, gridSize do
     local t = {}
-    for j = 1, gridSize do
+    for _ = 1, gridSize do
       t[#t + 1] = {}
     end
     res[#res + 1] = t
@@ -120,10 +119,10 @@ end
 -- не работает нормально. Нужно отсылал с некоторой периодичностью в виде 
 -- сообщений в основную нить
 function gatherStatistic(cells: {Cell})
-    local maxEnergy = 0
+    local maxEnergy = 0.0
     --local minEnergy = istate.initialEnergy[2]
-    local minEnergy = 100000000
-    local sumEnergy = 0
+    local minEnergy = 100000000.0
+    local sumEnergy = 0.0
     local square = gridSize * gridSize
     local i = 0
 
@@ -167,25 +166,26 @@ end
 
 
 function emitFoodInRandomPoint(): boolean, Cell
-  local x = rng:random(1, gridSize)
-  local y = rng:random(1, gridSize)
-  local t = grid[x][y]
-  -- если клетка пустая
-  if not t.energy then
-    local self = {
-      food = true,
-      pos = {x = x, y = y}
-    }
-    table.insert(meals, self)
-    grid[x][y] = self
-    return true, grid[x][y]
-  else
-    return false, grid[x][y]
-  end
+    --XXX проверить - может ли x достигать gridSize
+    local x = math.floor(rng:random(1, gridSize))
+    local y = math.floor(rng:random(1, gridSize))
+    local t = grid[x][y]
+    -- если клетка пустая
+    if not t.energy then
+        local self = {
+            food = true,
+            pos = {x = x, y = y}
+        }
+        table.insert(meals, self)
+        grid[x][y] = self
+        return true, grid[x][y]
+    else
+        return false, grid[x][y]
+    end
 end
 
 local foodGenerationSpeed = 0.1
-local accum = 0
+local accum = 0.
 
 --[[
 Сделать возможность генерации пищи не на каждом шагу симуляции
@@ -200,7 +200,7 @@ function emitFood(_: number)
     while true do
         accum = accum + foodGenerationSpeed
 
-        for i = 0, math.floor(math.log(iter)) do
+        for _ = 0, math.floor(math.log(iter)) do
             --print(i, accum)
 
             emitFoodInRandomPoint()
@@ -288,8 +288,8 @@ end
 --]]
 
 local function genPosition(): number, number
-    local cx = 0
-    local cy = 0
+    local cx = 0.
+    local cy = 0.
     local i, limit = 0, 1000
     while true do
         cx = rng:random(1, istate.gridSize)
@@ -299,8 +299,8 @@ local function genPosition(): number, number
             istate.spreadPoint.x, istate.spreadPoint.y
         )
         local ex1 = len < istate.spreadRad
-        local ex2 = grid[cx][cy].food == nil
-        local ex3 = grid[cx][cy].energy == nil;
+        local ex2 = grid[math.floor(cx)][math.floor(cy)].food == nil
+        local ex3 = grid[math.floor(cx)][math.floor(cy)].energy == nil;
         if ex1 and ex2 and ex3 then
             return cx, cy
         end
@@ -316,7 +316,7 @@ end
 --[[
 Пока только линейный рост колонии
 --]]
-local function emitCell(iter: number)
+local function emitCell(_: number)
     --[[
     print("cellsNum", cellsNum)
     -- не создается нужное количество клеток
@@ -465,7 +465,7 @@ local function experiment()
     -- вставки клеток через сообщение insertcell
     while true do
 
-        local ok, msg: boolean, string = pcall(function()
+        local emitok, msg: boolean, string = pcall(function()
             -- создание клеток
             if emitCellCoro and not coroutine.resume(emitCellCoro, iter) then
                 emitCellCoro = nil
@@ -475,7 +475,7 @@ local function experiment()
                 emitFoodCoro = nil
             end
         end)
-        if not ok then
+        if not emitok then
             print('emit pcall error ' .. msg)
         end
 
@@ -572,12 +572,12 @@ end
 function commands.getobject()
     --local x, y: number, number = channels.msg:pop() as number, channels.msg:pop() as number
     local x, y: number, number
-    x = channels.object_w:pop() as number
-    y = channels.object_w:pop() as number
+    x = channels.object_w:pop() as integer
+    y = channels.object_w:pop() as integer
     print("commands.getobject", x, y)
     local ok, errmsg: boolean, string = pcall(function()
         if grid then
-            local cell = grid[x][y]
+            local cell = grid[math.floor(x)][math.floor(y)]
             if cell then
                 --requestChan:push(serpent.dump(cell))
                 local dump = serpent.dump(cell)
@@ -623,7 +623,7 @@ end
 
 function commands.isalive()
     --local x, y = channels.msg:pop() as number, channels.msg:pop() as number  
-    local x, y = channels.alive:pop() as number, channels.alive:pop() as number  
+    local x, y = channels.alive:pop() as integer, channels.alive:pop() as integer  
     --if not x or not y or not threadNum then
     if type(x) ~= 'number' or type(y) ~= 'number' then
         assert(string.format("x, y " ..  x .. " " .. y .. " threadNum " .. threadNum))
@@ -640,7 +640,7 @@ function commands.isalive()
         --assert(type(gridSize) == 'number')
 
         if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
-            local cell = grid[x][y]
+            local cell = grid[math.floor(x)][math.floor(y)]
             writelog(string.format("cell %s", inspect(cell)))
             --local state: boolean = cell.energy and cell.energy > 0
             local state = false

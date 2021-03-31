@@ -80,9 +80,9 @@ function VirtualMachine.new(bytecode)
 end
 
 function VirtualMachine:run()
-   local ip = 1
+
    while true do
-      local exp = self.code[ip]
+
    end
 end
 

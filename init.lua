@@ -27,7 +27,7 @@ local camera = require("camera")
 
 local inspect = require("inspect")
 local mtschemes = require("mtschemes")
-local prof = require("jprof")
+
 local sim = require("simulator")
 local startInStepMode = false
 local binds = require("binds")
@@ -357,13 +357,17 @@ local maxEnergy = 100000
 local function roundSettings()
    local status
 
+   local function wrap(n, status)
+      return math.floor(n), status
+   end
+
    commonSetup.nofood = imgui.Checkbox(i18n("nofood"), commonSetup.nofood)
 
    commonSetup.initialEnergy[1], status = imgui.SliderInt('minimum energy', commonSetup.initialEnergy[1], 0, maxEnergy)
    commonSetup.initialEnergy[2], status = imgui.SliderInt('maximum energy', commonSetup.initialEnergy[2], 0, maxEnergy)
 
-   commonSetup.cellsNum, status = imgui.SliderFloat(i18n("initpopulation"), commonSetup.cellsNum, 0, maxCellsNum)
-   commonSetup.cellsNum = math.ceil(commonSetup.cellsNum)
+   commonSetup.cellsNum, status = wrap(imgui.SliderFloat(i18n("initpopulation"), commonSetup.cellsNum, 0, maxCellsNum))
+
 
    commonSetup.emitInvSpeed, status = imgui.SliderFloat(i18n("invemmspeed"), commonSetup.emitInvSpeed, 0, 200)
    commonSetup.emitInvSpeed = math.ceil(commonSetup.emitInvSpeed)
@@ -372,13 +376,13 @@ local function roundSettings()
 
    commonSetup.foodenergy, status = imgui.SliderFloat(i18n("foodenergy"), commonSetup.foodenergy, 0, 10)
 
-   commonSetup.gridSize, status = imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, 10, 100)
+   commonSetup.gridSize, status = wrap(imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, 10, 100))
    if simulatorRender and status then
       simulatorRender:cameraToCenter()
       simulatorRender:draw()
    end
 
-   commonSetup.threadCount, status = imgui.SliderInt(i18n("threadcount"), commonSetup.threadCount, 1, 9)
+   commonSetup.threadCount, status = wrap(imgui.SliderInt(i18n("threadcount"), commonSetup.threadCount, 1, 9))
    commonSetup.threadCount = checkValidThreadCount(commonSetup.threadCount)
    if simulatorRender and status then
       simulatorRender:cameraToCenter()
@@ -409,7 +413,7 @@ local function stop()
 end
 
 local drFloat = 10.9
-local drFloats = { 10.9, 0.1 }
+
 
 local function drawLog()
 
@@ -442,8 +446,8 @@ local function drawSim()
    end
    num, status = imgui.Combo("preset", selectedPreset, presetsNamesByZeros, #presetsNames)
    if status then
-      selectedPreset = num
-      activatePreset(num + 1)
+      selectedPreset = math.modf(num)
+      activatePreset((num + 1.0))
    end
 
    imgui.Spacing()
@@ -479,7 +483,7 @@ local function drawSim()
    num, status = imgui.Combo('state', selectedState, statesByZeros, #states)
 
    if status then
-      selectedState = num
+      selectedState = math.floor(num)
    end
    if imgui.Button(i18n("readstate")) then
       readState()
@@ -505,8 +509,8 @@ local function drawSim()
    drFloat, status = imgui.DragFloat('drug', drFloat, 1, 0, 100)
    drFloat, status = imgui.SliderAngle('resonator', drFloat, 0, 360)
 
-   local mx, my = love.mouse.getPosition()
-   local x, y, w, h = simulatorRender:getRect()
+
+
 
 
    if underCursor then
@@ -801,7 +805,7 @@ local function init()
    love.filesystem.createDirectory('snaphots')
    loadLocales()
    local mx, my = love.mouse.getPosition()
-   underCursor = { x = mx, y = my }
+   underCursor = { x = math.floor(mx), y = math.floor(my) }
 
    cam = camera.new()
    simulatorRender = SimulatorRender.new(commonSetup, cam)

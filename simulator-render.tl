@@ -6,7 +6,7 @@ require "common"
 require "types"
 
 local gr = love.graphics
-local inspect = require "inspect"
+--local inspect = require "inspect"
 --local keyconfig = require "keyconfig"
 local mtschemes = require "mtschemes"
 --local prof = require "jprof"
@@ -49,7 +49,7 @@ local SimulatorRender_mt: metatable<SimulatorRender> = {
 -- размер клетки поля суб канваса в пикселях
 --local pixSize: number = 20
 --local pixSize: number = 160
-local pixSize: number = 10
+local pixSize: integer = 10
 -- ширина линий сетки
 local gridLineWidth = 3
 -- во сколько раз полотно больше размера картинки
@@ -156,7 +156,7 @@ function SimulatorRender:bakeCanvas()
     gr.setCanvas()
 end
 
-local testing = require 'testing'
+--local testing = require 'testing'
 
 function SimulatorRender:draw()
     if not self.enabled then

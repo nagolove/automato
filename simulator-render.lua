@@ -6,7 +6,7 @@ require("common")
 require("types")
 
 local gr = love.graphics
-local inspect = require("inspect")
+
 
 local mtschemes = require("mtschemes")
 
@@ -156,7 +156,7 @@ function SimulatorRender:bakeCanvas()
    gr.setCanvas()
 end
 
-local testing = require('testing')
+
 
 function SimulatorRender:draw()
    if not self.enabled then

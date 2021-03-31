@@ -2,10 +2,10 @@ global type MtSchema = record
     --[[
     left, right, up, down
     ]]
-    l: number
-    r: number
-    u: number
-    d: number
-    draw: {number, number}
+    l: integer
+    r: integer
+    u: integer
+    d: integer
+    draw: {integer, integer}
 end
 return {MtSchema}

@@ -80,9 +80,9 @@ function VirtualMachine.new(bytecode: {Expression}): VirtualMachine
 end
 
 function VirtualMachine:run(): VirtualMachine.ErrorCode, any...
-    local ip = 1
+    --local ip = 1
     while true do
-        local exp = self.code[ip]
+        --local exp = self.code[ip]
     end
 end
 

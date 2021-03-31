@@ -5,14 +5,14 @@ require "mtschemes"
 local inspect = require "inspect"
 
 global type Pos = record
-    x: number
-    y: number
+    x: integer
+    y: integer
 end
 
 global type Cell = record
     color: {number}
     pos: Pos
-    ip: number
+    ip: integer
     energy: number
     code: {string}
     moves: {number} -- массив предыдущих положений клетки
@@ -32,15 +32,15 @@ global type CellActions = {string: function(Cell): boolean}
 
 global type CommonSetup = record
     -- количество потоков
-    threadCount: number
+    threadCount: integer
     -- размер сетки
-    gridSize: number
+    gridSize: integer
     -- максимальное количество клеток
-    cellsNum: number
+    cellsNum: integer
     -- разброс границы энергии клетки при создании, массив двух элементов
     initialEnergy: {number, number}
     -- длина кода генерируемого новой клетке
-    codeLen: number
+    codeLen: integer
     -- обновлять-ли клетки еды
     nofood: boolean
     -- на сколько уменьшается энергия клетки
@@ -82,9 +82,9 @@ global type GetGridFunction = function(): Grid
 global type InitCellFunction = function(any): Cell
 
 global type CellActionsInit = record
-    threadNum: number
+    threadNum: integer
     getGrid: GetGridFunction
-    gridSize: number
+    gridSize: integer
     initCell: InitCellFunction
     schema: MtSchema
     popCommand: function
@@ -151,7 +151,8 @@ global type Statistic = record
     --isalive: boolean
 end
 
-global formatMods<const>: {Statistic.Types:string} = {
+--global formatMods<const>: {Statistic.Types:string} = {
+global formatMods: {Statistic.Types:string} = {
     ['allEated'] = '%d',
     ['maxEnergy'] = '%d',
     ['minEnergy'] = '%d',
@@ -233,7 +234,7 @@ end
 
 global type Channels = {string: love.thread.Channel}
 
-global ChannelsTypes<const>: {string} = {
+global ChannelsTypes: {string} = {
     -- основная нить: запись настроек инициализации
     -- рабочая нить: чтение настроек инициализации
     'setup',
@@ -309,11 +310,11 @@ global type Simulator = record
     type Preset = record
         name: string
         nofood: boolean
-        cellsNum: number
+        cellsNum: integer
         denergy: number
         foodenergy: number
-        gridSize: number
-        threadCount: number
+        gridSize: integer
+        threadCount: integer
     end
 
     -- создать и запустить
@@ -340,12 +341,12 @@ global type Simulator = record
     --getDrawLists : function(query: function(Cell): boolean): {DrawNode}
 
     -- вернуть номер нити обрабатывающей клетку с индексом x, y
-    findThreadByPos: function(x: number, y: number): number
-    getObject : function(number, number): Cell
+    findThreadByPos: function(x: integer, y: integer): integer
+    getObject : function(x: integer, y: integer): Cell
     step : function()
     getStatistic : function(): {Statistic}
-    getGridSize : function(): number
-    getSchema : function()
+    getGridSize : function(): integer
+    getSchema : function(): {MtSchema}
     -- время симуляции в секундах
     getUptime: function(): number
 end

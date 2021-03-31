@@ -18,8 +18,7 @@ print("thread", threadNum, "is running")
 
 local inspect = require("inspect")
 local serpent = require("serpent")
-local struct = require("struct")
-local maxDataChannelCount = 10
+
 
 local secondDelay = 1
 local rng
@@ -57,7 +56,7 @@ local commands = {}
 
 local lastEmitIter = 0
 
-local emitInvSpeed = 100
+local emitInvSpeed = 100.
 
 local logName = string.format("thread%d.txt", threadNum)
 print("logName", logName)
@@ -98,9 +97,9 @@ local experimentCoro
 
 function getFalseGrid()
    local res = {}
-   for i = 1, gridSize do
+   for _ = 1, gridSize do
       local t = {}
-      for j = 1, gridSize do
+      for _ = 1, gridSize do
          t[#t + 1] = {}
       end
       res[#res + 1] = t
@@ -120,10 +119,10 @@ end
 
 
 function gatherStatistic(cells)
-   local maxEnergy = 0
+   local maxEnergy = 0.0
 
-   local minEnergy = 100000000
-   local sumEnergy = 0
+   local minEnergy = 100000000.0
+   local sumEnergy = 0.0
    local square = gridSize * gridSize
    local i = 0
 
@@ -167,8 +166,9 @@ end
 
 
 function emitFoodInRandomPoint()
-   local x = rng:random(1, gridSize)
-   local y = rng:random(1, gridSize)
+
+   local x = math.floor(rng:random(1, gridSize))
+   local y = math.floor(rng:random(1, gridSize))
    local t = grid[x][y]
 
    if not t.energy then
@@ -185,7 +185,7 @@ function emitFoodInRandomPoint()
 end
 
 local foodGenerationSpeed = 0.1
-local accum = 0
+local accum = 0.
 
 
 
@@ -200,7 +200,7 @@ function emitFood(_)
    while true do
       accum = accum + foodGenerationSpeed
 
-      for i = 0, math.floor(math.log(iter)) do
+      for _ = 0, math.floor(math.log(iter)) do
 
 
          emitFoodInRandomPoint()
@@ -288,8 +288,8 @@ end
 
 
 local function genPosition()
-   local cx = 0
-   local cy = 0
+   local cx = 0.
+   local cy = 0.
    local i, limit = 0, 1000
    while true do
       cx = rng:random(1, istate.gridSize)
@@ -299,8 +299,8 @@ local function genPosition()
       istate.spreadPoint.x, istate.spreadPoint.y)
 
       local ex1 = len < istate.spreadRad
-      local ex2 = grid[cx][cy].food == nil
-      local ex3 = grid[cx][cy].energy == nil;
+      local ex2 = grid[math.floor(cx)][math.floor(cy)].food == nil
+      local ex3 = grid[math.floor(cx)][math.floor(cy)].energy == nil;
       if ex1 and ex2 and ex3 then
          return cx, cy
       end
@@ -316,7 +316,7 @@ end
 
 
 
-local function emitCell(iter)
+local function emitCell(_)
 
 
 
@@ -465,7 +465,7 @@ local function experiment()
 
    while true do
 
-      local ok, msg = pcall(function()
+      local emitok, msg = pcall(function()
 
          if emitCellCoro and not coroutine.resume(emitCellCoro, iter) then
             emitCellCoro = nil
@@ -475,7 +475,7 @@ local function experiment()
             emitFoodCoro = nil
          end
       end)
-      if not ok then
+      if not emitok then
          print('emit pcall error ' .. msg)
       end
 
@@ -577,7 +577,7 @@ function commands.getobject()
    print("commands.getobject", x, y)
    local ok, errmsg = pcall(function()
       if grid then
-         local cell = grid[x][y]
+         local cell = grid[math.floor(x)][math.floor(y)]
          if cell then
 
             local dump = serpent.dump(cell)
@@ -640,7 +640,7 @@ function commands.isalive()
 
 
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
-         local cell = grid[x][y]
+         local cell = grid[math.floor(x)][math.floor(y)]
          writelog(string.format("cell %s", inspect(cell)))
 
          local state = false

@@ -18,14 +18,14 @@ require "types"
 require "common"
 
 local infoTimer: Timer = timer.new()
-local gridSize: number
+local gridSize: integer
 local mtschema: {MtSchema}
 local starttime: number = 0
 local statistic: {Statistic} = {}
 local threads: {love.thread.Thread} = {}
 local statGatherDelay = 0.1
 -- количество потоков
-local threadCount: number = -1
+local threadCount: integer = -1
 local mode: SimulatorMode = "stop"
 local channels: {Channels} = {}
 --[[
@@ -110,14 +110,14 @@ local function pushMsg2Threads(t: any)
     print('pushMsg2Threads()', tostring(t))
     for i = 1, threadCount do
         print("send to 'msg" .. i .. "'")
-        channels[i].msg:push(t)
+        channels[i as integer].msg:push(t)
     end
 end
 
 local function clearChannels()
     print('clearChannels')
     for i = 1, threadCount do
-        for _, ch in pairs(channels[i]) do
+        for _, ch in pairs(channels[i as integer]) do
             ch:clear()
         end
     end
@@ -139,9 +139,9 @@ local function createThreads(
         print("Channels for thread", i)
         table.insert(channels, initChannels(i))
 
-        channels[i].setup:performAtomic(function(channel: love.thread.Channel)
+        channels[i as integer].setup:performAtomic(function(channel: love.thread.Channel)
             channel:push(commonSetup)
-            channel:push(serpent.dump(mtschema[i]))
+            channel:push(serpent.dump(mtschema[i as integer]))
         end)
         -- создание рабочей нити
         local th: love.thread.Thread = love.thread.newThread("scenes/automato/simulator-thread.lua")
@@ -249,7 +249,7 @@ end
 
 -- возвращает номер нити многопоточной схемы по целочисленным координатам 
 -- клетки. Отсчет с левого верхнего угла
-function Simulator.findThreadByPos(x: number, y: number): number
+function Simulator.findThreadByPos(x: integer, y: integer): integer
     local fract: number
     local _: any
     _, fract = math.modf(x)
@@ -278,7 +278,7 @@ end
 -- здеcь нужно определять в какой из потоков отправить запрос используя каналы
 -- msg1, msg2, ...
 -- функция - запрос для визуального отладчика
-function Simulator.getObject(x: number, y: number): Cell
+function Simulator.getObject(x: integer, y: integer): Cell
     local threadNum = Simulator.findThreadByPos(x, y)
 
     if threadNum == -1 then
@@ -382,7 +382,7 @@ function Simulator.update(dt: number)
     infoTimer:update(dt)
 end
 
-function Simulator.getGridSize(): number
+function Simulator.getGridSize(): integer
     return gridSize
 end
 
@@ -492,7 +492,7 @@ function Simulator.readState(data: string): boolean
     end
 
     --threadCount = commonSetup.threadCount
-    threadCount = tonumber(store.threadCount)
+    threadCount = tonumber(store.threadCount) as integer
     print("threadCount", threadCount)
 
     --gridSize = commonSetup.gridSize
@@ -520,7 +520,7 @@ function Simulator.readState(data: string): boolean
         setup.threadCount, 
         mtschema, 
         setup,
-        function(_: love.thread.Thread, i: number)
+        function(_: love.thread.Thread, i: integer)
             channels[i].state:performAtomic(
                 function(channel: love.thread.Channel)
                     channel:clear()

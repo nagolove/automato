@@ -3,7 +3,7 @@ require "mtschemes"
 require "love"
 require "common"
 
-local marshal = require 'marshal'
+--local marshal = require 'marshal'
 local inspect = require "inspect"
 local serpent = require "serpent"
 
@@ -11,29 +11,29 @@ local serpent = require "serpent"
 local getGrid: GetGridFunction
 
 -- размер поля
-local gridSize: number
+local gridSize: integer
 
 -- табличка с действиями клетки
 local actions = {}
 
 -- количество энергии прибавляемое за одну съеденную ячейку "еды"
-local ENERGY = 10
+local ENERGY = 10.
 
 -- функция-конструктор для создания клетки по координатам x, y
 local initCell: InitCellFunction
 
 -- счетчик 
-local allEated: number = 0
+local allEated: integer = 0
 
 -- табличка с напралением передачи инфы о клетках выщедщих за границы поля
 -- при работе в несколько потоков
 local schema: MtSchema
 
 -- текущий номер потока
-local curThreadNum: number
+local curThreadNum: integer
 
 --local function isAlive(x: number, y: number, threadNum: number|nil): boolean
-local function isAlive(x: number, y: number): boolean
+local function isAlive(x: integer, y: integer): boolean
     local t = getGrid()[x][y]
     return t.energy and t.energy > 0
 end
@@ -70,7 +70,7 @@ end
 local requestThreadDemandTimeout = 0.02
 
 -- проверяет жива ли клетка в определенном потоке
-local function isAliveNeighbours(x: number, y: number, threadNum: number): boolean
+local function isAliveNeighbours(x: integer, y: integer, threadNum: integer): boolean
     if not threadNum then
         error("no threadNum")
     end
@@ -297,13 +297,13 @@ end
 
 --]]
 
-local around4: {{number}} = {
+local around4: {{integer}} = {
               {0, -1},
     {-1,  0},          {1, 0},
               {0,  1},
 }
 
-local around8: {{number}} = {
+local around8: {{integer}} = {
     {-1, -1}, {0, -1}, {1, -1},
     {-1,  0},          {1, 0},
     {-1,  1}, {0,  1}, {1, 1},
@@ -374,7 +374,7 @@ function actions.eat8move(cell: Cell): boolean
     return res
 end
 
-global type NeighboursCallback = function(number, number, Cell): boolean
+global type NeighboursCallback = function(integer, integer, Cell): boolean
 
 -- FIXME поиск должен рандоминизировать начальное положение что-бы 
 -- исключить влияние порядка обхода клеток.
@@ -385,7 +385,7 @@ global type NeighboursCallback = function(number, number, Cell): boolean
 -- Если коллбэк функция возвращает false, то дальнейшие вызовы прерываются, 
 -- управление возвращается.
 --
-local function listNeighbours8(x: number, y: number, cb: NeighboursCallback)
+local function listNeighbours8(x: integer, y: integer, cb: NeighboursCallback)
     for _, displacement in ipairs(around8) do
         local nx, ny = x + displacement[1], y + displacement[2]
         if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
@@ -396,7 +396,7 @@ local function listNeighbours8(x: number, y: number, cb: NeighboursCallback)
     end
 end
 
-local function listNeighbours4(x: number, y: number, cb: NeighboursCallback)
+local function listNeighbours4(x: integer, y: integer, cb: NeighboursCallback)
     for _, displacement in ipairs(around4) do
         local nx, ny = x + displacement[1], y + displacement[2]
         if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
@@ -454,10 +454,11 @@ end
 --]]
 --test_mixCode()
 
-local function findFreePos4(x: number, y: number): boolean, Pos
+--[[
+local function findFreePos4(x: integer, y: integer): boolean, Pos
     local pos: Pos = {}
     listNeighbours4(x, y,
-    function(xp: number, yp: number, value: Cell): boolean
+    function(xp: integer, yp: integer, value: Cell): boolean
         if (not value.energy) and (not value.food) then
             pos.x = xp
             pos.y = yp
@@ -472,10 +473,11 @@ end
 -- возвращает true и координаты если найдена пустая клетка вокруг данной 
 -- иначе false
 -- XXX возвращает true и пустую позицию
-local function findFreePos8(x: number, y: number): boolean, Pos
+--[[
+local function findFreePos8(x: integer, y: integer): boolean, Pos
     local pos: Pos = {}
     listNeighbours8(x, y,
-    function(xp: number, yp: number, value: Cell): boolean
+    function(xp: integer, yp: integer, value: Cell): boolean
         if (not value.energy) and (not value.food) then
             pos.x = xp
             pos.y = yp
