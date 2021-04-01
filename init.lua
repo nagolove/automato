@@ -5,7 +5,7 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 
 
 require("love")
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
+love.filesystem.setRequirePath("?.lua;?/init.lua;scenes/automato/?.lua")
 package.path = package.path .. ";scenes/automato/?.lua"
 require("common")
 require("imgui")
@@ -31,6 +31,7 @@ local mtschemes = require("mtschemes")
 local sim = require("simulator")
 local startInStepMode = false
 local binds = require("binds")
+print("package.path", package.path)
 local i18n = require("i18n")
 local profi = require("profi")
 local linesbufDelay = 1

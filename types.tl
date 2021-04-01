@@ -151,8 +151,8 @@ global type Statistic = record
     --isalive: boolean
 end
 
---global formatMods<const>: {Statistic.Types:string} = {
-global formatMods: {Statistic.Types:string} = {
+global formatMods<const>: {Statistic.Types:string} = {
+--global formatMods: {string: string} = {
     ['allEated'] = '%d',
     ['maxEnergy'] = '%d',
     ['minEnergy'] = '%d',
