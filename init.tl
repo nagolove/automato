@@ -5,7 +5,7 @@
 --]]
 
 require "love"
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
+love.filesystem.setRequirePath("?.lua;?/init.lua;scenes/automato/?.lua")
 package.path = package.path .. ";scenes/automato/?.lua"
 require "common"
 require "imgui"
@@ -17,6 +17,8 @@ local type ViewState = enum
     "sim"
     "graph"
 end
+
+local mem: {{number, {integer}}} = {}
 
 global PROF_CAPTURE = false
 
@@ -31,6 +33,7 @@ local mtschemes = require "mtschemes"
 local sim = require "simulator"
 local startInStepMode = false
 local binds = require "binds"
+print("package.path", package.path)
 local i18n = require "i18n"
 local profi = require "profi"
 local linesbufDelay = 1
@@ -457,6 +460,36 @@ local function drawSim()
     if mode == "stop" then
         roundSettings()
     end
+    if imgui.Button("collectgarbage") then
+        collectgarbage()
+    end
+    if imgui.Button("get 1GB RAM" .. string.format(" (usage %d mbytes)", (collectgarbage("count") as number)/ 1024)) then
+        local t: {number, {integer}} = {}
+        for _ = 1, 1000000 * 5 * 3 do
+            local k = math.random()
+            --for _ = 1, 10 do
+                --for _ = 1, 10 do
+                    --local value = math.sin(love.timer.getTime())
+                    ----print("value", value)
+                    --local r = math.random()
+                    --for _ = 1, 5 do 
+                        --k = k * math.pow(value, value) * r
+                    --end
+                --end
+            --end
+            table.insert(t, k)
+            --for k = 1, #mem do
+            --for i = 1, #mem do
+                --if mem[i] ~= 0. then
+                    --mem[i] = 2.0 / mem[i]
+                --end
+            --end
+        end
+        for j = 1, 100000 do
+            --table.insert(t[1][1], j)
+        end
+        mem[#mem + 1] = t
+    end
     if imgui.Button(i18n("start")) then
         start()
     end
@@ -527,6 +560,16 @@ local function drawBrief()
     imgui.End()
 end
 
+local function drawExperimental()
+    if imgui.Button("get 1GB RAM") then
+        local t = {}
+        for _ = 1, 100000 do
+            table.insert(t, 1)
+        end
+        --mem[#mem + 1] = t
+    end
+end
+
 local function drawui()
     imgui.StyleColorsLight()
 
@@ -536,6 +579,7 @@ local function drawui()
     drawSim()
     drawLog()
     drawBrief()
+    drawExperimental()
 
     if sim.isColonyDied() then
         --imgui.BeginPopupModal('Колония умерла')
