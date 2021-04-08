@@ -179,7 +179,7 @@ local function drawCellInfo(pos, cell)
             a = tostring(a)
          end
          msg = string.format(fmt, a)
-         printLog('drawCellInfo', msg)
+
 
          imgui.Text(k .. " " .. tostring(msg))
       end
@@ -266,7 +266,7 @@ local function printStat()
 
 
             local someText = "formatMods." .. k
-            printLog('someText', someText)
+
             imgui.Text(i18n(someText))
          end
 

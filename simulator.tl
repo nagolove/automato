@@ -66,7 +66,7 @@ local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
             end
         end
     else
-        printLog('extractDrawList() with nil channel')
+        --printLog('extractDrawList() with nil channel')
     end
     --prof.pop("extractDrawList")
 end
@@ -219,7 +219,7 @@ function Simulator.create(commonSetup: CommonSetup)
             else
                 t = channels[i].stat:peek() as Statistic
             end
-            printLog('channels[i].stat:getCount()', channels[i].stat:getCount())
+            --printLog('channels[i].stat:getCount()', channels[i].stat:getCount())
             if t then
                 table.insert(newstat, t)
             end
@@ -554,7 +554,7 @@ function Simulator.readState(data: string): boolean
             --else
                 --t = channels[i].stat:peek() as Statistic
             --end
-            print('channels[i].stat:getCount()', channels[i].stat:getCount())
+            --print('channels[i].stat:getCount()', channels[i].stat:getCount())
             if t then
                 table.insert(newstat, t)
             end

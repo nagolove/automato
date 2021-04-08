@@ -40,6 +40,7 @@ global record SimulatorRender
     canvas: love.graphics.Canvas
     cellCanvas: love.graphics.Canvas
     mealCanvas: gr.Canvas
+    gridCanvas: gr.Canvas
 end
 
 local SimulatorRender_mt: metatable<SimulatorRender> = {
@@ -84,13 +85,12 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
     self:computeGrid()
     printLog("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
 
-    self.canvas = gr.newCanvas(
-        self.fieldWidthPixels * canvasmultfactor, 
-        self.fieldHeightPixels * canvasmultfactor
-    )
+    local cw, ch = math.ceil(self.fieldWidthPixels * canvasmultfactor), math.ceil(self.fieldHeightPixels * canvasmultfactor)
+    self.gridCanvas = gr.newCanvas(cw, ch)
+    self.canvas = gr.newCanvas(cw, ch)
 
     clearCanvases(
-        { self.canvas, self.cellCanvas, self.mealCanvas },
+        { self.gridCanvas, self.canvas, self.cellCanvas, self.mealCanvas },
         { 0.5, 0, 0, 1}
     )
 
@@ -155,7 +155,8 @@ function SimulatorRender:bakeCanvas()
     --gr.clear{1, 1, 1, 1}
     gr.clear{0, 0, 0, 1}
     --self:drawGrid()
-    --self:drawCells()
+    gr.draw(self.gridCanvas as gr.Drawable)
+    self:drawCells()
     gr.setCanvas()
 end
 
@@ -202,17 +203,15 @@ end
 function SimulatorRender:update(_: number)
 end
 
-function SimulatorRender:prerender()
-    if not self.cellCanvas and not self.mealCanvas then
-        error("No cellCanvas created!")
-    end
-
+function SimulatorRender:prerenderMeal()
     gr.setCanvas(self.mealCanvas)
     gr.clear(0, 0, 0, 1)
     gr.setColor(mealcolor)
     gr.rectangle("fill", 0, 0, pixSize, pixSize)
     gr.setCanvas()
+end
 
+function SimulatorRender:prerenderCell()
     local tmpImage = gr.newImage("scenes/automato/cell.png") as gr.Texture
     local n = 2
     gr.setCanvas(self.cellCanvas)
@@ -225,11 +224,24 @@ function SimulatorRender:prerender()
         (self.cellCanvas as gr.Texture):getHeight() / tmpImage:getHeight()
     )
     gr.setCanvas()
-
     --gr.setCanvas(self.cellCanvas)
     --gr.setCanvas()
     self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas-1.png')
+end
 
+function SimulatorRender:prerenderGrid()
+    gr.setCanvas(self.gridCanvas)
+    self:drawGrid()
+    gr.setCanvas()
+end
+
+function SimulatorRender:prerender()
+    if not self.cellCanvas and not self.mealCanvas then
+        error("No cellCanvas created!")
+    end
+    self:prerenderMeal()
+    self:prerenderCell()
+    self:prerenderGrid()
 end
 
 function SimulatorRender:presentList(list: {DrawNode})

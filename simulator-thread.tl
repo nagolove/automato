@@ -569,14 +569,14 @@ function commands.getobject()
     local x, y: number, number
     x = channels.object_w:pop() as integer
     y = channels.object_w:pop() as integer
-    printLog("commands.getobject", x, y)
+    --printLog("commands.getobject", x, y)
     local ok, errmsg: boolean, string = pcall(function()
         if grid then
             local cell = grid[math.floor(x)][math.floor(y)]
             if cell then
                 --requestChan:push(serpent.dump(cell))
                 local dump = serpent.dump(cell)
-                printLog("dump", dump)
+                --printLog("dump", dump)
                 channels.object_r:push(dump)
             end
         end

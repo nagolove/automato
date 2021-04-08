@@ -66,7 +66,7 @@ local function extractDrawList(list, channel)
          end
       end
    else
-      printLog('extractDrawList() with nil channel')
+
    end
 
 end
@@ -219,7 +219,7 @@ function Simulator.create(commonSetup)
          else
             t = channels[i].stat:peek()
          end
-         printLog('channels[i].stat:getCount()', channels[i].stat:getCount())
+
          if t then
             table.insert(newstat, t)
          end
@@ -554,7 +554,7 @@ function Simulator.readState(data)
 
 
 
-         print('channels[i].stat:getCount()', channels[i].stat:getCount())
+
          if t then
             table.insert(newstat, t)
          end

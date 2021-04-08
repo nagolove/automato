@@ -179,7 +179,7 @@ local function drawCellInfo(pos: Pos, cell: Cell)
                 a = tostring(a)
             end
             msg = string.format(fmt, a)
-            printLog('drawCellInfo', msg)
+            --printLog('drawCellInfo', msg)
             --imgui.LabelText(k as string, tostring(msg))
             imgui.Text(k as string .. " " .. tostring(msg))
         end
@@ -266,7 +266,7 @@ local function printStat()
                 --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
                 --print(k, v)
                 local someText = "formatMods." .. k as Statistic.Types
-                printLog('someText', someText)
+                --printLog('someText', someText)
                 imgui.Text(i18n(someText))
             end
             --print('CollapsingHeader', r1, r2)
