@@ -1,15 +1,17 @@
+require "log"
+
 local inspect = require "inspect"
 local serpent = require "serpent"
-local struct = require "struct"
 local timer = require "Timer"
-local marshal = require 'marshal'
+--local struct = require "struct"
+--local marshal = require 'marshal'
 
 --local profi = require "profi"
 --profi:start()
 
 --local tabular = require "tabular"
 package.path = "./scenes/automato/?.lua;" .. package.path
-print("package.path", package.path)
+printLog("package.path", package.path)
 
 require "log"
 require "love"
@@ -17,6 +19,7 @@ require "mtschemes"
 require "types"
 require "common"
 
+--local prof = require "jprof"
 local infoTimer: Timer = timer.new()
 local gridSize: integer
 local mtschema: {MtSchema}
@@ -36,6 +39,7 @@ local setup: CommonSetup
 local colonyDied = false
 
 local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
+    --prof.push("extractDrawList")
     if channel then
         local sublist: {DrawNode}
 
@@ -62,12 +66,13 @@ local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
             end
         end
     else
-        print('extractDrawList() with nil channel')
+        printLog('extractDrawList() with nil channel')
     end
+    --prof.pop("extractDrawList")
 end
 
 function Simulator.getDrawLists(): {{DrawNode}}
---function Simulator.getDrawLists(): {DrawNode}
+    --prof.push("getDrawLists")
     local list = {}
     list[#list + 1] = {}
     list[#list + 1] = {}
@@ -75,20 +80,14 @@ function Simulator.getDrawLists(): {{DrawNode}}
         local drawlist: love.thread.Channel = channels[k].drawlist
         local drawlist_fn: love.thread.Channel = channels[k].drawlist_fn_
 
-        print('lists', drawlist, drawlist_fn)
+        --print('lists', drawlist, drawlist_fn)
 
         extractDrawList(list[1], drawlist)
-        --extractDrawList(list[2], drawlist)
         extractDrawList(list[2], drawlist_fn)
 
-        love.filesystem.append('drawlist_fn.txt', inspect(list[2]) .. "\n\n\n\n")
-        --print('drawlist_fn count', drawlist_fn:getCount())
-
-        --if #list[2] ~= 0 then
-            --love.event.quit()
-        --end
+        --love.filesystem.append('drawlist_fn.txt', inspect(list[2]) .. "\n\n\n\n")
     end
-    --print("getDrawLists", inspect(list))
+    --prof.pop("getDrawLists")
     return list
 end
 
@@ -220,7 +219,7 @@ function Simulator.create(commonSetup: CommonSetup)
             else
                 t = channels[i].stat:peek() as Statistic
             end
-            print('channels[i].stat:getCount()', channels[i].stat:getCount())
+            printLog('channels[i].stat:getCount()', channels[i].stat:getCount())
             if t then
                 table.insert(newstat, t)
             end

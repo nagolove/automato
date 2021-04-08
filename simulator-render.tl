@@ -1,6 +1,6 @@
 require "love"
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
-package.path = package.path .. ";scenes/automato/?.lua"
+--love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
+--package.path = package.path .. ";scenes/automato/?.lua"
 require "imgui"
 require "common"
 require "types"
@@ -82,7 +82,7 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
     }
     self = setmetatable(self, SimulatorRender_mt)
     self:computeGrid()
-    print("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
+    printLog("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
 
     self.canvas = gr.newCanvas(
         self.fieldWidthPixels * canvasmultfactor, 
@@ -126,18 +126,21 @@ function SimulatorRender:cameraToCenter()
     local w, h = gr.getDimensions()
     --print(self.canvas)
     --local w, h = (self.canvas as gr.Texture):getDimensions()
-    print('w, h', w, h)
+    printLog('w, h', w, h)
     -- TODO разобрать формулу, не работает как надо, на половину ширины
-    print('self.fieldWidthPixels', self.fieldWidthPixels, self.fieldHeightPixels)
+    printLog('self.fieldWidthPixels', self.fieldWidthPixels, self.fieldHeightPixels)
     local dx = (w - (self.canvas as gr.Texture):getWidth()) / 2
     local dy = (h - (self.canvas as gr.Texture):getHeight()) / 2
     --local dx = (w - self.fieldWidthPixels) / 2
     --local dy = (h - self.fieldHeightPixels) / 2
-    print("camera position", self.cam:position())
-    print("lookAt", dx, dy)
+
+    --printLog("camera position", self.cam:position())
+    --printLog("lookAt", dx, dy)
+
     self.cam.scale = 1.
     self.cam:lookAt(dx, dy)
-    print("camera position2", self.cam:position())
+
+    --printLog("camera position2", self.cam:position())
 
     --self.cam:lookAt(w / 2, h / 2)
     --self.cam:lookAt(200, 0)
@@ -151,8 +154,8 @@ function SimulatorRender:bakeCanvas()
     gr.setCanvas(self.canvas)
     --gr.clear{1, 1, 1, 1}
     gr.clear{0, 0, 0, 1}
-    self:drawGrid()
-    self:drawCells()
+    --self:drawGrid()
+    --self:drawCells()
     gr.setCanvas()
 end
 
@@ -172,7 +175,7 @@ function SimulatorRender:draw()
     --local sx, sy = 0.5, 0.5
     local sx, sy = 1, 1 
 
-    print('self.camera.position', self.cam:position())
+    --printLog('self.camera.position', self.cam:position())
     -- 710, 290
     self.cam:attach()
     gr.draw(
@@ -268,7 +271,7 @@ function SimulatorRender:computeGrid()
         schema = mtschemes[self.commonSetup.threadCount]
     end)
     if not ok then
-        print("Could'not require 'mtschemes'", errmsg)
+        printLog("Could'not require 'mtschemes'", errmsg)
     end
 
     if schema then
@@ -301,7 +304,7 @@ function SimulatorRender:drawGrid()
         schema = mtschemes[self.commonSetup.threadCount]
     end)
     if not ok then
-        print("Could'not require 'mtschemes'", errmsg)
+        printLog("Could'not require 'mtschemes'", errmsg)
     end
 
     local prevwidth = {gr.getColor()}

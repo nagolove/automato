@@ -6,15 +6,16 @@ require "types"
 require "love"
 require "love.math"
 require 'cell'
+require 'log'
 
 -- иногда возникает ошибка загрузки модулей при повторном старте
 -- возможно не завершаются потоки?
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
+--love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 
 require("mobdebug").start()
 
 local threadNum: integer = ... as integer
-print("thread", threadNum, "is running")
+printLog("thread", threadNum, "is running")
 
 local inspect = require "inspect"
 local serpent = require "serpent"
@@ -59,24 +60,19 @@ local lastEmitIter = 0
 local emitInvSpeed = 100.
 
 local logName = string.format("thread%d.txt", threadNum)
-print("logName", logName)
+printLog("logName", logName)
 
 --[[
 channels.cellrequest:push() <=> channels[1].cellrequest
 две таблицы
 --]]
 local channels: Channels = initChannels(threadNum)
---local channels: {string: love.thread.Channel} = {}
 
 -- строчка: имя
 for k, v in ipairs(ChannelsTypes) do
-    print("v", v, 'k', k)
-    --local ch = channelsByThreadIndex[v .. tostring(threadNum)]
-    --print("ch", ch)
-    --channels[v] = ch
+    printLog("v", v, 'k', k)
 end
---print("channelsByThreadIndex", inspect(channelsByThreadIndex))
-print("channels", inspect(channels))
+printLog("channels", inspect(channels))
 
 local cellActions = require "cell-actions"
 
@@ -144,7 +140,7 @@ function gatherStatistic(cells: {Cell})
     if sumEnergy == 0 then
         sumEnergy = 1
     end
-    print('square, i', square, i)
+    --printLog('square, i', square, i)
 
     local midEnergy: number
     if #cells == 0 then
@@ -238,7 +234,6 @@ end
 function updateCells(cells: {Cell}): {Cell}
     local alive = {}
     for _, cell in ipairs(cells) do
-        --print("cell", inspect(cell)) 
         local isalive = cell:update()
         if isalive then
             table.insert(alive, cell)
@@ -277,11 +272,11 @@ local function cloneCell(cell: Cell, newx: number, newy: number): Cell
             end
         end
         new.pos.x, new.pos.y = newx, newy
-        print("cloned cell")
+        printLog("cloned cell")
         table.insert(cells, new)
         return new
     else
-        print("nothing in clone")
+        printLog("nothing in clone")
         return nil
     end
 end
@@ -318,7 +313,7 @@ end
 --]]
 local function emitCell(_: number)
     --[[
-    print("cellsNum", cellsNum)
+    printLog("cellsNum", cellsNum)
     -- не создается нужное количество клеток
     while true do
         --for i = 1, cellsNum do
@@ -326,7 +321,7 @@ local function emitCell(_: number)
             break
         end
         if iter - lastEmitIter >= emitInvSpeed then
-            print("iter", iter)
+            printLog("iter", iter)
             --local cx, cy = genPosition()
             local cx = love.rng:random(1, istate.gridSize)
             local cy = love.rng:random(1, istate.gridSize)
@@ -339,14 +334,14 @@ local function emitCell(_: number)
     end
     --]]
 
-    print('istate.cellsNum', istate.cellsNum)
+    --printLog('istate.cellsNum', istate.cellsNum)
 
     if istate.emitFlags == 'normal' then
         for _ = 1, istate.cellsNum do
             local cx, cy = genPosition()
             --local cx = rng:random(1, istate.gridSize)
             --local cy = rng:random(1, istate.gridSize)
-            print('cx, cy', cx, cy)
+            --printLog('cx, cy', cx, cy)
             table.insert(
                 cells, 
                 Cell.new({ pos = { x = cx, y = cy } })
@@ -459,7 +454,7 @@ local function experiment()
         error(errmsg)
         stop = true
     end
-    print("#Experiment started with", #cells)
+    printLog("#Experiment started with", #cells)
 
     -- если нет живых клеток, то вставать на паузу, но сохранять возможность
     -- вставки клеток через сообщение insertcell
@@ -476,7 +471,7 @@ local function experiment()
             end
         end)
         if not emitok then
-            print('emit pcall error ' .. msg)
+            printLog('emit pcall error ' .. msg)
         end
 
         -- проход по списку клеток и вызов их программ. уничтожение некоторых клеток
@@ -501,12 +496,12 @@ local function experiment()
         channels.stat:push(stat)
 
         iter = iter + 1
-        print('iter', iter)
+        --printLog('iter', iter)
 
         coroutine.yield()
     end
 
-    print("there is no cells in simulation")
+    printLog("there is no cells in simulation")
     -- здесь нить должна уснуть в цикле ??
 
 --    saveDeadCellsLog(removed)
@@ -541,7 +536,7 @@ local function pushDrawList()
     --if dataChan:getCount() < maxDataChannelCount then
 
     --print('pushDrawList', inspect(drawlist))
-    print('getCount()', channels.drawlist:getCount())
+    --printLog('getCount()', channels.drawlist:getCount())
     --if channels.drawlist:getCount() < maxDataChannelCount then
 
     --channels.drawlist:clear()
@@ -565,7 +560,7 @@ end
 --]]
 
 function commands.stop()
-    print("stop command, break main cycle")
+    printLog("stop command, break main cycle")
     stop = true
 end
 
@@ -574,14 +569,14 @@ function commands.getobject()
     local x, y: number, number
     x = channels.object_w:pop() as integer
     y = channels.object_w:pop() as integer
-    print("commands.getobject", x, y)
+    printLog("commands.getobject", x, y)
     local ok, errmsg: boolean, string = pcall(function()
         if grid then
             local cell = grid[math.floor(x)][math.floor(y)]
             if cell then
                 --requestChan:push(serpent.dump(cell))
                 local dump = serpent.dump(cell)
-                print("dump", dump)
+                printLog("dump", dump)
                 channels.object_r:push(dump)
             end
         end
@@ -592,63 +587,37 @@ function commands.getobject()
 end
 
 function commands.step()
-    --print('commands.step()')
-    --print(debug.traceback())
     checkStep = true
     doStep = true
 
     -- сброс таймера посчета итераций в секунду
     stepsPerSecond = stepsCount
     stepsCount = 0
-    --]]
 end
 
 function commands.continuos()
-    print('commands.continuos')
+    printLog('commands.continuos')
     checkStep = false
 end
 
-local function writelog(...: string)
-end
-
---[[
-local function writelog(...: string)
-    local buf = ""
-    for i = 1, select("#", ...) do
-        buf = buf .. select(i, ...)
-    end
-    love.filesystem.append(logName, buf .. "\n")
-end
---]]
-
 function commands.isalive()
-    --local x, y = channels.msg:pop() as number, channels.msg:pop() as number  
     local x, y = channels.alive:pop() as integer, channels.alive:pop() as integer  
-    --if not x or not y or not threadNum then
     if type(x) ~= 'number' or type(y) ~= 'number' then
         assert(string.format("x, y " ..  x .. " " .. y .. " threadNum " .. threadNum))
     end
 
-    --print(x, y, threadNum)
-    print('isalive', type(x), type(y), type(threadNum))
-    --writelog(string.format("isalive %d x, y %d %d", threadNum, x, y))
+    --printLog('isalive', type(x), type(y), type(threadNum))
 
     local ok, errmsg: boolean, string = pcall(function()
 
-        --assert(type(x) == 'number')
-        --assert(type(y) == 'number')
-        --assert(type(gridSize) == 'number')
-
         if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
             local cell = grid[math.floor(x)][math.floor(y)]
-            writelog(string.format("cell %s", inspect(cell)))
-            --local state: boolean = cell.energy and cell.energy > 0
+            --printLog(string.format("cell %s", inspect(cell)))
             local state = false
             if cell.energy and cell.energy > 0 then
                 state = true
             end
-            writelog(string.format("pushed state %s", state))
-            --print("pushed state", state)
+            --printLog(string.format("pushed state %s", state))
             channels.cellrequest:push(state)
         end
     end)
@@ -661,13 +630,10 @@ end
 function commands.insertcell()
     -- получить сохраненную клетку
     -- FIXME сюда приходит в msg сообщение 'getobject'
-    --local msg = channels.msg:pop() as string
     local msg = channels.cells:pop() as string
-    print('cell channel', channels.cells)
-    print('insertcell', msg)
+    --printLog('cell channel', channels.cells)
+    --printLog('insertcell', msg)
 
-    --[[
-    --]]
     if msg then
         local newcellfun, err = load(msg)
         if (not newcellfun) and err then
@@ -680,16 +646,15 @@ function commands.insertcell()
         -- нормально, что grid не устанавливается и синхронизация пройдет только на
         -- следущем шаге?
         table.insert(cells, newcell)
-        --]]
     end
 end
 
 function commands.readstate()
     local state: string = channels.state:demand() as string
     local ok, store: boolean, any = serpent.load(state)
-    print('commands.readstate()', inspect(store))
+    printLog('commands.readstate()', inspect(store))
     if not ok then
-        print("commands.readstate() could'not load state")
+        printLog("commands.readstate() could'not load state")
         return
     end
 
@@ -702,7 +667,7 @@ function commands.readstate()
 end
 
 function commands.writestate()
-    print('commands.writestate')
+    printLog('commands.writestate')
 
     local store = {
         cells = cells,
@@ -741,20 +706,17 @@ end
 
 local function doSetup()
 
-    --local setupName = "setup" .. threadNum
-    --istate = love.thread.getChannel(setupName):pop() as CommonSetup
-    print('\\\\\\\\\\\\\\\\')
+    printLog('\\\\\\\\\\\\\\\\')
     for k, v in pairs(channels) do
-        print(k, v)
+        printLog(k, v)
     end
-    print('\\\\\\\\\\\\\\\\')
+    printLog('\\\\\\\\\\\\\\\\')
 
     istate = channels.setup:pop() as CommonSetup
     if not istate then
         error("No setup for thread " .. threadNum)
     end
     -- XXX получать состояние ГПСЧ из istate
-    --istate.rg = rng
     rng = love.math.newRandomGenerator()
     rng:setState(istate.rngState)
     istate.rng = rng
@@ -765,28 +727,28 @@ local function doSetup()
         commands.continuos()
     end
 
-    print("thread", threadNum)
-    print("istate", inspect(istate))
+    printLog("thread", threadNum)
+    printLog("istate", inspect(istate))
 
     gridSize = istate.gridSize
     cellsNum = istate.cellsNum
     emitInvSpeed = istate.emitInvSpeed
 
-    --local sschema: string = love.thread.getChannel(setupName):pop() as string
     local sschema: string = channels.setup:pop() as string
 
     local schemafun, err = load(sschema)
     if err then
         error("Could'not get schema for thread")
     end
+
     local schemaRestored: MtSchema = schemafun() as MtSchema
-    print("schemaRestored", inspect(schemaRestored))
+    printLog("schemaRestored", inspect(schemaRestored))
     schema = shallowCopy(schemaRestored)
 
     drawCoefficients = shallowCopy(schemaRestored.draw)
 
-    print("schema", inspect(schema))
-    print("drawCoefficients", inspect(drawCoefficients))
+    printLog("schema", inspect(schema))
+    printLog("drawCoefficients", inspect(drawCoefficients))
 
     experimentCoro = coroutine.create(experiment)
 
@@ -801,7 +763,7 @@ local function doSetup()
         schema = schema,
         foodenergy = istate.foodenergy,
         popCommand = popCommand,
-        writelog = writelog,
+        writelog = printLog,
         rng = istate.rng,
         -- XXX работает только для текущей нити
         setStepMode = commands.step,
@@ -827,7 +789,6 @@ local function step()
 
     -- XXX корутина в принципе не должна завершаться, дальше только падать и 
     -- писать отчет об ошибке
-    --if not ok and not experimentErrorPrinted then
     if not ok then
         experimentErrorPrinted = true
         free = true
@@ -836,8 +797,6 @@ local function step()
 end
 
 local function main()
-    --local syncChan = love.thread.getChannel("sync")
-    --channels.ready:push("ready")
     timestamp = love.timer.getTime()
     local __step_done = false
     while not stop do
@@ -866,15 +825,11 @@ local function main()
             end)
 
             pushDrawList()
-            --print('main loop, __step_done', __step_done)
-            --print('checkStep, doStep', checkStep, doStep)
             doStep = false
         else
             love.timer.sleep(0.001)
         end
     end
-    --channels.ready:clear()
-    --channels.ready:push("free")
 end
 
 clearLogs()
@@ -883,4 +838,4 @@ main()
 
 channels.isstopped:push(true)
 
-print("thread", threadNum, "done")
+printLog("thread", threadNum, "done")

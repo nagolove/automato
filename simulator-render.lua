@@ -1,6 +1,6 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local _tl_table_unpack = unpack or table.unpack; require("love")
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
-package.path = package.path .. ";scenes/automato/?.lua"
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local _tl_table_unpack = unpack or table.unpack; require("love")
+
+
 require("imgui")
 require("common")
 require("types")
@@ -82,7 +82,7 @@ function SimulatorRender.new(commonSetup, cam)
    }
    self = setmetatable(self, SimulatorRender_mt)
    self:computeGrid()
-   print("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
+   printLog("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
 
    self.canvas = gr.newCanvas(
    self.fieldWidthPixels * canvasmultfactor,
@@ -126,18 +126,21 @@ function SimulatorRender:cameraToCenter()
    local w, h = gr.getDimensions()
 
 
-   print('w, h', w, h)
+   printLog('w, h', w, h)
 
-   print('self.fieldWidthPixels', self.fieldWidthPixels, self.fieldHeightPixels)
+   printLog('self.fieldWidthPixels', self.fieldWidthPixels, self.fieldHeightPixels)
    local dx = (w - (self.canvas):getWidth()) / 2
    local dy = (h - (self.canvas):getHeight()) / 2
 
 
-   print("camera position", self.cam:position())
-   print("lookAt", dx, dy)
+
+
+
+
    self.cam.scale = 1.
    self.cam:lookAt(dx, dy)
-   print("camera position2", self.cam:position())
+
+
 
 
 
@@ -151,8 +154,8 @@ function SimulatorRender:bakeCanvas()
    gr.setCanvas(self.canvas)
 
    gr.clear({ 0, 0, 0, 1 })
-   self:drawGrid()
-   self:drawCells()
+
+
    gr.setCanvas()
 end
 
@@ -172,7 +175,7 @@ function SimulatorRender:draw()
 
    local sx, sy = 1, 1
 
-   print('self.camera.position', self.cam:position())
+
 
    self.cam:attach()
    gr.draw(
@@ -268,7 +271,7 @@ function SimulatorRender:computeGrid()
       schema = mtschemes[self.commonSetup.threadCount]
    end)
    if not ok then
-      print("Could'not require 'mtschemes'", errmsg)
+      printLog("Could'not require 'mtschemes'", errmsg)
    end
 
    if schema then
@@ -301,7 +304,7 @@ function SimulatorRender:drawGrid()
       schema = mtschemes[self.commonSetup.threadCount]
    end)
    if not ok then
-      print("Could'not require 'mtschemes'", errmsg)
+      printLog("Could'not require 'mtschemes'", errmsg)
    end
 
    local prevwidth = { gr.getColor() }

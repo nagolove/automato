@@ -43,7 +43,7 @@ local setup: CellActionsInit = {}
 
 local maxSavedPositions = 64
 
-local writelog: function(...: string)
+local writelog: function(...: any)
 
 -- записать текущее положение клетки в ее табличку передвижений
 local function pushPosition(cell: Cell)
@@ -71,10 +71,12 @@ local requestThreadDemandTimeout = 0.02
 
 -- проверяет жива ли клетка в определенном потоке
 local function isAliveNeighbours(x: integer, y: integer, threadNum: integer): boolean
+    local limit = 500
+
     if not threadNum then
         error("no threadNum")
     end
-    writelog(string.format("isAliveNeighbours(%d, %d, %d)", x, y, threadNum))
+    --writelog(string.format("isAliveNeighbours(%d, %d, %d)", x, y, threadNum))
 
     --print("threadNum", threadNum)
 
@@ -93,19 +95,18 @@ local function isAliveNeighbours(x: integer, y: integer, threadNum: integer): bo
         --print("FUCKFUCK")
         local threadName = "cellrequest" .. threadNum
 
-        writelog("request to", threadName)
+        --writelog("request to", threadName)
 
         local chan = love.thread.getChannel(threadName)
         local state: boolean = chan:demand(requestThreadDemandTimeout) as boolean
 
         --if not state then
         local i = 0
-        local limit = 500
         while not state do
             if i >= limit then
                 error("Cycles limit reached.")
             end
-            writelog("setup.popCommand")
+            --writelog("setup.popCommand")
 
             setup.popCommand()
             love.timer.sleep(0.01)
@@ -113,7 +114,7 @@ local function isAliveNeighbours(x: integer, y: integer, threadNum: integer): bo
             i = i + 1
         end
 
-        writelog("state ", tostring(state))
+        --writelog("state ", tostring(state))
 
         assert(state ~= nil, "no answer from " .. threadName .. " thread")
         return state
@@ -129,7 +130,9 @@ local function moveCellToThread(cell: Cell, threadNum: number)
     --local dump: string = serpent.dump(cell)
     local dump = serpent.dump(cell)
     local chan = love.thread.getChannel("msg" .. threadNum)
-    print('moveCellToThread dump', inspect(dump))
+
+    --printLog('moveCellToThread dump', inspect(dump))
+
     local bchan = love.thread.getChannel('busy' .. threadNum)
     local state = bchan:peek() as string
     -- блокировка в ожидании
@@ -141,7 +144,7 @@ local function moveCellToThread(cell: Cell, threadNum: number)
     chan:push("insertcell")
     --<<-- еще что-то вклинивается
     local cellsChan = love.thread.getChannel('cells' .. threadNum)
-    print('cellsChan', cellsChan)
+    --printLog('cellsChan', cellsChan)
     -- XXX нужна ли здесь очистка?
     --cellsChan:clear()
     cellsChan:push(dump)
@@ -297,11 +300,13 @@ end
 
 --]]
 
+--[[
 local around4: {{integer}} = {
               {0, -1},
     {-1,  0},          {1, 0},
               {0,  1},
 }
+--]]
 
 local around8: {{integer}} = {
     {-1, -1}, {0, -1}, {1, -1},
@@ -385,6 +390,8 @@ global type NeighboursCallback = function(integer, integer, Cell): boolean
 -- Если коллбэк функция возвращает false, то дальнейшие вызовы прерываются, 
 -- управление возвращается.
 --
+
+--[[
 local function listNeighbours8(x: integer, y: integer, cb: NeighboursCallback)
     for _, displacement in ipairs(around8) do
         local nx, ny = x + displacement[1], y + displacement[2]
@@ -395,7 +402,9 @@ local function listNeighbours8(x: integer, y: integer, cb: NeighboursCallback)
         end
     end
 end
+--]]
 
+--[[
 local function listNeighbours4(x: integer, y: integer, cb: NeighboursCallback)
     for _, displacement in ipairs(around4) do
         local nx, ny = x + displacement[1], y + displacement[2]
@@ -594,7 +603,7 @@ local function init(t: CellActionsInit)
 
     writelog = t.writelog
 
-    print("t", inspect(t))
+    printLog("t", inspect(t))
     allEated = 0
 end
 

@@ -1,6 +1,7 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local debug = _tl_compat and _tl_compat.debug or debug; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; require("love")
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
+
 require("mtschemes")
+require("log")
 
 local inspect = require("inspect")
 
@@ -299,8 +300,8 @@ function initChannels(n)
    for _, v in ipairs(ChannelsTypes) do
       result[v] = love.thread.getChannel(v .. tostring(n))
    end
-   print(string.format('initChannels, n = %d', n), inspect(result))
-   print('initChannels traceback', debug.traceback())
+   printLog(string.format('initChannels, n = %d', n), inspect(result))
+   printLog('initChannels traceback', debug.traceback())
    return result
 end
 

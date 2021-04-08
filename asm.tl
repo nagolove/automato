@@ -3,6 +3,7 @@
 Как использовать cell-actions?
 --]]
 
+require "log"
 require "types"
 require "common"
 
@@ -92,7 +93,7 @@ local vm: VirtualMachine = VirtualMachine.new(bcode)
 
 local err: VirtualMachine.ErrorCode = vm:run()
 
-print(err)
+printLog(err)
 
 local cell: Cell = {
     energy = 6864,
@@ -105,4 +106,4 @@ local cell: Cell = {
     }
 }
 
-print(inspect(cell))
+printLog(inspect(cell))

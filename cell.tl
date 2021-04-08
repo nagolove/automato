@@ -17,7 +17,7 @@ local function getCodeValues(): {string}
 end
 
 local codeValues: {string}
-print("codeValues", inspect(codeValues))
+printLog("codeValues", inspect(codeValues))
 
 -- генератор кода
 function genCode(): {string}
@@ -64,18 +64,18 @@ function Cell.new(t: CellSetup): Cell
     self.id = istate.cellId
     istate.cellId = istate.cellId + 1
 
-    print('Cell:new')
-    print('istate.initialEnergy', istate.initialEnergy[1], istate.initialEnergy[2])
-    self.energy = istate.rng:random(istate.initialEnergy[1], istate.initialEnergy[2])
-    print('istate.rg:random() =', self.energy)
+    --printLog('Cell:new')
+    --printLog('istate.initialEnergy', istate.initialEnergy[1], istate.initialEnergy[2])
+    --printLog('istate.rg:random() =', self.energy)
 
     self:print()
+    self.energy = istate.rng:random(istate.initialEnergy[1], istate.initialEnergy[2])
 
     return self
 end
 
 function Cell:print()
-    print('Cell:print')
+    --printLog('Cell:print')
 end
 
 -- здесь работа vm

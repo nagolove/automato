@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("types")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local table = _tl_compat and _tl_compat.table or table; require("types")
 require("mtschemes")
 require("love")
 require("common")
@@ -71,10 +71,12 @@ local requestThreadDemandTimeout = 0.02
 
 
 local function isAliveNeighbours(x, y, threadNum)
+   local limit = 500
+
    if not threadNum then
       error("no threadNum")
    end
-   writelog(string.format("isAliveNeighbours(%d, %d, %d)", x, y, threadNum))
+
 
 
 
@@ -93,19 +95,18 @@ local function isAliveNeighbours(x, y, threadNum)
 
       local threadName = "cellrequest" .. threadNum
 
-      writelog("request to", threadName)
+
 
       local chan = love.thread.getChannel(threadName)
       local state = chan:demand(requestThreadDemandTimeout)
 
 
       local i = 0
-      local limit = 500
       while not state do
          if i >= limit then
             error("Cycles limit reached.")
          end
-         writelog("setup.popCommand")
+
 
          setup.popCommand()
          love.timer.sleep(0.01)
@@ -113,7 +114,7 @@ local function isAliveNeighbours(x, y, threadNum)
          i = i + 1
       end
 
-      writelog("state ", tostring(state))
+
 
       assert(state ~= nil, "no answer from " .. threadName .. " thread")
       return state
@@ -129,7 +130,9 @@ local function moveCellToThread(cell, threadNum)
 
    local dump = serpent.dump(cell)
    local chan = love.thread.getChannel("msg" .. threadNum)
-   print('moveCellToThread dump', inspect(dump))
+
+
+
    local bchan = love.thread.getChannel('busy' .. threadNum)
    local state = bchan:peek()
 
@@ -141,7 +144,7 @@ local function moveCellToThread(cell, threadNum)
    chan:push("insertcell")
 
    local cellsChan = love.thread.getChannel('cells' .. threadNum)
-   print('cellsChan', cellsChan)
+
 
 
    cellsChan:push(dump)
@@ -297,11 +300,13 @@ end
 
 
 
-local around4 = {
-   { 0, -1 },
-   { -1, 0 }, { 1, 0 },
-   { 0, 1 },
-}
+
+
+
+
+
+
+
 
 local around8 = {
    { -1, -1 }, { 0, -1 }, { 1, -1 },
@@ -385,27 +390,31 @@ end
 
 
 
-local function listNeighbours8(x, y, cb)
-   for _, displacement in ipairs(around8) do
-      local nx, ny = x + displacement[1], y + displacement[2]
-      if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
-         if cb(nx, ny, getGrid()[nx][ny]) == false then
-            break
-         end
-      end
-   end
-end
 
-local function listNeighbours4(x, y, cb)
-   for _, displacement in ipairs(around4) do
-      local nx, ny = x + displacement[1], y + displacement[2]
-      if nx >= 1 and nx <= gridSize and ny >= 1 and ny <= gridSize then
-         if cb(nx, ny, getGrid()[nx][ny]) == false then
-            break
-         end
-      end
-   end
-end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -594,7 +603,7 @@ local function init(t)
 
    writelog = t.writelog
 
-   print("t", inspect(t))
+   printLog("t", inspect(t))
    allEated = 0
 end
 

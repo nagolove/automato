@@ -3,6 +3,7 @@
 
 
 
+require("log")
 require("types")
 require("common")
 
@@ -92,7 +93,7 @@ local vm = VirtualMachine.new(bcode)
 
 local err = vm:run()
 
-print(err)
+printLog(err)
 
 local cell = {
    energy = 6864,
@@ -105,4 +106,4 @@ local cell = {
    },
 }
 
-print(inspect(cell))
+printLog(inspect(cell))

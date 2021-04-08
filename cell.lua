@@ -17,7 +17,7 @@ local function getCodeValues()
 end
 
 local codeValues
-print("codeValues", inspect(codeValues))
+printLog("codeValues", inspect(codeValues))
 
 
 function genCode()
@@ -64,18 +64,18 @@ function Cell.new(t)
    self.id = istate.cellId
    istate.cellId = istate.cellId + 1
 
-   print('Cell:new')
-   print('istate.initialEnergy', istate.initialEnergy[1], istate.initialEnergy[2])
-   self.energy = istate.rng:random(istate.initialEnergy[1], istate.initialEnergy[2])
-   print('istate.rg:random() =', self.energy)
+
+
+
 
    self:print()
+   self.energy = istate.rng:random(istate.initialEnergy[1], istate.initialEnergy[2])
 
    return self
 end
 
 function Cell:print()
-   print('Cell:print')
+
 end
 
 

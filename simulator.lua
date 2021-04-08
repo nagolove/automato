@@ -1,21 +1,24 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local inspect = require("inspect")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local assert = _tl_compat and _tl_compat.assert or assert; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local package = _tl_compat and _tl_compat.package or package; local pairs = _tl_compat and _tl_compat.pairs or pairs; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; require("log")
+
+local inspect = require("inspect")
 local serpent = require("serpent")
-local struct = require("struct")
 local timer = require("Timer")
-local marshal = require('marshal')
+
+
 
 
 
 
 
 package.path = "./scenes/automato/?.lua;" .. package.path
-print("package.path", package.path)
+printLog("package.path", package.path)
 
 require("log")
 require("love")
 require("mtschemes")
 require("types")
 require("common")
+
 
 local infoTimer = timer.new()
 local gridSize
@@ -36,6 +39,7 @@ local setup
 local colonyDied = false
 
 local function extractDrawList(list, channel)
+
    if channel then
       local sublist
 
@@ -62,8 +66,9 @@ local function extractDrawList(list, channel)
          end
       end
    else
-      print('extractDrawList() with nil channel')
+      printLog('extractDrawList() with nil channel')
    end
+
 end
 
 function Simulator.getDrawLists()
@@ -75,16 +80,10 @@ function Simulator.getDrawLists()
       local drawlist = channels[k].drawlist
       local drawlist_fn = channels[k].drawlist_fn_
 
-      print('lists', drawlist, drawlist_fn)
+
 
       extractDrawList(list[1], drawlist)
-
       extractDrawList(list[2], drawlist_fn)
-
-      love.filesystem.append('drawlist_fn.txt', inspect(list[2]) .. "\n\n\n\n")
-
-
-
 
 
    end
@@ -220,7 +219,7 @@ function Simulator.create(commonSetup)
          else
             t = channels[i].stat:peek()
          end
-         print('channels[i].stat:getCount()', channels[i].stat:getCount())
+         printLog('channels[i].stat:getCount()', channels[i].stat:getCount())
          if t then
             table.insert(newstat, t)
          end

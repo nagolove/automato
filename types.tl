@@ -1,6 +1,7 @@
 require "love"
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
+--love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 require "mtschemes"
+require "log"
 
 local inspect = require "inspect"
 
@@ -90,7 +91,7 @@ global type CellActionsInit = record
     popCommand: function
     -- сколько прибавляется энергии за съеденную еду
     foodenergy: number
-    writelog: function(...:string)
+    writelog: function(...:any)
     rng: love.math.RandomGenerator
     setStepMode: function()
     channels: Channels
@@ -299,8 +300,8 @@ function initChannels(n: number): Channels
     for _, v in ipairs(ChannelsTypes as {string}) do
         result[v] = love.thread.getChannel(v .. tostring(n))
     end
-    print(string.format('initChannels, n = %d', n), inspect(result))
-    print('initChannels traceback', debug.traceback())
+    printLog(string.format('initChannels, n = %d', n), inspect(result))
+    printLog('initChannels traceback', debug.traceback())
     return result
 end
 

@@ -5,12 +5,20 @@
 --]]
 
 require "love"
-love.filesystem.setRequirePath("?.lua;?/init.lua;scenes/automato/?.lua")
-package.path = package.path .. ";scenes/automato/?.lua"
+require "log"
+love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. 
+    ";../../?/init.lua;" ..
+    "?.lua;" ..
+    "?/init.lua;" .. 
+    "scenes/automato/?/init.lua;" ..
+    "scenes/automato/?.lua")
+printLog(love.filesystem.getRequirePath())
+--package.path = package.path .. ";scenes/automato/?.lua"
 require "common"
 require "imgui"
 require "simulator-render"
 require "types"
+--require "log"
 
 -- режит отображения
 local type ViewState = enum
@@ -18,9 +26,12 @@ local type ViewState = enum
     "graph"
 end
 
-global PROF_CAPTURE = false
+local profi = require "profi"
+
+--global PROF_CAPTURE = false
 
 local serpent = require "serpent"
+local i18n = require "i18n"
 local linesbuf = require 'kons'.new()
 local camera = require "camera"
 --local gr = love.graphics
@@ -31,9 +42,8 @@ local mtschemes = require "mtschemes"
 local sim = require "simulator"
 local startInStepMode = false
 local binds = require "binds"
-print("package.path", package.path)
-local i18n = require "i18n"
-local profi = require "profi"
+printLog("package.path", package.path)
+package.path = package.path .. ";../../?/init.lua;../../?.lua"
 local linesbufDelay = 1
 local viewState: ViewState = "sim"
 local underCursor: Pos = {}
@@ -84,7 +94,7 @@ local selectedState = 0
 local function loadLocales()
     local localePath = "scenes/automato/locales"
     local files = love.filesystem.getDirectoryItems(localePath)
-    print("locale files", inspect(files))
+    printLog("locale files", inspect(files))
     for _, v in ipairs(files) do 
         i18n.loadFile(localePath .. "/" .. v, function(path: string): any
             local chunk, errmsg = love.filesystem.load(path)
@@ -96,12 +106,12 @@ local function loadLocales()
     end
     --i18n.setLocale('en')
     i18n.setLocale('ru')
-    print("i18n", inspect(i18n))
+    printLog("i18n", inspect(i18n))
 end
 
 local function loadStates()
     local files = love.filesystem.getDirectoryItems(snaphotsDirectory)
-    print('loadStates', inspect(files))
+    printLog('loadStates', inspect(files))
     states = files
     --if #states ~= 0 then
         --selectedState = 1
@@ -169,7 +179,7 @@ local function drawCellInfo(pos: Pos, cell: Cell)
                 a = tostring(a)
             end
             msg = string.format(fmt, a)
-            print('drawCellInfo', msg)
+            printLog('drawCellInfo', msg)
             --imgui.LabelText(k as string, tostring(msg))
             imgui.Text(k as string .. " " .. tostring(msg))
         end
@@ -231,16 +241,12 @@ local function printStat()
 
     local starr: {Statistic} = sim.getStatistic()
 
-    print("starr = ", inspect(starr))
-    --print("#starr", #starr)
-    --print("prevStat", inspect(prevStat))
-
     -- XXX работает ли такая подмена массива?
     if #starr ~= 0 then
         prevStat = deepCopy(prevStat)
     elseif #starr == 0 and prevStat then
         starr = prevStat
-        print("used prevStat", inspect(prevStat))
+        printLog("used prevStat", inspect(prevStat))
     end
 
     -- XXX hack
@@ -248,7 +254,7 @@ local function printStat()
         table.remove(starr, 2)
     end
 
-    love.filesystem.append('printstat.txt', string.format("starr = %s\n", inspect(starr)))
+    --love.filesystem.append('printstat.txt', string.format("starr = %s\n", inspect(starr)))
 
     for _, st in ipairs(starr) do
         for k, v in pairs(st as {string: number}) do
@@ -260,7 +266,7 @@ local function printStat()
                 --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
                 --print(k, v)
                 local someText = "formatMods." .. k as Statistic.Types
-                print('someText', someText)
+                printLog('someText', someText)
                 imgui.Text(i18n(someText))
             end
             --print('CollapsingHeader', r1, r2)
@@ -275,9 +281,9 @@ end
 
 local function readState()
     local fname = snaphotsDirectory .. '/' .. states[selectedState + 1]
-    print('readState', fname)
+    printLog('readState', fname)
     local fileData = love.filesystem.read(fname)
-    print('#fileData', #fileData)
+    printLog('#fileData', #fileData)
     if not sim.readState(fileData) then
         linesbuf:push(linesbufDelay, 'could not load state')
     end
@@ -285,7 +291,7 @@ end
 
 local function writeState()
     local files = love.filesystem.getDirectoryItems(snaphotsDirectory)
-    print('files', inspect(files))
+    printLog('files', inspect(files))
     local res = sim.writeState()
     local fname = snaphotsDirectory .. string.format("/sim-%d.data", #files)
     love.filesystem.write(fname, res)
@@ -561,8 +567,12 @@ local function draw()
     if viewState == "sim" then
         --local zazor: number = 10
 
+        --profi:start()
+
         -- рисовать несколько симуляторов разных поколений
         simulatorRender:draw()
+
+        --profi:stop()
 
         --[[
         gr.push()
@@ -608,7 +618,10 @@ local function update(dt: number)
     simulatorRender:update(dt)
     cellUnderCursor = getCellUnderCursor(underCursor)
     timer:update(dt)
+
+    --prof.push("sim.update")
     sim.update(dt)
+    --prof.pop("sim.update")
 
     if simulatorRender then
         local mx, my = love.mouse.getPosition()
@@ -625,9 +638,9 @@ end
 
 local function loadPresets()
     local chunk, errmsg = love.filesystem.load("scenes/automato/presets.lua")
-    print("chunk, errmsg", chunk, errmsg)
+    printLog("chunk, errmsg", chunk, errmsg)
     local loadedPresets = (chunk as function)() as {string: CommonSetup}
-    print("presets", inspect(presets))
+    printLog("presets", inspect(presets))
     for k, v in pairs(loadedPresets) do
         table.insert(presetsNames, k)
         for k1, v1 in pairs(commonSetup as {string: any}) do
@@ -649,7 +662,7 @@ local function bindKeys()
         { key = "q" }, 
         function(sc: Shortcut): boolean, Shortcut
             --prof.write("prof.mpack")
-            print('prof.mpack written')
+            printLog('prof.mpack written')
             return false, sc
         end, 
         "write profiler report to file",
@@ -802,7 +815,7 @@ end
 
 local function init()
     clearLogs()
-    print("automato init()")
+    printLog("automato init()")
     love.filesystem.createDirectory('snaphots')
     loadLocales()
     local mx, my = love.mouse.getPosition()
@@ -814,18 +827,19 @@ local function init()
     bindKeys()
     loadPresets()
     loadStates()
-    print("automato init done.")
+    printLog("automato init done.")
 end
 
 local function quit()
     --prof.write('prof.mpack')
-    print('prof.mpack written')
+    printLog('prof.mpack written')
     love.filesystem.write('camera.txt', '')
     if simulatorRender then
         love.filesystem.append('camera.txt', serpent.dump(simulatorRender.cam))
     end
 end
 
+--[[
 local function checkCursorBounds(x: integer, y: integer): integer, integer
     if x <= 0 then 
         x = 1
@@ -841,8 +855,9 @@ local function checkCursorBounds(x: integer, y: integer): integer, integer
     end
     return x, y
 end
+--]]
 
-local function mousemoved(x: number, y: number, dx: number, dy: number)
+local function mousemoved(_: number, _: number, dx: number, dy: number)
     --underCursor = simulatorRender:mouseToCamera(x, y)
     --linesbuf:push(1, string.format('underCursor %d, %d', underCursor.x, underCursor.y))
     --underCursor.x, underCursor.y = checkCursorBounds(underCursor.x, underCursor.y)

@@ -6,15 +6,16 @@ require("types")
 require("love")
 require("love.math")
 require('cell')
+require('log')
 
 
 
-love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
+
 
 require("mobdebug").start()
 
 local threadNum = ...
-print("thread", threadNum, "is running")
+printLog("thread", threadNum, "is running")
 
 local inspect = require("inspect")
 local serpent = require("serpent")
@@ -59,7 +60,7 @@ local lastEmitIter = 0
 local emitInvSpeed = 100.
 
 local logName = string.format("thread%d.txt", threadNum)
-print("logName", logName)
+printLog("logName", logName)
 
 
 
@@ -68,15 +69,10 @@ print("logName", logName)
 local channels = initChannels(threadNum)
 
 
-
 for k, v in ipairs(ChannelsTypes) do
-   print("v", v, 'k', k)
-
-
-
+   printLog("v", v, 'k', k)
 end
-
-print("channels", inspect(channels))
+printLog("channels", inspect(channels))
 
 local cellActions = require("cell-actions")
 
@@ -144,7 +140,7 @@ function gatherStatistic(cells)
    if sumEnergy == 0 then
       sumEnergy = 1
    end
-   print('square, i', square, i)
+
 
    local midEnergy
    if #cells == 0 then
@@ -238,7 +234,6 @@ end
 function updateCells(cells)
    local alive = {}
    for _, cell in ipairs(cells) do
-
       local isalive = cell:update()
       if isalive then
          table.insert(alive, cell)
@@ -339,14 +334,14 @@ local function emitCell(_)
 
 
 
-   print('istate.cellsNum', istate.cellsNum)
+
 
    if istate.emitFlags == 'normal' then
       for _ = 1, istate.cellsNum do
          local cx, cy = genPosition()
 
 
-         print('cx, cy', cx, cy)
+
          table.insert(
          cells,
          Cell.new({ pos = { x = cx, y = cy } }))
@@ -459,7 +454,7 @@ local function experiment()
       error(errmsg)
       stop = true
    end
-   print("#Experiment started with", #cells)
+   printLog("#Experiment started with", #cells)
 
 
 
@@ -476,7 +471,7 @@ local function experiment()
          end
       end)
       if not emitok then
-         print('emit pcall error ' .. msg)
+         printLog('emit pcall error ' .. msg)
       end
 
 
@@ -501,12 +496,12 @@ local function experiment()
       channels.stat:push(stat)
 
       iter = iter + 1
-      print('iter', iter)
+
 
       coroutine.yield()
    end
 
-   print("there is no cells in simulation")
+   printLog("there is no cells in simulation")
 
 
 
@@ -541,7 +536,7 @@ local function pushDrawList()
 
 
 
-   print('getCount()', channels.drawlist:getCount())
+
 
 
 
@@ -565,7 +560,7 @@ end
 
 
 function commands.stop()
-   print("stop command, break main cycle")
+   printLog("stop command, break main cycle")
    stop = true
 end
 
@@ -574,14 +569,14 @@ function commands.getobject()
    local x, y
    x = channels.object_w:pop()
    y = channels.object_w:pop()
-   print("commands.getobject", x, y)
+   printLog("commands.getobject", x, y)
    local ok, errmsg = pcall(function()
       if grid then
          local cell = grid[math.floor(x)][math.floor(y)]
          if cell then
 
             local dump = serpent.dump(cell)
-            print("dump", dump)
+            printLog("dump", dump)
             channels.object_r:push(dump)
          end
       end
@@ -592,62 +587,36 @@ function commands.getobject()
 end
 
 function commands.step()
-
-
    checkStep = true
    doStep = true
 
 
    stepsPerSecond = stepsCount
    stepsCount = 0
-
 end
 
 function commands.continuos()
-   print('commands.continuos')
+   printLog('commands.continuos')
    checkStep = false
 end
 
-local function writelog(...)
-end
-
-
-
-
-
-
-
-
-
-
-
 function commands.isalive()
-
    local x, y = channels.alive:pop(), channels.alive:pop()
-
    if type(x) ~= 'number' or type(y) ~= 'number' then
       assert(string.format("x, y " .. x .. " " .. y .. " threadNum " .. threadNum))
    end
 
 
-   print('isalive', type(x), type(y), type(threadNum))
-
 
    local ok, errmsg = pcall(function()
 
-
-
-
-
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
          local cell = grid[math.floor(x)][math.floor(y)]
-         writelog(string.format("cell %s", inspect(cell)))
 
          local state = false
          if cell.energy and cell.energy > 0 then
             state = true
          end
-         writelog(string.format("pushed state %s", state))
 
          channels.cellrequest:push(state)
       end
@@ -661,10 +630,7 @@ end
 function commands.insertcell()
 
 
-
    local msg = channels.cells:pop()
-   print('cell channel', channels.cells)
-   print('insertcell', msg)
 
 
 
@@ -680,16 +646,15 @@ function commands.insertcell()
 
 
       table.insert(cells, newcell)
-
    end
 end
 
 function commands.readstate()
    local state = channels.state:demand()
    local ok, store = serpent.load(state)
-   print('commands.readstate()', inspect(store))
+   printLog('commands.readstate()', inspect(store))
    if not ok then
-      print("commands.readstate() could'not load state")
+      printLog("commands.readstate() could'not load state")
       return
    end
 
@@ -702,7 +667,7 @@ function commands.readstate()
 end
 
 function commands.writestate()
-   print('commands.writestate')
+   printLog('commands.writestate')
 
    local store = {
       cells = cells,
@@ -741,19 +706,16 @@ end
 
 local function doSetup()
 
-
-
-   print('\\\\\\\\\\\\\\\\')
+   printLog('\\\\\\\\\\\\\\\\')
    for k, v in pairs(channels) do
-      print(k, v)
+      printLog(k, v)
    end
-   print('\\\\\\\\\\\\\\\\')
+   printLog('\\\\\\\\\\\\\\\\')
 
    istate = channels.setup:pop()
    if not istate then
       error("No setup for thread " .. threadNum)
    end
-
 
    rng = love.math.newRandomGenerator()
    rng:setState(istate.rngState)
@@ -765,13 +727,12 @@ local function doSetup()
       commands.continuos()
    end
 
-   print("thread", threadNum)
-   print("istate", inspect(istate))
+   printLog("thread", threadNum)
+   printLog("istate", inspect(istate))
 
    gridSize = istate.gridSize
    cellsNum = istate.cellsNum
    emitInvSpeed = istate.emitInvSpeed
-
 
    local sschema = channels.setup:pop()
 
@@ -779,14 +740,15 @@ local function doSetup()
    if err then
       error("Could'not get schema for thread")
    end
+
    local schemaRestored = schemafun()
-   print("schemaRestored", inspect(schemaRestored))
+   printLog("schemaRestored", inspect(schemaRestored))
    schema = shallowCopy(schemaRestored)
 
    drawCoefficients = shallowCopy(schemaRestored.draw)
 
-   print("schema", inspect(schema))
-   print("drawCoefficients", inspect(drawCoefficients))
+   printLog("schema", inspect(schema))
+   printLog("drawCoefficients", inspect(drawCoefficients))
 
    experimentCoro = coroutine.create(experiment)
 
@@ -801,7 +763,7 @@ local function doSetup()
       schema = schema,
       foodenergy = istate.foodenergy,
       popCommand = popCommand,
-      writelog = writelog,
+      writelog = printLog,
       rng = istate.rng,
 
       setStepMode = commands.step,
@@ -827,7 +789,6 @@ local function step()
 
 
 
-
    if not ok then
       experimentErrorPrinted = true
       free = true
@@ -836,8 +797,6 @@ local function step()
 end
 
 local function main()
-
-
    timestamp = love.timer.getTime()
    local __step_done = false
    while not stop do
@@ -866,15 +825,11 @@ local function main()
          end)
 
          pushDrawList()
-
-
          doStep = false
       else
          love.timer.sleep(0.001)
       end
    end
-
-
 end
 
 clearLogs()
@@ -883,4 +838,4 @@ main()
 
 channels.isstopped:push(true)
 
-print("thread", threadNum, "done")
+printLog("thread", threadNum, "done")

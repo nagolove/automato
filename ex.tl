@@ -9,13 +9,13 @@ local b: Map = {
 
 function printMap(m: Map)
     for k, v in pairs(m) do
-        print(k, v)
+        printLog(k, v)
     end
 end
 
 function printSeq(arr: Seq)
     for k, v in ipairs(arr) do
-        print(k, v)
+        printLog(k, v)
     end
 end
 
@@ -69,7 +69,7 @@ end
 local commands: Commands = {}
 
 commands["do3"] = function()
-    print("do3")
+    printLog("do3")
 end
 
 function commands.do1() print("do1") end
@@ -89,7 +89,7 @@ function zoo(): string, number
 end
 
 function goo(s: string)
-    print(s)
+    printLog(s)
 end
 
 --goo(zoo as string)
