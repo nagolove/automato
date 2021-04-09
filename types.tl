@@ -274,7 +274,7 @@ global ChannelsTypes: {string} = {
         * основной поток считывает состояния при сериализации
     при десериализации:
         * рабочий поток считывает состояние клеток и еды
-        * основной потоко запичывает состояние клеток и еды
+        * основной потоко запиcывает состояние клеток и еды
     --]]
     "state",
 
@@ -293,6 +293,8 @@ global ChannelsTypes: {string} = {
     -- рабочий поток: считывает координаты клетки
     -- другой рабочий поток(или тот-же): записывает координаты клетк
     'alive',
+
+    'colonystatus',
 }
 
 function initChannels(n: number): Channels
@@ -340,16 +342,28 @@ global type Simulator = record
 
     -- получить массив данных для рисования
     getDrawLists : function(): {{DrawNode}}
+    presentLists: function()
+
     -- пример запроса для рисования(предки-потомки и тд)
     --getDrawLists : function(query: function(Cell): boolean): {DrawNode}
 
     -- вернуть номер нити обрабатывающей клетку с индексом x, y
     findThreadByPos: function(x: integer, y: integer): integer
+
+    -- вернуть клетку по координатам ее ячейки
     getObject : function(x: integer, y: integer): Cell
+
+    -- выполнить шаг в пошаговом режиме
     step : function()
+
+    -- возвзвращает таблицу с информацией по колонии на текущий момент
     getStatistic : function(): {Statistic}
+
+    -- размер решетки
     getGridSize : function(): integer
+
     getSchema : function(): {MtSchema}
+
     -- время симуляции в секундах
     getUptime: function(): number
 end

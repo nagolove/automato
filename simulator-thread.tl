@@ -486,6 +486,10 @@ local function experiment()
         -- обновление решетки по списку живых клеток и списку еды
         updateGrid()
 
+        if #cells == 0 then
+            channels.colonystatus:push("nocellsincolony")
+        end
+
         -- обновить статистику за такт
         --stat = gatherStatistic(cells)
         gatherStatistic(cells)
@@ -603,8 +607,6 @@ function commands.isalive()
         assert(string.format("x, y " ..  x .. " " .. y .. " threadNum " .. threadNum))
     end
 
-    --printLog('isalive', type(x), type(y), type(threadNum))
-
     local ok, errmsg: boolean, string = pcall(function()
 
         if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
@@ -614,7 +616,6 @@ function commands.isalive()
             if cell.energy and cell.energy > 0 then
                 state = true
             end
-            --printLog(string.format("pushed state %s", state))
             channels.cellrequest:push(state)
         end
     end)
@@ -625,11 +626,7 @@ end
 
 -- метод для пересылки клеток между нитями
 function commands.insertcell()
-    -- получить сохраненную клетку
-    -- FIXME сюда приходит в msg сообщение 'getobject'
     local msg = channels.cells:pop() as string
-    --printLog('cell channel', channels.cells)
-    --printLog('insertcell', msg)
 
     if msg then
         local newcellfun, err = load(msg)

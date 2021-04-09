@@ -486,6 +486,10 @@ local function experiment()
 
       updateGrid()
 
+      if #cells == 0 then
+         channels.colonystatus:push("nocellsincolony")
+      end
+
 
 
       gatherStatistic(cells)
@@ -603,8 +607,6 @@ function commands.isalive()
       assert(string.format("x, y " .. x .. " " .. y .. " threadNum " .. threadNum))
    end
 
-
-
    local ok, errmsg = pcall(function()
 
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
@@ -614,7 +616,6 @@ function commands.isalive()
          if cell.energy and cell.energy > 0 then
             state = true
          end
-
          channels.cellrequest:push(state)
       end
    end)
@@ -625,11 +626,7 @@ end
 
 
 function commands.insertcell()
-
-
    local msg = channels.cells:pop()
-
-
 
    if msg then
       local newcellfun, err = load(msg)

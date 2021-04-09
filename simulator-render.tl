@@ -22,6 +22,7 @@ global record SimulatorRender
     drawGrid: function(SimulatorRender)
     drawCells: function(SimulatorRender)
     presentList: function(SimulatorRender, list: {DrawNode})
+    presentLists: function(SimulatorRender)
     
     cameraToCenter: function(SimulatorRender)
     mouseToCamera: function(SimulatorRender, x: number, y: number): Pos
@@ -47,8 +48,38 @@ local SimulatorRender_mt: metatable<SimulatorRender> = {
     __index = SimulatorRender,
 }
 
+-- количество кадров анимации
+local cellAnimFramesCount = 4
+-- frames/second
+local cellAnimSpeed = 24. 
+
+local type AnimatedCell = record
+    new: function(x: integer, y: integer): AnimatedCell
+    frame: integer
+    timestamp: number
+    x: number
+    y: number
+end
+
+local AnimatedCell_mt: metatable<AnimatedCell> = {
+    __index = AnimatedCell,
+}
+
+function AnimatedCell.new(x: integer, y: integer): AnimatedCell
+    local self = setmetatable({} as AnimatedCell, AnimatedCell_mt)
+    self.x = x
+    self.y = y
+    --self.frame = 1
+    self.frame = math.random(1, cellAnimFramesCount)
+    self.timestamp = love.timer.getTime()
+    return self
+end
+
+local animatedCellsArr: {AnimatedCell}
+local animatedCellsGrid: {{AnimatedCell}}
 -- размер клетки поля суб канваса в пикселях
-local pixSize: integer = 10
+--local pixSize: integer = 10
+local pixSize: integer = 60
 -- ширина линий сетки
 local gridLineWidth = 3
 -- во сколько раз полотно больше размера картинки
@@ -64,6 +95,35 @@ local function clearCanvases(canvases: {love.graphics.Canvas}, color: {number})
         gr.setCanvas(canvas)
         gr.clear(color)
         gr.setCanvas()
+    end
+end
+
+function SimulatorRender:createAnimatedCells()
+    animatedCellsGrid = {}
+    animatedCellsArr = {}
+    for i = 1, self.commonSetup.gridSize do
+        table.insert(animatedCellsGrid, {})
+        local row :{AnimatedCell} = animatedCellsGrid[math.floor(i)]
+        for j = 1, self.commonSetup.gridSize do
+            local animatedCell = AnimatedCell.new(j, i)
+            row[#row + 1] = animatedCell
+            animatedCellsArr[#animatedCellsArr + 1] = animatedCell
+        end
+    end
+end
+
+function SimulatorRender:updateAnimatedCells(_: number)
+    local now = love.timer.getTime()
+    local framePause = 1 / cellAnimSpeed-- frames/second
+    for _, animatedCell in ipairs(animatedCellsArr) do
+        if now - animatedCell.timestamp >= framePause then
+            animatedCell.timestamp = now
+            if animatedCell.frame + 1 >= cellAnimFramesCount then
+                animatedCell.frame = 1
+            else
+                animatedCell.frame = animatedCell.frame + 1
+            end
+        end
     end
 end
 
@@ -133,7 +193,7 @@ function SimulatorRender:bakeCanvas()
     gr.setCanvas(self.canvas)
     gr.clear{0, 0, 0, 1}
     gr.draw(self.gridCanvas as gr.Drawable)
-    self:drawCells()
+    self:presentLists()
     gr.setCanvas()
 end
 
@@ -155,7 +215,8 @@ function SimulatorRender:draw()
     --testing.writeCanvas2Disk(self.canvas, 'SimulatorRender.canvas-%d.png', 100)
 end
 
-function SimulatorRender:update(_: number)
+function SimulatorRender:update(dt: number)
+    self:updateAnimatedCells(dt)
 end
 
 function SimulatorRender:prerenderMeal()
@@ -167,12 +228,13 @@ function SimulatorRender:prerenderMeal()
 end
 
 function SimulatorRender:prerenderCell()
-    local tmpImage = gr.newImage("scenes/automato/cell.png") as gr.Texture
-    local n = 2
+    --local tmpImage = gr.newImage("scenes/automato/cell.png") as gr.Texture
+    local tmpImage = gr.newImage("scenes/automato/cell-anim.png") as gr.Texture
+    --local n = 2
     gr.setCanvas(self.cellCanvas)
     gr.clear(cellcolor1)
     gr.setColor(cellcolor2)
-    gr.rectangle("fill", n, n, pixSize - 2 * n, pixSize - 2 * n)
+    --gr.rectangle("fill", n, n, pixSize - 2 * n, pixSize - 2 * n)
     gr.draw(
         tmpImage as gr.Drawable, 0, 0, 0,
         (self.cellCanvas as gr.Texture):getWidth() / tmpImage:getWidth(),
@@ -180,6 +242,7 @@ function SimulatorRender:prerenderCell()
     )
     gr.setCanvas()
     self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas-1.png')
+    self:createAnimatedCells()
 end
 
 function SimulatorRender:prerenderGrid()
@@ -197,12 +260,36 @@ function SimulatorRender:prerender()
     self:prerenderGrid()
 end
 
+function SimulatorRender:drawCell()
+
+end
+
+function SimulatorRender:drawMeal()
+
+end
+
 function SimulatorRender:presentList(list: {DrawNode})
+    --for _, node in ipairs(list) do
+        --local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
+        --if node.food then
+            --gr.setColor(1, 1, 1, 1)
+            --gr.draw(self.mealCanvas as love.graphics.Drawable, x, y)
+        --else
+            --if node.color then
+                --gr.setColor(node.color)
+            --else
+                --gr.setColor(1, 1, 1, 1)
+            --end
+            --gr.draw(self.cellCanvas as love.graphics.Drawable, x, y)
+        --end
+    --end
+
     for _, node in ipairs(list) do
         local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
         if node.food then
             gr.setColor(1, 1, 1, 1)
             gr.draw(self.mealCanvas as love.graphics.Drawable, x, y)
+
         else
             if node.color then
                 gr.setColor(node.color)
@@ -214,7 +301,7 @@ function SimulatorRender:presentList(list: {DrawNode})
     end
 end
 
-function SimulatorRender:drawCells()
+function SimulatorRender:presentLists()
     local drawlists: {{DrawNode}} = sim.getDrawLists()
     if not drawlists then
         return

@@ -293,6 +293,8 @@ ChannelsTypes = {
 
 
    'alive',
+
+   'colonystatus',
 }
 
 function initChannels(n)

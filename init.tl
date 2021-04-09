@@ -147,17 +147,14 @@ local function drawCellInfo(pos: Pos, cell: Cell)
     if not cell then
         return
     end
-    --linesbuf:pushi('drawCellInfo')
     local mx, my = love.mouse.getPosition()
 
     -- сделать нормальное выделение клетки под курсором
 
-    imgui.SetNextWindowPos(mx, my)
+    local d = 5
+    imgui.SetNextWindowPos(mx + d, my + d)
     imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize|AlwaysAutoResize")
     local msg: string
-    --print('drawCellInfo', inspect(cell))
-    --[[
-    --]]
     imgui.Text(string.format('at point %d, %d', pos.x, pos.y))
     linesbuf:pushi('cellUnderCursor', inspect(cell))
     for k, v in pairs(cell as {any: any}) do
@@ -179,12 +176,9 @@ local function drawCellInfo(pos: Pos, cell: Cell)
                 a = tostring(a)
             end
             msg = string.format(fmt, a)
-            --printLog('drawCellInfo', msg)
-            --imgui.LabelText(k as string, tostring(msg))
             imgui.Text(k as string .. " " .. tostring(msg))
         end
     end
-    --]]
 
     imgui.End()
 end
@@ -561,6 +555,7 @@ local function drawui()
        --imgui.PushItemWidth(100)
        print(i18n('nextplay'))
        if imgui.Button(i18n('nextplay')) then
+            start()
            --local button_w, button_h = 100, 100
            --if imgui.Button('nextplay') then
            --if imgui.Button('nextplay', button_w, button_h) then

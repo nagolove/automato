@@ -147,17 +147,14 @@ local function drawCellInfo(pos, cell)
    if not cell then
       return
    end
-
    local mx, my = love.mouse.getPosition()
 
 
 
-   imgui.SetNextWindowPos(mx, my)
+   local d = 5
+   imgui.SetNextWindowPos(mx + d, my + d)
    imgui.Begin('info', false, "NoTitleBar|NoMove|NoResize|AlwaysAutoResize")
    local msg
-
-
-
    imgui.Text(string.format('at point %d, %d', pos.x, pos.y))
    linesbuf:pushi('cellUnderCursor', inspect(cell))
    for k, v in pairs(cell) do
@@ -179,12 +176,9 @@ local function drawCellInfo(pos, cell)
             a = tostring(a)
          end
          msg = string.format(fmt, a)
-
-
          imgui.Text(k .. " " .. tostring(msg))
       end
    end
-
 
    imgui.End()
 end
@@ -561,6 +555,7 @@ local function drawui()
 
       print(i18n('nextplay'))
       if imgui.Button(i18n('nextplay')) then
+         start()
 
 
 

@@ -168,18 +168,20 @@ function Simulator.create(commonSetup)
    love.filesystem.write('drawlist_fn.txt', "")
 
    setup = deepCopy(commonSetup)
-   print("--------------------------------------------")
 
-   print("commonSetup", inspect(commonSetup))
+   printLog("--------------------------------------------")
+   printLog("commonSetup", inspect(commonSetup))
 
    if isdone == false then
       Simulator.shutdown()
    end
 
+   colonyDied = false
+
 
    threadCount = commonSetup.threadCount
 
-   print("threadCount", threadCount)
+   printLog("threadCount", threadCount)
 
    gridSize = commonSetup.gridSize
    commonSetup.cellId = 0
@@ -191,7 +193,7 @@ function Simulator.create(commonSetup)
    commonSetup.rngState = mainRng:getState()
 
    mtschema = require("mtschemes")[threadCount]
-   print("mtschema", inspect(mtschema))
+   printLog("mtschema", inspect(mtschema))
 
    if not mtschema then
       error(string.format("Unsupported scheme for %d threads.", threadCount))
@@ -199,15 +201,15 @@ function Simulator.create(commonSetup)
 
    createThreads(threadCount, mtschema, commonSetup)
 
-   print("threads", inspect(threads))
-   print("thread errors")
+   printLog("threads", inspect(threads))
+   printLog("thread errors")
    for _, v in ipairs(threads) do
-      print(v:getError())
+      printLog(v:getError())
    end
-   print("end thread errors")
+   printLog("end thread errors")
 
    local processorCount = love.system.getProcessorCount()
-   print("processorCount", processorCount)
+   printLog("processorCount", processorCount)
 
    starttime = love.timer.getTime()
    isdone = false
@@ -223,28 +225,13 @@ function Simulator.create(commonSetup)
          else
             t = channels[i].stat:peek()
          end
-
          if t then
             table.insert(newstat, t)
          end
       end
       statistic = newstat
-
-
-
-
-
-
-
-
-
    end)
 end
-
-
-
-
-
 
 function Simulator.isColonyDied()
    return colonyDied
@@ -341,6 +328,17 @@ end
 
 function Simulator.update(dt)
    infoTimer:update(dt)
+
+   local counter = 0
+   for i = 1, threadCount do
+      local value = channels[i].colonystatus:pop()
+      if value and value == "nocellsincolony" then
+         counter = counter + 1
+      end
+   end
+   if threadCount == counter then
+      colonyDied = true
+   end
 end
 
 function Simulator.getGridSize()
