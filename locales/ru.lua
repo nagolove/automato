@@ -29,6 +29,9 @@ return {
         stp = 'стоп',
         readstate = 'прочитать состояние',
         writestate = 'записать состояние',
+        nextplay = 'играть сначала',
+        exit = 'выйти',
+        progress = 'смотреть достижения',
 
         stat = {
             allEated = 'съедено клеток',

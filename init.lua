@@ -27,7 +27,7 @@ local ViewState = {}
 
 
 local profi = require("profi")
-
+local gr = love.graphics
 
 
 local serpent = require("serpent")
@@ -241,7 +241,6 @@ local function printStat()
 
    local starr = sim.getStatistic()
 
-
    if #starr ~= 0 then
       prevStat = deepCopy(prevStat)
    elseif #starr == 0 and prevStat then
@@ -249,28 +248,18 @@ local function printStat()
       printLog("used prevStat", inspect(prevStat))
    end
 
-
    if #starr > 1 then
       table.remove(starr, 2)
    end
-
-
 
    for _, st in ipairs(starr) do
       for k, v in pairs(st) do
 
          if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k], k, v), true) then
 
-
-
-
-
             local someText = "formatMods." .. k
-
             imgui.Text(i18n(someText))
          end
-
-
       end
    end
 end
@@ -531,6 +520,9 @@ local function drawBrief()
 
    imgui.Begin('brief', false)
    printStat()
+   if imgui.Button('kill colony') then
+      sim.killColony()
+   end
    imgui.End()
 end
 
@@ -545,6 +537,30 @@ local function drawui()
    drawBrief()
 
    if sim.isColonyDied() then
+      print('colony died')
+
+
+
+      local window_bg = { 1, 0, 0, 1 }
+      imgui.PushStyleColor("WindowBg", window_bg[1], window_bg[2], window_bg[3], window_bg[4])
+      local windowCapture = 'Колония умерла'
+      imgui.Begin(windowCapture, false, "NoMove|NoResize|AlwaysAutoResize")
+
+
+
+
+
+      local window_w, window_h = imgui.GetWindowSize()
+      local w, h = gr.getDimensions()
+      local posx, posy = math.ceil((w - window_w) / 2), math.ceil((h - window_h) / 2)
+      imgui.SetWindowPos(windowCapture, posx, posy, "Always")
+
+      imgui.PushAllowKeyboardFocus(false)
+
+
+
+      print(i18n('nextplay'))
+      if imgui.Button(i18n('nextplay')) then
 
 
 
@@ -559,6 +575,24 @@ local function drawui()
 
 
 
+
+
+
+
+
+
+
+      end
+      if imgui.Button(i18n('progress')) then
+
+      end
+      if imgui.Button(i18n('exit')) then
+         love.event.quit()
+      end
+
+      imgui.PopAllowKeyboardFocus()
+      imgui.End()
+      imgui.PopStyleColor()
 
    end
 end
@@ -611,22 +645,27 @@ end
 
 
 
-local function update(dt)
-
-   linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
-   linesbuf:update()
-   simulatorRender:update(dt)
-   cellUnderCursor = getCellUnderCursor(underCursor)
-   timer:update(dt)
-
-
-   sim.update(dt)
-
-
+local function updateMouseToCamera()
    if simulatorRender then
       local mx, my = love.mouse.getPosition()
       underCursor = simulatorRender:mouseToCamera(mx, my)
    end
+end
+
+local function update(dt)
+
+   linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
+   linesbuf:pushi(string.format('scale %f, %f', cam.scale, cam.scale))
+   linesbuf:update()
+   simulatorRender:update(dt)
+   cellUnderCursor = getCellUnderCursor(underCursor)
+   timer:update(dt)
+   binds.cameraControlUpdate(dt)
+
+   sim.update(dt)
+
+
+   updateMouseToCamera()
 
    if love.mouse.isDown(1) then
       startGrap = { love.mouse.getPosition() }
@@ -656,6 +695,30 @@ end
 local function bindKeys()
    binds.bindCameraControl(cam)
    local Shortcut = KeyConfig.Shortcut
+
+   KeyConfig.bind(
+   "isdown",
+   { key = "z" },
+   function(sc)
+      updateMouseToCamera()
+      cam:zoom(1.01)
+      return false, sc
+   end,
+   "zoom camera out",
+   "zoomout")
+
+
+   KeyConfig.bind(
+   "isdown",
+   { key = "x" },
+   function(sc)
+      updateMouseToCamera()
+      cam:zoom(0.99)
+      return false, sc
+   end,
+   "zoom camera in",
+   "zoomin")
+
 
    KeyConfig.bind(
    "keypressed",

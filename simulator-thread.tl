@@ -565,24 +565,21 @@ function commands.stop()
 end
 
 function commands.getobject()
-    --local x, y: number, number = channels.msg:pop() as number, channels.msg:pop() as number
     local x, y: number, number
     x = channels.object_w:pop() as integer
     y = channels.object_w:pop() as integer
-    --printLog("commands.getobject", x, y)
-    local ok, errmsg: boolean, string = pcall(function()
+    local ok, _: boolean, string = pcall(function()
         if grid then
             local cell = grid[math.floor(x)][math.floor(y)]
             if cell then
-                --requestChan:push(serpent.dump(cell))
                 local dump = serpent.dump(cell)
-                --printLog("dump", dump)
                 channels.object_r:push(dump)
             end
         end
     end)
     if not ok then
-        error("Error in getobject operation " .. errmsg)
+        -- попытка восстановиться от ошибки очистив очередь сообщений
+        --error("Error in getobject operation " .. errmsg)
     end
 end
 

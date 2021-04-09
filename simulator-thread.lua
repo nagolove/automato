@@ -565,24 +565,21 @@ function commands.stop()
 end
 
 function commands.getobject()
-
    local x, y
    x = channels.object_w:pop()
    y = channels.object_w:pop()
-
-   local ok, errmsg = pcall(function()
+   local ok, _ = pcall(function()
       if grid then
          local cell = grid[math.floor(x)][math.floor(y)]
          if cell then
-
             local dump = serpent.dump(cell)
-
             channels.object_r:push(dump)
          end
       end
    end)
    if not ok then
-      error("Error in getobject operation " .. errmsg)
+
+
    end
 end
 

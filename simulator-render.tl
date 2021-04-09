@@ -48,8 +48,6 @@ local SimulatorRender_mt: metatable<SimulatorRender> = {
 }
 
 -- размер клетки поля суб канваса в пикселях
---local pixSize: number = 20
---local pixSize: number = 160
 local pixSize: integer = 10
 -- ширина линий сетки
 local gridLineWidth = 3
@@ -60,7 +58,6 @@ local gridColor = {0.5, 0.5, 0.5}
 local mealcolor = {0, 1, 0, 1}
 local cellcolor1 = {0.5, 0.5, 0.5, 1}
 local cellcolor2 = {0, 0, 1, 1}
---local black = {0, 0, 0, 1}
 
 local function clearCanvases(canvases: {love.graphics.Canvas}, color: {number})
     for _, canvas in ipairs(canvases) do
@@ -91,7 +88,7 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
 
     clearCanvases(
         { self.gridCanvas, self.canvas, self.cellCanvas, self.mealCanvas },
-        { 0.5, 0, 0, 1}
+        { 0, 0, 0, 1}
     )
 
     self:prerender()
@@ -117,44 +114,24 @@ function SimulatorRender:mouseToCamera(x: number, y: number): Pos
     return {
         x = math.ceil((nx / self:getPixSize()) * self.cam.scale),
         y = math.ceil((ny / self:getPixSize()) * self.cam.scale)
-        --x = math.floor((nx / self:getPixSize()) * self.cam.scale),
-        --y = math.floor((ny / self:getPixSize()) * self.cam.scale)
     }
 end
 
 function SimulatorRender:cameraToCenter()
     local w, h = gr.getDimensions()
-    --print(self.canvas)
-    --local w, h = (self.canvas as gr.Texture):getDimensions()
     printLog('w, h', w, h)
-    -- TODO разобрать формулу, не работает как надо, на половину ширины
     printLog('self.fieldWidthPixels', self.fieldWidthPixels, self.fieldHeightPixels)
     local dx = (w - (self.canvas as gr.Texture):getWidth()) / 2
     local dy = (h - (self.canvas as gr.Texture):getHeight()) / 2
-    --local dx = (w - self.fieldWidthPixels) / 2
-    --local dy = (h - self.fieldHeightPixels) / 2
-
-    --printLog("camera position", self.cam:position())
-    --printLog("lookAt", dx, dy)
 
     self.cam.scale = 1.
     self.cam:lookAt(dx, dy)
-
-    --printLog("camera position2", self.cam:position())
-
-    --self.cam:lookAt(w / 2, h / 2)
-    --self.cam:lookAt(200, 0)
-
-    --self.cam:lookAt(-dx, -dy)
-    --self.cam:move(dx, dy)
 end
 
 function SimulatorRender:bakeCanvas()
     gr.setColor{1, 1, 1, 1}
     gr.setCanvas(self.canvas)
-    --gr.clear{1, 1, 1, 1}
     gr.clear{0, 0, 0, 1}
-    --self:drawGrid()
     gr.draw(self.gridCanvas as gr.Drawable)
     self:drawCells()
     gr.setCanvas()
@@ -167,37 +144,15 @@ function SimulatorRender:draw()
         return
     end
 
-    -- TODO запекать только есть есть события отрисовки клеток или поля
-    -- с предыдущего кадра.
     self:bakeCanvas()
-    --print("SimulatorRender:draw() self.canvas", self.canvas)
-
     gr.setColor{1, 1, 1, 1}
-    --local sx, sy = 0.5, 0.5
     local sx, sy = 1, 1 
 
-    --printLog('self.camera.position', self.cam:position())
-    -- 710, 290
     self.cam:attach()
-    gr.draw(
-        self.canvas as love.graphics.Drawable,
-        0, 
-        0, 
-        0.0,
-        sx,
-        sy
-    )
+    gr.draw( self.canvas as love.graphics.Drawable, 0, 0, 0.0, sx, sy)
     self.cam:detach()
 
     --testing.writeCanvas2Disk(self.canvas, 'SimulatorRender.canvas-%d.png', 100)
-
-    --[[
-    -- XXX загружается каждый кадр
-    local font = love.graphics.newFont("fonts/DroidSansMono.ttf", 32)
-    gr.setFont(font)
-    gr.setColor(1, 1, 1)
-    gr.print('привет галактика!', 100, 100)
-    --]]
 end
 
 function SimulatorRender:update(_: number)
@@ -224,8 +179,6 @@ function SimulatorRender:prerenderCell()
         (self.cellCanvas as gr.Texture):getHeight() / tmpImage:getHeight()
     )
     gr.setCanvas()
-    --gr.setCanvas(self.cellCanvas)
-    --gr.setCanvas()
     self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas-1.png')
 end
 

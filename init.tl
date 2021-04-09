@@ -27,7 +27,7 @@ local type ViewState = enum
 end
 
 local profi = require "profi"
-
+local gr = love.graphics
 --global PROF_CAPTURE = false
 
 local serpent = require "serpent"
@@ -241,7 +241,6 @@ local function printStat()
 
     local starr: {Statistic} = sim.getStatistic()
 
-    -- XXX работает ли такая подмена массива?
     if #starr ~= 0 then
         prevStat = deepCopy(prevStat)
     elseif #starr == 0 and prevStat then
@@ -249,28 +248,18 @@ local function printStat()
         printLog("used prevStat", inspect(prevStat))
     end
 
-    -- XXX hack
     if #starr > 1 then
         table.remove(starr, 2)
     end
-
-    --love.filesystem.append('printstat.txt', string.format("starr = %s\n", inspect(starr)))
 
     for _, st in ipairs(starr) do
         for k, v in pairs(st as {string: number}) do
             --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
             if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k as Statistic.Types], k, v), true) then
             --if imgui.CollapsingHeader(string.format('%s:' .. formatMods[k as Statistic.Types], k, v), false) then
-                --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
-                --imgui.SameLine()
-                --imgui.Text(string.format('%s:' .. formatMods[k as Statistic.Types], k, v))
-                --print(k, v)
                 local someText = "formatMods." .. k as Statistic.Types
-                --printLog('someText', someText)
                 imgui.Text(i18n(someText))
             end
-            --print('CollapsingHeader', r1, r2)
-            --if (ImGui::CollapsingHeader("Window options"))
         end
     end
 end
@@ -531,6 +520,9 @@ local function drawBrief()
     --imgui.Begin('brief', false, 'AlwaysAutoResize')
     imgui.Begin('brief', false)
     printStat()
+    if imgui.Button('kill colony') then
+        sim.killColony()
+    end
     imgui.End()
 end
 
@@ -545,22 +537,64 @@ local function drawui()
     drawBrief()
 
     if sim.isColonyDied() then
-        --imgui.BeginPopupModal('Колония умерла')
-        --if imgui.BeginPopupModal('Colony died', false, 'MenuBar') then
-        --if imgui.BeginPopupModal('Colony died', false, 'MenuBar') then
-        --local r1, r2 = imgui.BeginPopupModal('Colony died', false, 'Modal|AlwaysAutoResize|Popup') 
-        --local r1, r2 = imgui.Begin('Colony died', false, 'Modal|AlwaysAutoResize|Popup') 
-        --local r1, r2 = imgui.BeginPopupModal('Colony died', false, 'Modal|AlwaysAutoResize|Popup')  
-        --print('BeginPopupModal', r1, r2)
-        --if r1 then
-            --imgui.Text('some text')
-            --if imgui.Button('OK') then
-            ---- рестар
-            --end
-        --end
-            --imgui.EndPopup()
-        --imgui.End()
-    end
+        print('colony died')
+       --if imgui.BeginPopupModal('Колония умерла') then
+       --imgui.Begin('Колония умерла', false, "NoTitleBar|NoMove|NoResize|AlwaysAutoResize")
+       --imgui.Begin('Колония умерла', false, "NoTitleBar|NoMove|NoResize")
+       local window_bg = { 1, 0, 0, 1 }
+       imgui.PushStyleColor("WindowBg", window_bg[1], window_bg[2], window_bg[3], window_bg[4])
+       local windowCapture = 'Колония умерла'
+       imgui.Begin(windowCapture, false, "NoMove|NoResize|AlwaysAutoResize")
+       --print('imgui.GetWindowSize()', imgui.GetWindowSize())
+
+       --local window_w, window_h = 900, 300
+       --imgui.SetWindowSize(windowCapture, window_w, window_h, "Always")
+
+       local window_w, window_h = imgui.GetWindowSize()
+       local w, h = gr.getDimensions()
+       local posx, posy: integer = math.ceil((w - window_w) / 2), math.ceil((h - window_h) / 2)
+       imgui.SetWindowPos(windowCapture, posx, posy, "Always")
+
+       imgui.PushAllowKeyboardFocus(false)
+
+
+       --imgui.PushItemWidth(100)
+       print(i18n('nextplay'))
+       if imgui.Button(i18n('nextplay')) then
+           --local button_w, button_h = 100, 100
+           --if imgui.Button('nextplay') then
+           --if imgui.Button('nextplay', button_w, button_h) then
+
+
+           --if imgui.BeginPopupModal("blahblah") then
+               --imgui.EndPopup()
+           --end
+
+           --imgui.PopItemWidth()
+           --if imgui.BeginPopupModal('Colony died', false, 'MenuBar') then
+           --if imgui.BeginPopupModal('Colony died', false, 'MenuBar') then
+           --local r1, r2 = imgui.BeginPopupModal('Colony died', false, 'Modal|AlwaysAutoResize|Popup') 
+           --local r1, r2 = imgui.Begin('Colony died', false, 'Modal|AlwaysAutoResize|Popup') 
+           --local r1, r2 = imgui.BeginPopupModal('Colony died', false, 'Modal|AlwaysAutoResize|Popup')  
+           --print('BeginPopupModal', r1, r2)
+           --if r1 then
+           --imgui.Text('some text')
+           --if imgui.Button('OK') then
+           ---- рестар
+           --end
+           end
+           if imgui.Button(i18n('progress')) then
+
+           end
+           if imgui.Button(i18n('exit')) then
+               love.event.quit()
+           end
+           --imgui.EndPopup()
+           imgui.PopAllowKeyboardFocus()
+           imgui.End()
+           imgui.PopStyleColor()
+       --end
+   end
 end
 
 local function draw()
@@ -611,22 +645,27 @@ end
     --end
 --end
 
-local function update(dt: number)
-    --prof.push("frame")
-    linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
-    linesbuf:update()
-    simulatorRender:update(dt)
-    cellUnderCursor = getCellUnderCursor(underCursor)
-    timer:update(dt)
-
-    --prof.push("sim.update")
-    sim.update(dt)
-    --prof.pop("sim.update")
-
+local function updateMouseToCamera()
     if simulatorRender then
         local mx, my = love.mouse.getPosition()
         underCursor = simulatorRender:mouseToCamera(mx, my)
     end
+end
+
+local function update(dt: number)
+    --prof.push("frame")
+    linesbuf:pushi(string.format('FPS %d', love.timer.getFPS()))
+    linesbuf:pushi(string.format('scale %f, %f', cam.scale, cam.scale))
+    linesbuf:update()
+    simulatorRender:update(dt)
+    cellUnderCursor = getCellUnderCursor(underCursor)
+    timer:update(dt)
+    binds.cameraControlUpdate(dt)
+    --prof.push("sim.update")
+    sim.update(dt)
+    --prof.pop("sim.update")
+
+    updateMouseToCamera()
 
     if love.mouse.isDown(1) then
         startGrap = {love.mouse.getPosition()}
@@ -656,6 +695,30 @@ end
 local function bindKeys()
     binds.bindCameraControl(cam)
     local Shortcut = KeyConfig.Shortcut
+
+    KeyConfig.bind(
+        "isdown",
+        { key = "z" },
+        function(sc: Shortcut): boolean, Shortcut
+            updateMouseToCamera()
+            cam:zoom(1.01)
+            return false, sc
+        end,
+        "zoom camera out",
+        "zoomout"
+    )
+
+    KeyConfig.bind(
+        "isdown",
+        { key = "x" },
+        function(sc: Shortcut): boolean, Shortcut
+            updateMouseToCamera()
+            cam:zoom(0.99)
+            return false, sc
+        end,
+        "zoom camera in",
+        "zoomin"
+    )
 
     KeyConfig.bind(
         "keypressed",

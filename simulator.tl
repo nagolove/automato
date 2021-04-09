@@ -71,6 +71,10 @@ local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
     --prof.pop("extractDrawList")
 end
 
+function Simulator.killColony()
+    colonyDied = true
+end
+
 function Simulator.getDrawLists(): {{DrawNode}}
     --prof.push("getDrawLists")
     local list = {}
@@ -284,23 +288,8 @@ function Simulator.getObject(x: integer, y: integer): Cell
         error(string.format("threadNum == -1 for %d, %d with schema %s", x, y, inspect(mtschema)))
     end
 
-    --local mchan = love.thread.getChannel("msg" .. threadNum)
-    --local mchan = channels[threadNum].msg
-    --local bchan = love.thread.getChannel('busy' .. threadNum)
-    --local state = bchan:peek() as string
-
-    --channels[threadNum].msg:push('getobject')
-    -- пишу из главного
-    --bchan:push('b')
-
-    --mchan:push("getobject")
-    --mchan:push(x)
-    --mchan:push(y)
-
     -- передать команду
     channels[threadNum].msg:push("getobject")
-    --channels[threadNum].object_w:push(x)
-    --channels[threadNum].object_w:push(y)
 
     -- передать параметры команды
     channels[threadNum].object_w:performAtomic(function(channel: love.thread.Channel)
@@ -308,47 +297,19 @@ function Simulator.getObject(x: integer, y: integer): Cell
         channel:push(y)
     end)
 
-    --bchan:clear()
-
-    --[[
-
-    --mchan:push("getobject")
-    channels[threadNum].msg:push("getobject")
-    channels[threadNum].object:push(x)
-    channels[threadNum].object:push(y)
-
-
-    { 
-        cmd = 'getobject',
-        ...,
-        ...,
-    }
-    ]]
-
     -- FIXME demand не дает ответа за таймаут и вешает программу
-    --local sobject = rchan:demand(0.01) as string
     local sobject = channels[threadNum].object_r:demand(0.01) as string
-    --local sobject = channels[threadNum].object:pop() as string
-
-    --print("sobject", sobject)
 
     if not sobject then
         return nil
     end
 
-    --local objectfun, err: function, boolean = serpent.load(sobject)
     local ok, object: boolean, Cell = serpent.load(sobject) as (boolean, Cell)
-
-    --print("ok", ok)
-
     if not ok then
-        --logferror("Could'not deserialize cell object %s", err)
         logferror("Could'not deserialize cell object")
         return nil
     end
 
-    --print("rchan:getCount()", channels[threadNum].object:getCount())
-    --print("object", inspect(object))
     return object
 end
 
@@ -365,7 +326,8 @@ end
 
 function Simulator.step()
     print('Simulator.step()')
-    print('ppppppppppppppppppppppppppppppppppp')
+    --print('ppppppppppppppppppppppppppppppppppp')
+    --getDrawLists
     pushMsg2Threads("step")
 end
 

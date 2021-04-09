@@ -48,8 +48,6 @@ local SimulatorRender_mt = {
 }
 
 
-
-
 local pixSize = 10
 
 local gridLineWidth = 3
@@ -60,7 +58,6 @@ local gridColor = { 0.5, 0.5, 0.5 }
 local mealcolor = { 0, 1, 0, 1 }
 local cellcolor1 = { 0.5, 0.5, 0.5, 1 }
 local cellcolor2 = { 0, 0, 1, 1 }
-
 
 local function clearCanvases(canvases, color)
    for _, canvas in ipairs(canvases) do
@@ -91,7 +88,7 @@ function SimulatorRender.new(commonSetup, cam)
 
    clearCanvases(
    { self.gridCanvas, self.canvas, self.cellCanvas, self.mealCanvas },
-   { 0.5, 0, 0, 1 })
+   { 0, 0, 0, 1 })
 
 
    self:prerender()
@@ -117,44 +114,24 @@ function SimulatorRender:mouseToCamera(x, y)
    return {
       x = math.ceil((nx / self:getPixSize()) * self.cam.scale),
       y = math.ceil((ny / self:getPixSize()) * self.cam.scale),
-
-
    }
 end
 
 function SimulatorRender:cameraToCenter()
    local w, h = gr.getDimensions()
-
-
    printLog('w, h', w, h)
-
    printLog('self.fieldWidthPixels', self.fieldWidthPixels, self.fieldHeightPixels)
    local dx = (w - (self.canvas):getWidth()) / 2
    local dy = (h - (self.canvas):getHeight()) / 2
 
-
-
-
-
-
    self.cam.scale = 1.
    self.cam:lookAt(dx, dy)
-
-
-
-
-
-
-
-
 end
 
 function SimulatorRender:bakeCanvas()
    gr.setColor({ 1, 1, 1, 1 })
    gr.setCanvas(self.canvas)
-
    gr.clear({ 0, 0, 0, 1 })
-
    gr.draw(self.gridCanvas)
    self:drawCells()
    gr.setCanvas()
@@ -167,35 +144,13 @@ function SimulatorRender:draw()
       return
    end
 
-
-
    self:bakeCanvas()
-
-
    gr.setColor({ 1, 1, 1, 1 })
-
    local sx, sy = 1, 1
 
-
-
    self.cam:attach()
-   gr.draw(
-   self.canvas,
-   0,
-   0,
-   0.0,
-   sx,
-   sy)
-
+   gr.draw(self.canvas, 0, 0, 0.0, sx, sy)
    self.cam:detach()
-
-
-
-
-
-
-
-
 
 
 end
@@ -224,8 +179,6 @@ function SimulatorRender:prerenderCell()
    (self.cellCanvas):getHeight() / tmpImage:getHeight())
 
    gr.setCanvas()
-
-
    self.cellCanvas:newImageData():encode('png', 'simulator-render-cell-canvas-1.png')
 end
 

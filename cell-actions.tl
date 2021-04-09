@@ -76,9 +76,6 @@ local function isAliveNeighbours(x: integer, y: integer, threadNum: integer): bo
     if not threadNum then
         error("no threadNum")
     end
-    --writelog(string.format("isAliveNeighbours(%d, %d, %d)", x, y, threadNum))
-
-    --print("threadNum", threadNum)
 
     local msgChan = love.thread.getChannel("msg" .. threadNum)
     msgChan:push("isalive")
@@ -86,27 +83,19 @@ local function isAliveNeighbours(x: integer, y: integer, threadNum: integer): bo
     aliveChan:push(x)
     aliveChan:push(y)
 
-    -- блокирующий вызов, вешает программу
-    --local state: boolean = love.thread.getChannel("request" .. threadNum):demand() as boolean
-
     if threadNum == curThreadNum then
         return isAlive(x, y)
     else
-        --print("FUCKFUCK")
         local threadName = "cellrequest" .. threadNum
-
-        --writelog("request to", threadName)
 
         local chan = love.thread.getChannel(threadName)
         local state: boolean = chan:demand(requestThreadDemandTimeout) as boolean
 
-        --if not state then
         local i = 0
         while not state do
             if i >= limit then
                 error("Cycles limit reached.")
             end
-            --writelog("setup.popCommand")
 
             setup.popCommand()
             love.timer.sleep(0.01)
@@ -114,24 +103,15 @@ local function isAliveNeighbours(x: integer, y: integer, threadNum: integer): bo
             i = i + 1
         end
 
-        --writelog("state ", tostring(state))
-
         assert(state ~= nil, "no answer from " .. threadName .. " thread")
         return state
-
-        --return true
     end
 end
 
 -- отослать клетку в другой поток через канал
 local function moveCellToThread(cell: Cell, threadNum: number)
-    --print("moveCellToThread", threadNum)
-
-    --local dump: string = serpent.dump(cell)
     local dump = serpent.dump(cell)
     local chan = love.thread.getChannel("msg" .. threadNum)
-
-    --printLog('moveCellToThread dump', inspect(dump))
 
     local bchan = love.thread.getChannel('busy' .. threadNum)
     local state = bchan:peek() as string
@@ -144,32 +124,44 @@ local function moveCellToThread(cell: Cell, threadNum: number)
     chan:push("insertcell")
     --<<-- еще что-то вклинивается
     local cellsChan = love.thread.getChannel('cells' .. threadNum)
-    --printLog('cellsChan', cellsChan)
-    -- XXX нужна ли здесь очистка?
     --cellsChan:clear()
     cellsChan:push(dump)
     bchan:clear()
 end
 
+----------------------------------------
+-- имитация алгоритма рисования анимации движения
+--[[
+print('actions.up()')
+local node: DrawNode = {}
+node.x = cell.pos.x
+node.y = cell.pos.y
+node.color = {1, 1, 1, 1}
+print('setup.channels', inspect(setup.channels))
+for _ = 1, 100 do 
+    --do
+    local ok, errmsg: boolean, string = pcall(function()
+        setup.channels.drawlist_fn:push(node)
+    end)
+    if not ok then
+        print('error in actions.cross()', errmsg)
+    end
+end
+--]]
+----------------------------------------
+
+
 function actions.left(cell: Cell): boolean
     local res = true
     local pos = cell.pos
     pushPosition(cell)
-    --print("cell", inspect(cell))
     if pos.x > 1 and not isAlive(pos.x - 1, pos.y) then
         pos.x = pos.x - 1
-    --elseif pos.x <= 1 and not isAlive(gridSize, pos.y) then
-    --print("schema", inspect(schema))
     elseif pos.x <= 1 and not isAliveNeighbours(gridSize, pos.y, schema.l) then
-        --getGrid()[cell.pos.x][cell.pos.y].energy = 0
-        --local oldx, oldy = cell.pos.x, cell.pos.y
-        --pos.x = gridSize
+        local oldx, oldy = cell.pos.x, cell.pos.y
         cell.pos.x = gridSize
         moveCellToThread(cell, schema.l)
-        --getGrid()[oldx][oldy] = {}
-        -- XXX клетка должна быть сразу уничтожена
-        -- после возврата из функции
-        --getGrid()[oldx][oldy].energy = 0
+        getGrid()[oldx][oldy].energy = 0
         res = false
     end
     return res
@@ -181,11 +173,11 @@ function actions.right(cell: Cell): boolean
     pushPosition(cell)
     if pos.x < gridSize and not isAlive(pos.x + 1, pos.y) then
         pos.x = pos.x + 1
-    --elseif pos.x >= gridSize and not isAlive(1, pos.y) then
     elseif pos.x >= gridSize and not isAliveNeighbours(1, pos.y, schema.r) then
-        --getGrid()[cell.pos.x][cell.pos.y].energy = 0
+        local oldx, oldy = cell.pos.x, cell.pos.y
         cell.pos.x = 1
         moveCellToThread(cell, schema.r)
+        getGrid()[oldx][oldy].energy = 0
         res = false
     end
     return res
@@ -195,34 +187,13 @@ function actions.up(cell: Cell): boolean
     local res = true
     local pos = cell.pos
     pushPosition(cell)
-
-    ----------------------------------------
-    --[[
-    print('actions.up()')
-    local node: DrawNode = {}
-    node.x = cell.pos.x
-    node.y = cell.pos.y
-    node.color = {1, 1, 1, 1}
-    print('setup.channels', inspect(setup.channels))
-    for _ = 1, 100 do 
-        --do
-        local ok, errmsg: boolean, string = pcall(function()
-            setup.channels.drawlist_fn:push(node)
-        end)
-        if not ok then
-            print('error in actions.cross()', errmsg)
-        end
-    end
-    --]]
-    ----------------------------------------
-
     if pos.y > 1 and not isAlive(pos.x, pos.y - 1) then
         pos.y = pos.y - 1
-    --elseif pos.y <= 1 and not isAlive(pos.x, gridSize) then
     elseif pos.y <= 1 and not isAliveNeighbours(pos.x, gridSize, schema.u) then
-        --getGrid()[cell.pos.x][cell.pos.y].energy = 0
+        local oldx, oldy = cell.pos.x, cell.pos.y
         cell.pos.y = gridSize
         moveCellToThread(cell, schema.u)
+        getGrid()[oldx][oldy].energy = 0
         res = false
     end
     return res
@@ -235,9 +206,10 @@ function actions.down(cell: Cell): boolean
     if pos.y < gridSize and not isAlive(pos.x, pos.y + 1) then
         pos.y = pos.y + 1
     elseif pos.y >= gridSize and not isAliveNeighbours(pos.x, 1, schema.d) then
-        --getGrid()[cell.pos.x][cell.pos.y].energy = 0
+        local oldx, oldy = cell.pos.x, cell.pos.y
         cell.pos.y = 1
         moveCellToThread(cell, schema.d)
+        getGrid()[oldx][oldy].energy = 0
         res = false
     end
     return res

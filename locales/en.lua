@@ -29,6 +29,9 @@ return {
         stp = 'stp',
         readstate = 'read state',
         writestate = 'write state',
+        nextplay = 'next play',
+        exit = 'exit',
+        progress = 'see progress',
 
         stat = {
             -- съедено клеток

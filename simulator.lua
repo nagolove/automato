@@ -71,6 +71,10 @@ local function extractDrawList(list, channel)
 
 end
 
+function Simulator.killColony()
+   colonyDied = true
+end
+
 function Simulator.getDrawLists()
 
    local list = {}
@@ -285,22 +289,7 @@ function Simulator.getObject(x, y)
    end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
    channels[threadNum].msg:push("getobject")
-
-
 
 
    channels[threadNum].object_w:performAtomic(function(channel)
@@ -309,45 +298,17 @@ function Simulator.getObject(x, y)
    end)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    local sobject = channels[threadNum].object_r:demand(0.01)
-
-
-
 
    if not sobject then
       return nil
    end
 
-
    local ok, object = serpent.load(sobject)
-
-
-
    if not ok then
-
       logferror("Could'not deserialize cell object")
       return nil
    end
-
-
 
    return object
 end
@@ -365,7 +326,8 @@ end
 
 function Simulator.step()
    print('Simulator.step()')
-   print('ppppppppppppppppppppppppppppppppppp')
+
+
    pushMsg2Threads("step")
 end
 

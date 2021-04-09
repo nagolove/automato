@@ -335,6 +335,8 @@ global type Simulator = record
 
     -- возвращает истину если колония умерла
     isColonyDied: function(): boolean
+    -- убить колонию
+    killColony: function()
 
     -- получить массив данных для рисования
     getDrawLists : function(): {{DrawNode}}
