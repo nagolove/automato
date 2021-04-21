@@ -7,12 +7,12 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 require("love")
 require("log")
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() ..
-";../../?/init.lua;" ..
-"?.lua;" ..
-"?/init.lua;" ..
+
+"./?.lua;" ..
+"./?/init.lua;" ..
 "scenes/automato/?/init.lua;" ..
 "scenes/automato/?.lua")
-printLog(love.filesystem.getRequirePath())
+printLog('[[' .. love.filesystem.getRequirePath() .. ']]')
 
 require("common")
 require("imgui")
@@ -29,6 +29,11 @@ local ViewState = {}
 local profi = require("profi")
 local gr = love.graphics
 
+
+
+local mem = {}
+
+PROF_CAPTURE = false
 
 local serpent = require("serpent")
 local i18n = require("i18n")
@@ -447,6 +452,36 @@ local function drawSim()
    if mode == "stop" then
       roundSettings()
    end
+   if imgui.Button("collectgarbage") then
+      collectgarbage()
+   end
+   if imgui.Button("get 1GB RAM" .. string.format(" (usage %d mbytes)", (collectgarbage("count")) / 1024)) then
+      local t = {}
+      for _ = 1, 1000000 * 5 * 3 do
+         local k = math.random()
+
+
+
+
+
+
+
+
+
+
+         table.insert(t, k)
+
+
+
+
+
+
+      end
+      for j = 1, 100000 do
+
+      end
+      mem[#mem + 1] = t
+   end
    if imgui.Button(i18n("start")) then
       start()
    end
@@ -520,6 +555,16 @@ local function drawBrief()
    imgui.End()
 end
 
+local function drawExperimental()
+   if imgui.Button("get 1GB RAM") then
+      local t = {}
+      for _ = 1, 100000 do
+         table.insert(t, 1)
+      end
+
+   end
+end
+
 local function drawui()
    imgui.StyleColorsLight()
 
@@ -529,6 +574,7 @@ local function drawui()
    drawSim()
    drawLog()
    drawBrief()
+   drawExperimental()
 
    if sim.isColonyDied() then
       print('colony died')

@@ -1,17 +1,17 @@
+love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 require "love"
---love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
---package.path = package.path .. ";scenes/automato/?.lua"
+package.path = package.path .. ";scenes/automato/?.lua"
 require "imgui"
 require "common"
 require "types"
 
-local gr = love.graphics
 --local inspect = require "inspect"
 --local keyconfig = require "keyconfig"
-local mtschemes = require "mtschemes"
 --local prof = require "jprof"
-local sim = require "simulator"
 --local profi = require "profi"
+local gr = love.graphics
+local mtschemes = require "mtschemes"
+local sim = require "simulator"
 
 global record SimulatorRender
     new: function(commonSetup: CommonSetup, Camera): SimulatorRender
