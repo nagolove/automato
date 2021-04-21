@@ -61,6 +61,7 @@ local AnimatedCell = {}
 
 
 
+
 local AnimatedCell_mt = {
    __index = AnimatedCell,
 }
@@ -260,43 +261,36 @@ function SimulatorRender:prerender()
    self:prerenderGrid()
 end
 
-function SimulatorRender:drawCell()
-
+function SimulatorRender:drawCell(animatedCell)
+   gr.setColor(1, 1, 1, 1)
+   gr.draw(self.cellCanvas, animatedCell.x, animatedCell.y)
 end
 
-function SimulatorRender:drawMeal()
-
+function SimulatorRender:drawMeal(animatedCell)
+   gr.draw(self.mealCanvas, animatedCell.x, animatedCell.y)
 end
 
 function SimulatorRender:presentList(list)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
    for _, node in ipairs(list) do
-      local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
-      if node.food then
-         gr.setColor(1, 1, 1, 1)
-         gr.draw(self.mealCanvas, x, y)
+      local x, y = math.floor((node.x - 1) * pixSize), math.floor((node.y - 1) * pixSize)
 
-      else
-         if node.color then
-            gr.setColor(node.color)
+      local animatedCell = animatedCellsGrid[x][y]
+      if animatedCell and animatedCell.empty then
+         local tmpCell = AnimatedCell.new(x, y)
+         animatedCellsGrid[x][y] = tmpCell
+         animatedCellsArr[#animatedCellsArr + 1] = tmpCell
+      end
+      if animatedCell then
+         if node.food then
+            self:drawCell(animatedCell)
          else
-            gr.setColor(1, 1, 1, 1)
+            if node.color then
+               gr.setColor(node.color)
+            else
+               gr.setColor(1, 1, 1, 1)
+            end
+            self:drawMeal(animatedCell)
          end
-         gr.draw(self.cellCanvas, x, y)
       end
    end
 end
