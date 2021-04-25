@@ -3,12 +3,10 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 
 
 
-
 love.filesystem.setRequirePath(
 love.filesystem.getRequirePath() .. "?.lua;scenes/automato/?.lua")
 
 
-require("love")
 require("imgui")
 require("common")
 require("types")
@@ -16,12 +14,20 @@ require("types")
 
 
 
-
 local gr = love.graphics
+local inspect = require("inspect")
 local mtschemes = require("mtschemes")
 local sim = require("simulator")
 
  SimulatorRender = {}
+
+
+
+
+
+
+
+
 
 
 
@@ -85,7 +91,10 @@ function AnimatedCell.new(x, y)
 end
 
 local animatedCellsArr
+
+
 local animatedCellsGrid
+
 
 
 local pixSize = 60
@@ -206,18 +215,17 @@ function SimulatorRender:bakeCanvas()
    gr.setCanvas()
 end
 
-
-
 function SimulatorRender:draw()
    if not self.enabled then
+      print("disabled")
       return
    end
 
    self:bakeCanvas()
    gr.setColor({ 1, 1, 1, 1 })
-   local sx, sy = 1, 1
 
    self.cam:attach()
+   local sx, sy = 1, 1
    gr.draw(self.canvas, 0, 0, 0.0, sx, sy)
    self.cam:detach()
 
@@ -260,6 +268,7 @@ function SimulatorRender:prerenderGrid()
    gr.setCanvas()
 end
 
+
 function SimulatorRender:prerender()
    if not self.cellCanvas and not self.mealCanvas then
       error("No cellCanvas created!")
@@ -278,9 +287,18 @@ function SimulatorRender:drawMeal(animatedCell)
    gr.draw(self.mealCanvas, animatedCell.x, animatedCell.y)
 end
 
+
 function SimulatorRender:presentList(list)
    for _, node in ipairs(list) do
-      local x, y = math.floor((node.x - 1) * pixSize), math.floor((node.y - 1) * pixSize)
+
+      local x, y = node.x, node.y
+
+
+
+
+
+
+
 
       local animatedCell = animatedCellsGrid[x][y]
       if animatedCell and animatedCell.empty then

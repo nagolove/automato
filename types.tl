@@ -168,16 +168,19 @@ global formatMods: {string: string} = {
 }
 
 global type PictureTypes = enum
+    -- живая клетка
     "cell"
+    -- еда
     "food"
+    -- анимация показывающая, что на данной ячейке поля происходит поиск от какой-то клетки
     "search"
 end
 
 -- передается из рабочего потока в основой
 global type DrawNode = record
     -- целочисленные координаты от (1,1) до размеров поля
-    x: number
-    y: number
+    x: integer
+    y: integer
     -- ячейка еды?
     food: boolean
     -- цвет, только для обычных клеток
@@ -303,7 +306,7 @@ function initChannels(n: number): Channels
         result[v] = love.thread.getChannel(v .. tostring(n))
     end
     printLog(string.format('initChannels, n = %d', n), inspect(result))
-    printLog('initChannels traceback', debug.traceback())
+    --printLog('initChannels traceback', debug.traceback())
     return result
 end
 

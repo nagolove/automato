@@ -7,12 +7,12 @@
 require "love"
 require "log"
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. 
-    ";../../?/init.lua;" ..
+    --";../../?/init.lua;" ..
     "?.lua;" ..
     "?/init.lua;" .. 
     "scenes/automato/?/init.lua;" ..
     "scenes/automato/?.lua")
-printLog(love.filesystem.getRequirePath())
+printLog('[[' .. love.filesystem.getRequirePath() .. ']]')
 --package.path = package.path .. ";scenes/automato/?.lua"
 require "common"
 require "imgui"
@@ -30,8 +30,9 @@ local profi = require "profi"
 local gr = love.graphics
 --global PROF_CAPTURE = false
 
--- для тестирования выделения памяти
+-- табличка для экспериментов с выделением памяти
 local mem: {{number, {integer}}} = {}
+
 global PROF_CAPTURE = false
 
 local serpent = require "serpent"
@@ -476,7 +477,7 @@ local function drawSim()
                 --end
             --end
         end
-        for j = 1, 100000 do
+        for _ = 1, 100000 do
             --table.insert(t[1][1], j)
         end
         mem[#mem + 1] = t
@@ -648,14 +649,6 @@ local function draw()
 
         --profi:stop()
 
-        --[[
-        gr.push()
-        simulatorRender.cam:attach()
-        local canvasx, canvasy = simulatorRender.fieldWidthPixels + zazor, 0
-        gr.draw(simulatorRender.canvas as love.graphics.Drawable, canvasx, canvasy)
-        simulatorRender.cam:detach()
-        gr.pop()
-        --]]
         if underCursor then
             --simulatorRender:drawCellPath(cellUnderCursor)
         end

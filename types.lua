@@ -1,4 +1,4 @@
-local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local debug = _tl_compat and _tl_compat.debug or debug; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; require("love")
+local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local string = _tl_compat and _tl_compat.string or string; require("love")
 
 require("mtschemes")
 require("log")
@@ -174,6 +174,9 @@ formatMods = {
 
 
 
+
+
+
  DrawNode = {}
 
 
@@ -303,7 +306,7 @@ function initChannels(n)
       result[v] = love.thread.getChannel(v .. tostring(n))
    end
    printLog(string.format('initChannels, n = %d', n), inspect(result))
-   printLog('initChannels traceback', debug.traceback())
+
    return result
 end
 

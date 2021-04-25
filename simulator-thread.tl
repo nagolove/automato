@@ -811,8 +811,8 @@ local function main()
             channels.drawlist_fn:performAtomic(function(channel: love.thread.Channel)
                 for _ = 1, 100 do
                     local node: DrawNode = {}
-                    node.x = rng:random(1, 100)
-                    node.y = rng:random(1, 100)
+                    node.x = math.floor(rng:random(1, 100))
+                    node.y = math.floor(rng:random(1, 100))
                     node.color = {0.5, 0.7, 0.2}
                     channel:push(node)
                 end

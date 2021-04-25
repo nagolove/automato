@@ -7,12 +7,12 @@ local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 th
 require("love")
 require("log")
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() ..
-";../../?/init.lua;" ..
+
 "?.lua;" ..
 "?/init.lua;" ..
 "scenes/automato/?/init.lua;" ..
 "scenes/automato/?.lua")
-printLog(love.filesystem.getRequirePath())
+printLog('[[' .. love.filesystem.getRequirePath() .. ']]')
 
 require("common")
 require("imgui")
@@ -32,6 +32,7 @@ local gr = love.graphics
 
 
 local mem = {}
+
 PROF_CAPTURE = false
 
 local serpent = require("serpent")
@@ -476,7 +477,7 @@ local function drawSim()
 
 
       end
-      for j = 1, 100000 do
+      for _ = 1, 100000 do
 
       end
       mem[#mem + 1] = t
@@ -645,14 +646,6 @@ local function draw()
 
 
       simulatorRender:draw()
-
-
-
-
-
-
-
-
 
 
 

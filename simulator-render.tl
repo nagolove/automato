@@ -2,22 +2,20 @@ require "love"
 
 --love.filesystem.setRequirePath("?.lua;scenes/automato/?.lua")
 --package.path = package.path .. ";scenes/automato/?.lua"
---package.path = package.path .. ";scenes/automato/?.lua"
 
 love.filesystem.setRequirePath(
     love.filesystem.getRequirePath() .. "?.lua;scenes/automato/?.lua"
 )
 
-require "love"
 require "imgui"
 require "common"
 require "types"
 
---local inspect = require "inspect"
 --local keyconfig = require "keyconfig"
 --local prof = require "jprof"
 --local profi = require "profi"
 local gr = love.graphics
+local inspect = require "inspect"
 local mtschemes = require "mtschemes"
 local sim = require "simulator"
 
@@ -31,15 +29,23 @@ global record SimulatorRender
     drawCells: function(SimulatorRender)
     presentList: function(SimulatorRender, list: {DrawNode})
     presentLists: function(SimulatorRender)
+    prerenderMeal: function(SimulatorRender)
+    prerenderGrid: function(SimulatorRender)
+    prerenderCell: function(SimulatorRender)
+
+    drawCell: function(SimulatorRender, animatedCell: AnimatedCell)
+    drawMeal: function(SimulatorRender, animatedCell: AnimatedCell)
     
     cameraToCenter: function(SimulatorRender)
     mouseToCamera: function(SimulatorRender, x: number, y: number): Pos
     getRect: function(SimulatorRender): number, number, number, number
     update: function(SimulatorRender, number)
 
+
     getPixSize: function(SimulatorRender): number
     computeGrid: function(SimulatorRender)
     bakeCanvas: function(SimulatorRender)
+
 
     enabled: boolean
     commonSetup: CommonSetup
@@ -85,7 +91,10 @@ function AnimatedCell.new(x: integer, y: integer): AnimatedCell
 end
 
 local animatedCellsArr: {AnimatedCell}
+
+-- зачем этот двумерный массив?
 local animatedCellsGrid: {{AnimatedCell}}
+
 -- размер клетки поля суб канваса в пикселях
 --local pixSize: integer = 10
 local pixSize: integer = 60
@@ -206,22 +215,21 @@ function SimulatorRender:bakeCanvas()
     gr.setCanvas()
 end
 
---local testing = require 'testing'
-
 function SimulatorRender:draw()
     if not self.enabled then
+        print("disabled")
         return
     end
 
     self:bakeCanvas()
     gr.setColor{1, 1, 1, 1}
-    local sx, sy = 1, 1 
 
     self.cam:attach()
+    local sx, sy = 1, 1 
     gr.draw( self.canvas as love.graphics.Drawable, 0, 0, 0.0, sx, sy)
     self.cam:detach()
 
-    --testing.writeCanvas2Disk(self.canvas, 'SimulatorRender.canvas-%d.png', 100)
+    --require 'testing'.writeCanvas2Disk(self.canvas, 'SimulatorRender.canvas-%d.png', 100)
 end
 
 function SimulatorRender:update(dt: number)
@@ -260,6 +268,7 @@ function SimulatorRender:prerenderGrid()
     gr.setCanvas()
 end
 
+-- рисует в служебные канвасы
 function SimulatorRender:prerender()
     if not self.cellCanvas and not self.mealCanvas then
         error("No cellCanvas created!")
@@ -278,10 +287,19 @@ function SimulatorRender:drawMeal(animatedCell: AnimatedCell)
     gr.draw(self.mealCanvas as love.graphics.Drawable, animatedCell.x, animatedCell.y)
 end
 
+-- Производит проход по списку и вызывает метов рисования клеки
 function SimulatorRender:presentList(list: {DrawNode})
     for _, node in ipairs(list) do
-        local x, y = math.floor((node.x - 1) * pixSize), math.floor((node.y - 1) * pixSize)
+        --local x, y = math.floor((node.x - 1) * pixSize), math.floor((node.y - 1) * pixSize)
+        local x, y = node.x, node.y
+
         -- XXX проверь правильность индексации
+
+        --print("node", inspect(node))
+        --print("pixSize", pixSize)
+        --print("x, y", x, y)
+        --print("grid size", #animatedCellsGrid, #animatedCellsGrid[1])
+
         local animatedCell = animatedCellsGrid[x][y]
         if animatedCell and animatedCell.empty then
             local tmpCell = AnimatedCell.new(x, y)
