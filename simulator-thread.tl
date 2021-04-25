@@ -536,32 +536,8 @@ local function pushDrawList()
             food = true
         })
     end
-    -- нужное-ли условие?
-    --if dataChan:getCount() < maxDataChannelCount then
-
-    --print('pushDrawList', inspect(drawlist))
-    --printLog('getCount()', channels.drawlist:getCount())
-    --if channels.drawlist:getCount() < maxDataChannelCount then
-
-    --channels.drawlist:clear()
     channels.drawlist:push(drawlist)
-    --end
-
-    --if channels.data:getCount() < maxDataChannelCount then
-        --channels.data:push(drawlist)
-    --end
 end
-
---[[
-function commands.info()
-    local info: ThreadInfo = {
-        cells = #cells,
-        meals = #meals,
-        stepsPerSecond = stepsPerSecond,
-    }
-    channels.request:push(serpent.dump(info))
-end
---]]
 
 function commands.stop()
     printLog("stop command, break main cycle")
@@ -608,7 +584,6 @@ function commands.isalive()
     end
 
     local ok, errmsg: boolean, string = pcall(function()
-
         if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
             local cell = grid[math.floor(x)][math.floor(y)]
             --printLog(string.format("cell %s", inspect(cell)))
@@ -619,6 +594,7 @@ function commands.isalive()
             channels.cellrequest:push(state)
         end
     end)
+
     if not ok then
         error("isalive error: " ..errmsg)
     end
