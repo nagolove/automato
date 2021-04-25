@@ -35,34 +35,37 @@ local mem: {{number, {integer}}} = {}
 
 global PROF_CAPTURE = false
 
-local serpent = require "serpent"
-local i18n = require "i18n"
-local linesbuf = require 'kons'.new()
-local camera = require "camera"
+--local foodProduction: string = ''
 --local gr = love.graphics
 --local imgui = require "love-imgui"
-local inspect = require "inspect"
-local mtschemes = require "mtschemes"
 --local prof = require "jprof"
-local sim = require "simulator"
-local startInStepMode = false
 local binds = require "binds"
-printLog("package.path", package.path)
-package.path = package.path .. ";../../?/init.lua;../../?.lua"
-local linesbufDelay = 1
-local viewState: ViewState = "sim"
-local underCursor: Pos = {}
-local simulatorRender: SimulatorRender
 local cam: Camera
-local useProfi = false
-local mode: SimulatorMode = "stop"
---local foodProduction: string = ''
-local maxCellsNum = 5000
-local snaphotsDirectory = 'snaphots'
-local cellUnderCursor: Cell
-local timer: Timer = require "Timer".new()
+local camera = require "camera"
 local cameraZoomTimeout = 0.5
+local cellUnderCursor: Cell
+local i18n = require "i18n"
+local inspect = require "inspect"
+local linesbuf = require 'kons'.new()
+local linesbufDelay = 1
+local maxCellsNum = 5000
+local minGridSize, maxGridSize = 10, 100
+local mode: SimulatorMode = "stop"
+local mtschemes = require "mtschemes"
+local serpent = require "serpent"
+local sim = require "simulator"
+local simulatorRender: SimulatorRender
+local snaphotsDirectory = 'snaphots'
 local startGrap = {}
+local startInStepMode = false
+local timer: Timer = require "Timer".new()
+local underCursor: Pos = {}
+local useProfi = false
+local viewState: ViewState = "sim"
+
+package.path = package.path .. ";../../?/init.lua;../../?.lua"
+
+printLog("package.path", package.path)
 
 --[[ Начальные установки симуляции ]]
 local commonSetup: CommonSetup = {
@@ -371,7 +374,7 @@ local function roundSettings()
 
     commonSetup.foodenergy, status = imgui.SliderFloat(i18n("foodenergy"), commonSetup.foodenergy, 0, 10)
 
-    commonSetup.gridSize, status = wrap(imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, 10, 100))
+    commonSetup.gridSize, status = wrap(imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, minGridSize, maxGridSize))
     if simulatorRender and status then
         simulatorRender:cameraToCenter()
         simulatorRender:draw()

@@ -102,14 +102,16 @@ local animatedCellsGrid: {{AnimatedCell}}
 local pixSize: integer = 60
 -- ширина линий сетки
 local gridLineWidth = 3
--- во сколько раз полотно больше размера картинки
-local canvasmultfactor = 1
 
-local gridColor = {0.5, 0.5, 0.5}
-local mealcolor = {0, 1, 0, 1}
+-- во сколько раз полотно больше размера картинки
+--local canvasmultfactor = 1
+
 local cellcolor1 = {0.5, 0.5, 0.5, 1}
 local cellcolor2 = {0, 0, 1, 1}
+local gridColor = {0.5, 0.5, 0.5}
+local mealcolor = {0, 1, 0, 1}
 
+-- очистить список холстов заданным цветом
 local function clearCanvases(canvases: {love.graphics.Canvas}, color: {number})
     for _, canvas in ipairs(canvases) do
         gr.setCanvas(canvas)
@@ -118,6 +120,7 @@ local function clearCanvases(canvases: {love.graphics.Canvas}, color: {number})
     end
 end
 
+-- создать сетку анимированных клеток
 function SimulatorRender:createAnimatedCells()
     animatedCellsGrid = {}
     animatedCellsArr = {}
@@ -185,6 +188,8 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
     return self
 end
 
+-- вернуть четыре кардинальных числа, в пикселях - левый верхний угол экрана
+-- и ширина с высотой
 function SimulatorRender:getRect(): number, number, number, number
     local x, y = self.cam:cameraCoords(0, 0)
     local w = self.commonSetup.gridSize * self.cam.scale * pixSize 
@@ -192,6 +197,7 @@ function SimulatorRender:getRect(): number, number, number, number
     return x, y, w, h
 end
 
+-- по координатам мыши вернуть целочисленные значения индекса сетки
 function SimulatorRender:mouseToCamera(x: number, y: number): Pos
     local nx, ny: number, number = self.cam:worldCoords(x, y)
     return {
@@ -200,6 +206,7 @@ function SimulatorRender:mouseToCamera(x: number, y: number): Pos
     }
 end
 
+-- установить камеру по центру(значение по-умолчанию) и сбросить масштаб
 function SimulatorRender:cameraToCenter()
     local w, h = gr.getDimensions()
     printLog('w, h', w, h)
