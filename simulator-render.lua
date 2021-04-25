@@ -1,17 +1,25 @@
 local _tl_compat; if (tonumber((_VERSION or ''):match('[%d.]*$')) or 0) < 5.3 then local p, m = pcall(require, 'compat53.module'); if p then _tl_compat = m end end; local ipairs = _tl_compat and _tl_compat.ipairs or ipairs; local math = _tl_compat and _tl_compat.math or math; local pairs = _tl_compat and _tl_compat.pairs or pairs; local pcall = _tl_compat and _tl_compat.pcall or pcall; local string = _tl_compat and _tl_compat.string or string; local table = _tl_compat and _tl_compat.table or table; local _tl_table_unpack = unpack or table.unpack; require("love")
 
 
+
+
+
+love.filesystem.setRequirePath(
+love.filesystem.getRequirePath() .. "?.lua;scenes/automato/?.lua")
+
+
+require("love")
 require("imgui")
 require("common")
 require("types")
 
+
+
+
+
 local gr = love.graphics
-
-
 local mtschemes = require("mtschemes")
-
 local sim = require("simulator")
-
 
  SimulatorRender = {}
 

@@ -152,8 +152,8 @@ local inspect = require("inspect")
 
 
 
-formatMods = {
 
+formatMods = {
    ['allEated'] = '%d',
    ['maxEnergy'] = '%d',
    ['minEnergy'] = '%d',
