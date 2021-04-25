@@ -41,7 +41,6 @@ global record SimulatorRender
     getRect: function(SimulatorRender): number, number, number, number
     update: function(SimulatorRender, number)
 
-
     getPixSize: function(SimulatorRender): number
     computeGrid: function(SimulatorRender)
     bakeCanvas: function(SimulatorRender)
@@ -50,8 +49,11 @@ global record SimulatorRender
     enabled: boolean
     commonSetup: CommonSetup
     cam: Camera
-    fieldWidthPixels: number
-    fieldHeightPixels: number
+
+    -- что за значения в пикселях? реальная ширина поля и высота?
+    fieldWidthPixels: integer
+    fieldHeightPixels: integer
+
     canvas: love.graphics.Canvas
     cellCanvas: love.graphics.Canvas
     mealCanvas: gr.Canvas
@@ -160,7 +162,10 @@ function SimulatorRender.new(commonSetup: CommonSetup, cam: Camera): SimulatorRe
     self:computeGrid()
     printLog("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
 
-    local cw, ch = math.ceil(self.fieldWidthPixels * canvasmultfactor), math.ceil(self.fieldHeightPixels * canvasmultfactor)
+    --local cw, ch = math.ceil(self.fieldWidthPixels * canvasmultfactor), 
+        --math.ceil(self.fieldHeightPixels * canvasmultfactor)
+    local cw, ch = gr.getDimensions()
+
     self.gridCanvas = gr.newCanvas(cw, ch)
     self.canvas = gr.newCanvas(cw, ch)
 
@@ -207,7 +212,13 @@ function SimulatorRender:cameraToCenter()
 end
 
 function SimulatorRender:bakeCanvas()
-    gr.setColor{1, 1, 1, 1}
+    --gr.setColor{1, 1, 1, 1}
+
+    print("self.canvas", self.canvas)
+    -- слишком большой размер холста для быстрой рисовки
+    print("self.canvas size", (self.canvas as gr.Texture):getDimensions())
+    --os.exit()
+
     gr.setCanvas(self.canvas)
     gr.clear{0, 0, 0, 1}
     gr.draw(self.gridCanvas as gr.Drawable)
@@ -223,6 +234,14 @@ function SimulatorRender:draw()
 
     self:bakeCanvas()
     gr.setColor{1, 1, 1, 1}
+
+    --[[
+    процесс рисования поля
+
+    если изменился масштаб камеры, то пересчитать видимую сетку и запечь ее в канвас
+    или если масштаб не изменился, то отрисовать канвас
+
+    --]]
 
     self.cam:attach()
     local sx, sy = 1, 1 

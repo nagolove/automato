@@ -58,6 +58,8 @@ local sim = require("simulator")
 
 
 
+
+
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
@@ -160,7 +162,10 @@ function SimulatorRender.new(commonSetup, cam)
    self:computeGrid()
    printLog("fieldWidthPixels, fieldHeightPixels", self.fieldWidthPixels, self.fieldHeightPixels)
 
-   local cw, ch = math.ceil(self.fieldWidthPixels * canvasmultfactor), math.ceil(self.fieldHeightPixels * canvasmultfactor)
+
+
+   local cw, ch = gr.getDimensions()
+
    self.gridCanvas = gr.newCanvas(cw, ch)
    self.canvas = gr.newCanvas(cw, ch)
 
@@ -207,7 +212,13 @@ function SimulatorRender:cameraToCenter()
 end
 
 function SimulatorRender:bakeCanvas()
-   gr.setColor({ 1, 1, 1, 1 })
+
+   print("self.canvas", self.canvas)
+   print("self.canvas size", (self.canvas):getDimensions())
+
+
+
+
    gr.setCanvas(self.canvas)
    gr.clear({ 0, 0, 0, 1 })
    gr.draw(self.gridCanvas)
