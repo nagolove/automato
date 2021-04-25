@@ -59,6 +59,7 @@ local type AnimatedCell = record
     timestamp: number
     x: number
     y: number
+    empty: boolean
 end
 
 local AnimatedCell_mt: metatable<AnimatedCell> = {
@@ -260,43 +261,36 @@ function SimulatorRender:prerender()
     self:prerenderGrid()
 end
 
-function SimulatorRender:drawCell()
-
+function SimulatorRender:drawCell(animatedCell: AnimatedCell)
+    gr.setColor(1, 1, 1, 1)
+    gr.draw(self.cellCanvas as love.graphics.Drawable, animatedCell.x, animatedCell.y)
 end
 
-function SimulatorRender:drawMeal()
-
+function SimulatorRender:drawMeal(animatedCell: AnimatedCell)
+    gr.draw(self.mealCanvas as love.graphics.Drawable, animatedCell.x, animatedCell.y)
 end
 
 function SimulatorRender:presentList(list: {DrawNode})
-    --for _, node in ipairs(list) do
-        --local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
-        --if node.food then
-            --gr.setColor(1, 1, 1, 1)
-            --gr.draw(self.mealCanvas as love.graphics.Drawable, x, y)
-        --else
-            --if node.color then
-                --gr.setColor(node.color)
-            --else
-                --gr.setColor(1, 1, 1, 1)
-            --end
-            --gr.draw(self.cellCanvas as love.graphics.Drawable, x, y)
-        --end
-    --end
-
     for _, node in ipairs(list) do
-        local x, y = (node.x - 1) * pixSize, (node.y - 1) * pixSize
-        if node.food then
-            gr.setColor(1, 1, 1, 1)
-            gr.draw(self.mealCanvas as love.graphics.Drawable, x, y)
-
-        else
-            if node.color then
-                gr.setColor(node.color)
+        local x, y = math.floor((node.x - 1) * pixSize), math.floor((node.y - 1) * pixSize)
+        -- XXX проверь правильность индексации
+        local animatedCell = animatedCellsGrid[x][y]
+        if animatedCell and animatedCell.empty then
+            local tmpCell = AnimatedCell.new(x, y)
+            animatedCellsGrid[x][y] = tmpCell
+            animatedCellsArr[#animatedCellsArr + 1] = tmpCell
+        end
+        if animatedCell then
+            if node.food then
+                self:drawCell(animatedCell)
             else
-                gr.setColor(1, 1, 1, 1)
+                if node.color then
+                    gr.setColor(node.color)
+                else
+                    gr.setColor(1, 1, 1, 1)
+                end
+                self:drawMeal(animatedCell)
             end
-            gr.draw(self.cellCanvas as love.graphics.Drawable, x, y)
         end
     end
 end

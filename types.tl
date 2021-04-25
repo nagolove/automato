@@ -342,7 +342,6 @@ global type Simulator = record
 
     -- получить массив данных для рисования
     getDrawLists : function(): {{DrawNode}}
-    presentLists: function()
 
     -- пример запроса для рисования(предки-потомки и тд)
     --getDrawLists : function(query: function(Cell): boolean): {DrawNode}
