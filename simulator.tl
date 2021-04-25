@@ -37,9 +37,14 @@ channels[1].cellrequest:push()
 local isdone: boolean = true
 local setup: CommonSetup
 local colonyDied = false
+local maxExtractDrawListCount = 20
 
+-- опрашивает поток симулятора через именованный канал на получение списка рисования и
+-- добавляет полученные ноды в переданный список
 local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
+
     --prof.push("extractDrawList")
+
     if channel then
         local sublist: {DrawNode}
 
@@ -51,14 +56,11 @@ local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
             sublist = channel:peek() as {DrawNode}
         end
 
-        -- XXX workaround
-        if channel:getCount() > 20 then
+        if channel:getCount() > maxExtractDrawListCount then
             while channel:getCount() > 1 do
                 channel:pop()
             end
         end
-
-        --print('channel:getCount()', channel:getCount())
 
         if sublist then
             for _, node in ipairs(sublist) do
@@ -68,7 +70,9 @@ local function extractDrawList(list: {DrawNode}, channel: love.thread.Channel)
     else
         --printLog('extractDrawList() with nil channel')
     end
+
     --prof.pop("extractDrawList")
+
 end
 
 function Simulator.killColony()
@@ -78,10 +82,18 @@ end
 function Simulator.getDrawLists(): {{DrawNode}}
     --prof.push("getDrawLists")
     local list = {}
+
+    -- первый список рисования
     list[#list + 1] = {}
+
+    -- второй список рисования
     list[#list + 1] = {}
+
+    -- опросить все потоки
     for k, _ in ipairs(threads) do
+        -- основной список 
         local drawlist: love.thread.Channel = channels[k].drawlist
+        -- дололнительный(экспериментальный) список
         local drawlist_fn: love.thread.Channel = channels[k].drawlist_fn_
 
         --print('lists', drawlist, drawlist_fn)

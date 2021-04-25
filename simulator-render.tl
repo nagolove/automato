@@ -45,7 +45,6 @@ global record SimulatorRender
     computeGrid: function(SimulatorRender)
     bakeCanvas: function(SimulatorRender)
 
-
     enabled: boolean
     commonSetup: CommonSetup
     cam: Camera
@@ -98,6 +97,7 @@ local animatedCellsArr: {AnimatedCell}
 local animatedCellsGrid: {{AnimatedCell}}
 
 -- размер клетки поля суб канваса в пикселях
+-- начал экспериментирование отсюда
 --local pixSize: integer = 10
 local pixSize: integer = 60
 -- ширина линий сетки
@@ -340,6 +340,8 @@ function SimulatorRender:presentList(list: {DrawNode})
     end
 end
 
+-- получает массив массивов клеток для рисования в виде разных слоев.
+-- также отправляет на рисование
 function SimulatorRender:presentLists()
     local drawlists: {{DrawNode}} = sim.getDrawLists()
     if not drawlists then
