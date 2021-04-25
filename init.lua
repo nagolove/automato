@@ -35,34 +35,37 @@ local mem = {}
 
 PROF_CAPTURE = false
 
-local serpent = require("serpent")
-local i18n = require("i18n")
-local linesbuf = require('kons').new()
-local camera = require("camera")
 
 
-local inspect = require("inspect")
-local mtschemes = require("mtschemes")
 
-local sim = require("simulator")
-local startInStepMode = false
+
 local binds = require("binds")
-printLog("package.path", package.path)
-package.path = package.path .. ";../../?/init.lua;../../?.lua"
-local linesbufDelay = 1
-local viewState = "sim"
-local underCursor = {}
-local simulatorRender
 local cam
-local useProfi = false
-local mode = "stop"
-
-local maxCellsNum = 5000
-local snaphotsDirectory = 'snaphots'
-local cellUnderCursor
-local timer = require("Timer").new()
+local camera = require("camera")
 local cameraZoomTimeout = 0.5
+local cellUnderCursor
+local i18n = require("i18n")
+local inspect = require("inspect")
+local linesbuf = require('kons').new()
+local linesbufDelay = 1
+local maxCellsNum = 5000
+local minGridSize, maxGridSize = 10, 100
+local mode = "stop"
+local mtschemes = require("mtschemes")
+local serpent = require("serpent")
+local sim = require("simulator")
+local simulatorRender
+local snaphotsDirectory = 'snaphots'
 local startGrap = {}
+local startInStepMode = false
+local timer = require("Timer").new()
+local underCursor = {}
+local useProfi = false
+local viewState = "sim"
+
+package.path = package.path .. ";../../?/init.lua;../../?.lua"
+
+printLog("package.path", package.path)
 
 
 local commonSetup = {
@@ -371,7 +374,7 @@ local function roundSettings()
 
    commonSetup.foodenergy, status = imgui.SliderFloat(i18n("foodenergy"), commonSetup.foodenergy, 0, 10)
 
-   commonSetup.gridSize, status = wrap(imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, 10, 100))
+   commonSetup.gridSize, status = wrap(imgui.SliderInt(i18n("gridsize"), commonSetup.gridSize, minGridSize, maxGridSize))
    if simulatorRender and status then
       simulatorRender:cameraToCenter()
       simulatorRender:draw()

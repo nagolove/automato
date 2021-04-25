@@ -59,7 +59,6 @@ local sim = require("simulator")
 
 
 
-
 local SimulatorRender_mt = {
    __index = SimulatorRender,
 }
@@ -99,16 +98,19 @@ local animatedCellsGrid
 
 
 
+
 local pixSize = 60
 
 local gridLineWidth = 3
 
-local canvasmultfactor = 1
 
-local gridColor = { 0.5, 0.5, 0.5 }
-local mealcolor = { 0, 1, 0, 1 }
+
+
 local cellcolor1 = { 0.5, 0.5, 0.5, 1 }
 local cellcolor2 = { 0, 0, 1, 1 }
+local gridColor = { 0.5, 0.5, 0.5 }
+local mealcolor = { 0, 1, 0, 1 }
+
 
 local function clearCanvases(canvases, color)
    for _, canvas in ipairs(canvases) do
@@ -117,6 +119,7 @@ local function clearCanvases(canvases, color)
       gr.setCanvas()
    end
 end
+
 
 function SimulatorRender:createAnimatedCells()
    animatedCellsGrid = {}
@@ -185,12 +188,15 @@ function SimulatorRender.new(commonSetup, cam)
    return self
 end
 
+
+
 function SimulatorRender:getRect()
    local x, y = self.cam:cameraCoords(0, 0)
    local w = self.commonSetup.gridSize * self.cam.scale * pixSize
    local h = self.commonSetup.gridSize * self.cam.scale * pixSize
    return x, y, w, h
 end
+
 
 function SimulatorRender:mouseToCamera(x, y)
    local nx, ny = self.cam:worldCoords(x, y)
@@ -199,6 +205,7 @@ function SimulatorRender:mouseToCamera(x, y)
       y = math.ceil((ny / self:getPixSize()) * self.cam.scale),
    }
 end
+
 
 function SimulatorRender:cameraToCenter()
    local w, h = gr.getDimensions()
@@ -213,10 +220,10 @@ end
 
 function SimulatorRender:bakeCanvas()
 
+
    print("self.canvas", self.canvas)
+
    print("self.canvas size", (self.canvas):getDimensions())
-
-
 
 
    gr.setCanvas(self.canvas)
@@ -234,6 +241,14 @@ function SimulatorRender:draw()
 
    self:bakeCanvas()
    gr.setColor({ 1, 1, 1, 1 })
+
+
+
+
+
+
+
+
 
    self.cam:attach()
    local sx, sy = 1, 1
@@ -331,6 +346,8 @@ function SimulatorRender:presentList(list)
       end
    end
 end
+
+
 
 function SimulatorRender:presentLists()
    local drawlists = sim.getDrawLists()

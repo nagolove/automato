@@ -37,8 +37,13 @@ local channels = {}
 local isdone = true
 local setup
 local colonyDied = false
+local maxExtractDrawListCount = 20
+
+
 
 local function extractDrawList(list, channel)
+
+
 
    if channel then
       local sublist
@@ -51,14 +56,11 @@ local function extractDrawList(list, channel)
          sublist = channel:peek()
       end
 
-
-      if channel:getCount() > 20 then
+      if channel:getCount() > maxExtractDrawListCount then
          while channel:getCount() > 1 do
             channel:pop()
          end
       end
-
-
 
       if sublist then
          for _, node in ipairs(sublist) do
@@ -69,6 +71,8 @@ local function extractDrawList(list, channel)
 
    end
 
+
+
 end
 
 function Simulator.killColony()
@@ -78,10 +82,18 @@ end
 function Simulator.getDrawLists()
 
    local list = {}
+
+
    list[#list + 1] = {}
+
+
    list[#list + 1] = {}
+
+
    for k, _ in ipairs(threads) do
+
       local drawlist = channels[k].drawlist
+
       local drawlist_fn = channels[k].drawlist_fn_
 
 
