@@ -438,11 +438,13 @@ local function drawSim()
 
     local num, status: number, boolean
 
-    local presetsNamesByZeros = ""
-    for _, v in ipairs(presetsNames) do
-        presetsNamesByZeros  = presetsNamesByZeros .. v .. "\0"
-    end
-    num, status = imgui.Combo("preset", selectedPreset, presetsNamesByZeros, #presetsNames)
+    --local presetsNamesByZeros = ""
+    --for _, v in ipairs(presetsNames) do
+        --presetsNamesByZeros  = presetsNamesByZeros .. v .. "\0"
+    --end
+    local zerosSeparated, presetNum: string, integer = separateByZeros(presetsNames)
+    num, status = imgui.Combo("preset", selectedPreset, zerosSeparated, presetNum)
+    --num, status = imgui.Combo("preset", selectedPreset, presetsNamesByZeros, #presetsNames)
     if status then
         selectedPreset = math.modf(num)
         activatePreset((num + 1.0) as integer)

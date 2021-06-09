@@ -536,32 +536,8 @@ local function pushDrawList()
          food = true,
       })
    end
-
-
-
-
-
-
-
-
    channels.drawlist:push(drawlist)
-
-
-
-
-
 end
-
-
-
-
-
-
-
-
-
-
-
 
 function commands.stop()
    printLog("stop command, break main cycle")
@@ -608,7 +584,6 @@ function commands.isalive()
    end
 
    local ok, errmsg = pcall(function()
-
       if x >= 1 and x <= gridSize and y >= 1 and y <= gridSize then
          local cell = grid[math.floor(x)][math.floor(y)]
 
@@ -619,6 +594,7 @@ function commands.isalive()
          channels.cellrequest:push(state)
       end
    end)
+
    if not ok then
       error("isalive error: " .. errmsg)
    end
