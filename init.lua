@@ -99,23 +99,6 @@ local selectedPreset = 1
 local states
 local selectedState = 0
 
-local function loadLocales()
-   local localePath = "scenes/automato/locales"
-   local files = love.filesystem.getDirectoryItems(localePath)
-   printLog("locale files", inspect(files))
-   for _, v in ipairs(files) do
-      i18n.loadFile(localePath .. "/" .. v, function(path)
-         local chunk, errmsg = love.filesystem.load(path)
-         if not chunk then
-            error(errmsg)
-         end
-         return chunk
-      end)
-   end
-
-   i18n.setLocale('ru')
-   printLog("i18n", inspect(i18n))
-end
 
 local function loadStates()
    local files = love.filesystem.getDirectoryItems(snaphotsDirectory)
@@ -912,6 +895,24 @@ end
 
 local function clearLogs()
    love.filesystem.write('printstat.txt', "")
+end
+
+local function loadLocales()
+   local localePath = "scenes/automato/locales"
+   local files = love.filesystem.getDirectoryItems(localePath)
+   printLog("locale files", inspect(files))
+   for _, v in ipairs(files) do
+      i18n.loadFile(localePath .. "/" .. v, function(path)
+         local chunk, errmsg = love.filesystem.load(path)
+         if not chunk then
+            error(errmsg)
+         end
+         return chunk
+      end)
+   end
+
+   i18n.setLocale('ru')
+   printLog("i18n", inspect(i18n))
 end
 
 local function init()

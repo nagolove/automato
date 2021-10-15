@@ -1,11 +1,20 @@
---[[ Клеточный автомат-симулятор. Действие происходит на плоском поле в клетку, замкнутом на себя. Создается популяция клеток которые двигаются по 
-сгенерированной случайным образом программе из простого языка.
+--[[ 
+Клеточный автомат-симулятор. Действие происходит на плоском поле в клетку,
+замкнутом на себя. Создается популяция клеток которые двигаются по итеративно
+рекурсивной сгенерированной случайным образом на основе генератора псевдо
+случайных чисел программе из простого языка для развития клеток.
 Клетки питаются едой(зеленый цвет) и имеют конечный запас энергии.
 Цель игры - создать и развить долгоживущюю популяцию.
+Применяется логистическое отношение при случайной инициализации клеток на 
+игровом поле.
 --]]
 
 require "love"
+
+-- Является ли данный модуль логирования общим для проекта "автомато" и других
+-- проектов?
 require "log"
+
 love.filesystem.setRequirePath(love.filesystem.getRequirePath() .. 
     --";../../?/init.lua;" ..
     "?.lua;" ..
@@ -99,23 +108,6 @@ local selectedPreset = 1
 local states: {string}
 local selectedState = 0
 
-local function loadLocales()
-    local localePath = "scenes/automato/locales"
-    local files = love.filesystem.getDirectoryItems(localePath)
-    printLog("locale files", inspect(files))
-    for _, v in ipairs(files) do 
-        i18n.loadFile(localePath .. "/" .. v, function(path: string): any
-            local chunk, errmsg = love.filesystem.load(path)
-            if not chunk then
-                error(errmsg)
-            end
-            return chunk
-        end) 
-    end
-    --i18n.setLocale('en')
-    i18n.setLocale('ru')
-    printLog("i18n", inspect(i18n))
-end
 
 local function loadStates()
     local files = love.filesystem.getDirectoryItems(snaphotsDirectory)
@@ -912,6 +904,24 @@ end
 
 local function clearLogs()
     love.filesystem.write('printstat.txt', "")
+end
+
+local function loadLocales()
+    local localePath = "scenes/automato/locales"
+    local files = love.filesystem.getDirectoryItems(localePath)
+    printLog("locale files", inspect(files))
+    for _, v in ipairs(files) do 
+        i18n.loadFile(localePath .. "/" .. v, function(path: string): any
+            local chunk, errmsg = love.filesystem.load(path)
+            if not chunk then
+                error(errmsg)
+            end
+            return chunk
+        end) 
+    end
+    --i18n.setLocale('en')
+    i18n.setLocale('ru')
+    printLog("i18n", inspect(i18n))
 end
 
 local function init()
